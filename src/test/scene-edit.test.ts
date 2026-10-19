@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_CONFIG, DIMENSION_LIMITS, type GreenhouseConfig } from '@/types/greenhouse';
+import { DEFAULT_CONFIG, DIMENSION_LIMITS, type FarmConfig } from '@/types/farm';
 import {
   HANDLE_GAP,
   MIN_RISE,
@@ -19,8 +19,8 @@ import {
   typeCompatibilityPatch,
 } from '@/lib/sceneEdit';
 
-const base: GreenhouseConfig = { ...DEFAULT_CONFIG, state: 'Goa', district: 'North Goa' };
-const apply = (config: GreenhouseConfig, patch: Partial<GreenhouseConfig>) => ({ ...config, ...patch });
+const base: FarmConfig = { ...DEFAULT_CONFIG, state: 'Goa', district: 'North Goa' };
+const apply = (config: FarmConfig, patch: Partial<FarmConfig>) => ({ ...config, ...patch });
 
 describe('resizePatch', () => {
   it('snaps the footprint to whole metres and heights to half metres', () => {
@@ -114,16 +114,16 @@ describe('part detection', () => {
     expect(partForObjectName('climate-equipment')).toBe('type');
     expect(partForObjectName('frame-hoops')).toBe('frame');
     expect(partForObjectName('frame-purlins')).toBe('frame');
-    expect(partForObjectName('greenhouse-model')).toBe('size');
+    expect(partForObjectName('farm-model')).toBe('size');
     expect(partForObjectName('louver-slat')).toBeNull();
   });
 
   it('finds the part from any mesh inside it', () => {
-    const door = node('door-single-sliding', node('greenhouse-model'));
+    const door = node('door-single-sliding', node('farm-model'));
     const panel = node('panel', node('track', door));
     expect(partForObject(panel)).toBe('door');
     // Anything else inside the model (the foundation, a gutter) selects the house as a whole.
-    expect(partForObject(node('mystery', node('greenhouse-model')))).toBe('size');
+    expect(partForObject(node('mystery', node('farm-model')))).toBe('size');
     expect(partForObject(node('grass'))).toBeNull();
     expect(partForObject(null)).toBeNull();
   });
@@ -133,7 +133,7 @@ describe('part detection', () => {
     expect(objectBelongsToPart('roof-cover', 'roof')).toBe(true);
     expect(objectBelongsToPart('roof-cover', 'cover')).toBe(true);
     expect(objectBelongsToPart('end-wall-cover', 'cover')).toBe(true);
-    expect(objectBelongsToPart('greenhouse-model', 'size')).toBe(false);
+    expect(objectBelongsToPart('farm-model', 'size')).toBe(false);
     expect(objectBelongsToPart('door-roll-up', 'vents')).toBe(false);
   });
 });

@@ -21,8 +21,8 @@ import {
   type Vec3,
   type View,
 } from '@/lib/viewMath';
-import { antechamber } from '@/components/greenhouse/scene/structureLayout';
-import { DEFAULT_CONFIG, DIMENSION_LIMITS, type DoorEntry } from '@/types/greenhouse';
+import { antechamber } from '@/components/farm/scene/structureLayout';
+import { DEFAULT_CONFIG, DIMENSION_LIMITS, type DoorEntry } from '@/types/farm';
 import { ORBIT_STEP, isTypingTarget, resolveViewportKey } from '@/lib/viewportKeys';
 
 const close = (a: Vec3, b: Vec3, digits = 5) => a.forEach((value, i) => expect(value).toBeCloseTo(b[i], digits));

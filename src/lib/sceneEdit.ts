@@ -4,8 +4,8 @@ import {
   DOOR_ENTRY_OPTIONS,
   IRRIGATION_SYSTEM_OPTIONS,
   SIDE_VENTILATION_OPTIONS,
-  type GreenhouseConfig,
-} from '@/types/greenhouse';
+  type FarmConfig,
+} from '@/types/farm';
 
 /** The editable parts of the model, as named by the user. 'size' is the house as a whole. */
 export type EditablePart = 'size' | 'roof' | 'frame' | 'cover' | 'vents' | 'door' | 'irrigation' | 'crop' | 'type';
@@ -28,7 +28,7 @@ const clamp = (value: number, min: number, max: number) => Math.min(Math.max(val
  * Turns a dragged value into a config patch that always stays valid: snapped, inside the supported
  * limits, and with the roof rising above the gutter (or level with it for a flat roof).
  */
-export function resizePatch(config: GreenhouseConfig, key: ResizeKey, rawValue: number): Partial<GreenhouseConfig> {
+export function resizePatch(config: FarmConfig, key: ResizeKey, rawValue: number): Partial<FarmConfig> {
   if (!Number.isFinite(rawValue)) return {};
   const { min, max } = DIMENSION_LIMITS[key];
   const value = Number(clamp(snap(rawValue, SNAP_STEP[key]), min, max).toFixed(2));
@@ -57,9 +57,9 @@ export function resizePatch(config: GreenhouseConfig, key: ResizeKey, rawValue: 
 
 /** Switching to or from a shade-net house changes the cover, vents and door that go with it. */
 export function typeCompatibilityPatch(
-  nextType: GreenhouseConfig['greenhouseType'],
-  config: GreenhouseConfig
-): Partial<GreenhouseConfig> {
+  nextType: FarmConfig['greenhouseType'],
+  config: FarmConfig
+): Partial<FarmConfig> {
   if (nextType === 'shade-net') {
     return { greenhouseType: 'shade-net', coverMaterial: 'shade-net', sideVentilation: 'none', doorEntry: 'curtain' };
   }
@@ -72,7 +72,7 @@ export function typeCompatibilityPatch(
 }
 
 /** Roof changes keep the heights consistent: flat levels the ridge, others restore a rise. */
-export function roofPatch(roofType: GreenhouseConfig['roofType'], config: GreenhouseConfig): Partial<GreenhouseConfig> {
+export function roofPatch(roofType: FarmConfig['roofType'], config: FarmConfig): Partial<FarmConfig> {
   if (roofType === 'flat') return { roofType, ridgeHeight: config.gutterHeight };
   const ridgeHeight =
     config.ridgeHeight > config.gutterHeight
@@ -82,7 +82,7 @@ export function roofPatch(roofType: GreenhouseConfig['roofType'], config: Greenh
 }
 
 /** The root group of the model; any hit inside it that names no other part selects the house. */
-export const MODEL_ROOT_NAME = 'greenhouse-model';
+export const MODEL_ROOT_NAME = 'farm-model';
 
 /** Which part of the model a named scene object belongs to; null for anything not editable. */
 export function partForObjectName(name: string): EditablePart | null {
@@ -133,7 +133,7 @@ export const PART_VALUES = {
 export type OptionPart = Exclude<EditablePart, 'size'>;
 
 /** The config field each option part sets. */
-export const CONFIG_FIELD: Record<OptionPart, keyof GreenhouseConfig> = {
+export const CONFIG_FIELD: Record<OptionPart, keyof FarmConfig> = {
   roof: 'roofType',
   frame: 'structureMaterial',
   cover: 'coverMaterial',
@@ -148,23 +148,23 @@ export const CONFIG_FIELD: Record<OptionPart, keyof GreenhouseConfig> = {
 export const SHADE_LOCKED: Partial<Record<OptionPart, string>> = { cover: 'shade-net', vents: 'none', door: 'curtain' };
 
 /** True when a value cannot be chosen for this house (the shade-net locks). */
-export function isOptionLocked(part: OptionPart, value: string, config: GreenhouseConfig): boolean {
+export function isOptionLocked(part: OptionPart, value: string, config: FarmConfig): boolean {
   const locked = SHADE_LOCKED[part];
   return config.greenhouseType === 'shade-net' && locked !== undefined && locked !== value;
 }
 
 /** The patch for choosing an option, including the knock-on changes some choices need. */
-export function optionPatch(part: OptionPart, value: string, config: GreenhouseConfig): Partial<GreenhouseConfig> {
-  if (part === 'roof') return roofPatch(value as GreenhouseConfig['roofType'], config);
-  if (part === 'type') return typeCompatibilityPatch(value as GreenhouseConfig['greenhouseType'], config);
-  return { [CONFIG_FIELD[part]]: value } as Partial<GreenhouseConfig>;
+export function optionPatch(part: OptionPart, value: string, config: FarmConfig): Partial<FarmConfig> {
+  if (part === 'roof') return roofPatch(value as FarmConfig['roofType'], config);
+  if (part === 'type') return typeCompatibilityPatch(value as FarmConfig['greenhouseType'], config);
+  return { [CONFIG_FIELD[part]]: value } as Partial<FarmConfig>;
 }
 
 /**
  * The patch that steps a part to its next (or previous) available option, skipping locked ones and
  * wrapping around; empty when there is nothing else to choose.
  */
-export function cycleOptionPatch(part: OptionPart, config: GreenhouseConfig, direction: 1 | -1): Partial<GreenhouseConfig> {
+export function cycleOptionPatch(part: OptionPart, config: FarmConfig, direction: 1 | -1): Partial<FarmConfig> {
   const values = PART_VALUES[part] as readonly string[];
   const current = values.indexOf(String(config[CONFIG_FIELD[part]]));
   for (let step = 1; step < values.length; step += 1) {
@@ -184,7 +184,7 @@ export const PART_FOCUS: Partial<Record<EditablePart, 'door' | 'vents' | 'irriga
 };
 
 /** The grips a selected part offers. Parts chosen from a list (door, crop, ...) offer none. */
-export function handlesForPart(part: EditablePart | null, config: Pick<GreenhouseConfig, 'roofType'>): HandleKey[] {
+export function handlesForPart(part: EditablePart | null, config: Pick<FarmConfig, 'roofType'>): HandleKey[] {
   const ridge: HandleKey[] = config.roofType === 'flat' ? [] : ['ridgeHeight'];
   if (part === 'size' || part === 'frame') return ['length', 'width', 'corner', 'gutterHeight', ...ridge];
   if (part === 'cover') return ['length', 'width', 'corner', 'gutterHeight'];
@@ -208,7 +208,7 @@ export function handleValue(key: ResizeKey, coordinate: number): number {
 }
 
 /** The patch for a drag of the corner grip to (x, z) on the ground. */
-export function cornerPatch(config: GreenhouseConfig, x: number, z: number): Partial<GreenhouseConfig> {
+export function cornerPatch(config: FarmConfig, x: number, z: number): Partial<FarmConfig> {
   return {
     ...resizePatch(config, 'width', handleValue('width', x)),
     ...resizePatch(config, 'length', handleValue('length', z)),
@@ -268,7 +268,7 @@ export function optionLabelKey(part: OptionPart, value: string): string {
  * Approximate area of cover film or net: both side walls, both end walls up to the gutter, the
  * gable triangles and the roof slopes (a gothic arch is about 6% longer than a straight slope).
  */
-export function coverSurface(config: Pick<GreenhouseConfig, 'length' | 'width' | 'gutterHeight' | 'ridgeHeight' | 'roofType'>): number {
+export function coverSurface(config: Pick<FarmConfig, 'length' | 'width' | 'gutterHeight' | 'ridgeHeight' | 'roofType'>): number {
   const { length, width, gutterHeight, ridgeHeight, roofType } = config;
   const rise = Math.max(ridgeHeight - gutterHeight, 0);
   const walls = 2 * (length + width) * gutterHeight;

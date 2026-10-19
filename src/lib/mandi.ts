@@ -1,5 +1,5 @@
-import type { LatestMandiPrice } from '@/components/greenhouse/ReturnsPanel';
-import type { CropMarketPrice } from '@/types/greenhouse';
+import type { LatestMandiPrice } from '@/components/farm/ReturnsPanel';
+import type { CropMarketPrice } from '@/types/farm';
 
 /**
  * Today's mandi price for the selected crop in ₹ per kg: the state median when at least three markets reported (the

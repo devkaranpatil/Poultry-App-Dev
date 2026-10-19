@@ -8,7 +8,7 @@ on:
   push:
     branches: [main, master]
     paths:
-      - "src/components/greenhouse/**"
+      - "src/components/farm/**"
       - "src/lib/sceneEdit.ts"
       - "src/lib/renderCapability.ts"
       - "e2e/scene-options.spec.ts"

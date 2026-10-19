@@ -1,4 +1,6 @@
-﻿export type Locale = "en" | "hi" | "mr";
+﻿import { APP_NAME } from '@/config/app';
+
+export type Locale = "en" | "hi" | "mr";
 
 export const SUPPORTED_LANGUAGES: Array<{ value: Locale; label: string }> = [
   { value: "en", label: "English" },
@@ -84,7 +86,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "menu.support": "Help & Support",
 
     "app.setup": "Setup",
-    "app.productName": "Greenhouse IQ",
+    "app.productName": APP_NAME,
     "app.productSubtitle": "Greenhouse Design & Cost Intelligence",
     "app.complete": "Complete",
     "app.inProgress": "In Progress",
@@ -126,7 +128,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "landing.cardClimateMismatchDesc": "Designs fail against local weather behavior.",
     "landing.cardDesignGaps": "Design Gaps",
     "landing.cardDesignGapsDesc": "Weak engineering cuts lifespan and output.",
-    "landing.solutionTitle": "The Greenhouse IQ Solution",
+    "landing.solutionTitle": `The ${APP_NAME} Solution`,
     "landing.solutionDesc": "Engineering precision plus agricultural intelligence through guided, data-driven workflows.",
     "landing.smartScenarios": "Smart Scenarios",
     "landing.smartScenariosDesc": "Compare multiple configurations before committing capital.",
@@ -172,7 +174,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     "landing.privacy": "Privacy Policy",
     "landing.terms": "Terms of Service",
     "landing.contact": "Contact Support",
-    "landing.copyright": "Copyright {year} Greenhouse IQ. All rights reserved.",
+    "landing.copyright": `Copyright {year} ${APP_NAME}. All rights reserved.`,
     "support.title": "Help & Support",
     "support.subtitle": "Need help with account access, configurations, or calculations? Contact support using any channel below.",
     "support.email": "Email",
@@ -1195,7 +1197,7 @@ messages.hi = {
   "menu.support": "सहायता",
 
   "app.setup": "सेटअप",
-  "app.productName": "Greenhouse IQ",
+  "app.productName": APP_NAME,
   "app.productSubtitle": "पॉलीहाउस डिज़ाइन और लागत विश्लेषण",
   "app.complete": "पूर्ण",
   "app.inProgress": "प्रगति में",
@@ -1224,7 +1226,7 @@ messages.hi = {
   "landing.heroBadge": "प्रीमियम एग्री-टेक प्लानिंग",
   "landing.heroTitle": "बनाने से पहले जानें कि पॉलीहाउस में कितना खर्च होगा और कितनी कमाई होगी।",
   "landing.heroDesc": "अपना पॉलीहाउस 3D में डिज़ाइन करें, फिर आसान चरणों पर चलें: लागत, सरकारी सब्सिडी, कमाई, बैंक ऋण और जोखिम, सब सरल शब्दों में। अंत में छापने लायक रिपोर्ट।",
-  "landing.solutionTitle": "Greenhouse IQ समाधान",
+  "landing.solutionTitle": `${APP_NAME} समाधान`,
   "landing.solutionDesc": "मार्गदर्शित और डेटा-आधारित वर्कफ़्लो के साथ इंजीनियरिंग सटीकता और कृषि बुद्धिमत्ता।",
   "landing.smartScenarios": "स्मार्ट परिदृश्य",
   "landing.smartScenariosDesc": "पूंजी निवेश से पहले कई कॉन्फ़िगरेशन की तुलना करें।",
@@ -1282,7 +1284,7 @@ messages.hi = {
   "landing.privacy": "गोपनीयता नीति",
   "landing.terms": "सेवा की शर्तें",
   "landing.contact": "सहायता से संपर्क करें",
-  "landing.copyright": "कॉपीराइट {year} Greenhouse IQ. सर्वाधिकार सुरक्षित।",
+  "landing.copyright": `कॉपीराइट {year} ${APP_NAME}. सर्वाधिकार सुरक्षित।`,
   "support.title": "सहायता और समर्थन",
   "support.subtitle": "खाते की पहुंच, कॉन्फ़िगरेशन या गणना में सहायता चाहिए? नीचे दिए किसी भी माध्यम से सहायता टीम से संपर्क करें।",
   "support.email": "ईमेल",
@@ -2407,7 +2409,7 @@ messages.mr = {
   "menu.support": "मदत व सहाय्य",
 
   "app.setup": "सेटअप",
-  "app.productName": "Greenhouse IQ",
+  "app.productName": APP_NAME,
   "app.productSubtitle": "पॉलीहाउस डिझाइन आणि खर्च विश्लेषण",
   "app.complete": "पूर्ण",
   "app.inProgress": "सुरू आहे",
@@ -2436,7 +2438,7 @@ messages.mr = {
   "landing.heroBadge": "प्रीमियम अॅग्री-टेक नियोजन",
   "landing.heroTitle": "बांधण्यापूर्वी जाणून घ्या पॉलीहाऊसला किती खर्च येईल आणि किती कमाई होईल.",
   "landing.heroDesc": "तुमचे पॉलीहाऊस 3D मध्ये डिझाइन करा, मग सोप्या टप्प्यांनी पुढे जा: खर्च, सरकारी अनुदान, कमाई, बँक कर्ज आणि जोखीम, सर्व साध्या शब्दांत. शेवटी छापण्यायोग्य अहवाल.",
-  "landing.solutionTitle": "Greenhouse IQ उपाय",
+  "landing.solutionTitle": `${APP_NAME} उपाय`,
   "landing.solutionDesc": "मार्गदर्शित व डेटा-आधारित कार्यप्रवाहांसह अभियांत्रिकी अचूकता आणि कृषी बुद्धिमत्ता.",
   "landing.smartScenarios": "स्मार्ट परिस्थिती",
   "landing.smartScenariosDesc": "भांडवली गुंतवणुकीपूर्वी अनेक कॉन्फिगरेशनची तुलना करा.",

@@ -10,7 +10,7 @@ const supabase = installFakeSupabase();
 process.env.AUTH_RATE_LIMIT_MAX = '1000';
 process.env.AI_RATE_LIMIT_MAX = '1000';
 // An empty models folder: the "model not installed" case must not depend on what is downloaded locally.
-process.env.LLM_MODELS_DIR = path.join(os.tmpdir(), 'greenhouse-iq-no-models');
+process.env.LLM_MODELS_DIR = path.join(os.tmpdir(), 'farm-no-models');
 
 const require = createRequire(import.meta.url);
 const app = require('../../backend/app');

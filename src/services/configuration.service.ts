@@ -1,12 +1,17 @@
-import { normalizeGreenhouseConfig, type GreenhouseConfig } from "@/types/greenhouse";
-import { normalizePolyhouseConfig, type PolyhouseConfig } from "@/types/polyhouse";
+import { normalizeFarmConfig, type FarmConfig } from "@/types/farm";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.trim() ||
   (import.meta.env.DEV ? "http://localhost:5000" : "");
 
 export type ConfigurationType = "greenhouse" | "polyhouse";
-export type AnyConfig = GreenhouseConfig | PolyhouseConfig;
+export type AnyConfig = FarmConfig;
+
+/** Records saved as "polyhouse" kept the house type under `polyhouseType`; read it as the farm's own field. */
+function toFarmConfig(config: Partial<FarmConfig> & { polyhouseType?: FarmConfig["greenhouseType"] }): FarmConfig {
+  const { polyhouseType, ...rest } = config;
+  return normalizeFarmConfig({ greenhouseType: polyhouseType, ...rest });
+}
 
 export interface SavedConfiguration {
   id: string;
@@ -47,18 +52,12 @@ async function requestConfigurations(input: RequestInfo | URL, init?: RequestIni
 
 function normalizeSavedConfiguration(item: SavedConfiguration): SavedConfiguration {
   const configType = item.configType ?? "greenhouse";
-  const config =
-    configType === "polyhouse"
-      ? normalizePolyhouseConfig(item.config as Partial<PolyhouseConfig>)
-      : normalizeGreenhouseConfig(item.config as Partial<GreenhouseConfig>);
+  const config = toFarmConfig(item.config);
   return { ...item, configType, config };
 }
 
 export async function createConfiguration(token: string, input: CreateConfigurationInput) {
-  const config =
-    input.configType === "polyhouse"
-      ? normalizePolyhouseConfig(input.config as Partial<PolyhouseConfig>)
-      : normalizeGreenhouseConfig(input.config as Partial<GreenhouseConfig>);
+  const config = toFarmConfig(input.config);
 
   const response = await requestConfigurations(`${API_BASE_URL}/api/configurations`, {
     method: "POST",

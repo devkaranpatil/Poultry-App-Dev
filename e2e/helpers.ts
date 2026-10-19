@@ -2,7 +2,7 @@ import { expect, type Page } from "@playwright/test";
 
 export const PASSWORD = "e2e-password-123";
 export const MOCK_AUTH_URL = "http://localhost:5392";
-export const SESSION_KEY = "greenhouse.auth.session";
+export const SESSION_KEY = "farm.auth.session";
 
 /** A fresh address per test so runs never collide in the e2e database. */
 export function uniqueEmail(tag = "user") {
@@ -16,7 +16,7 @@ export function trackPageErrors(page: Page) {
   return errors;
 }
 
-export const GUIDE_SEEN_KEY = "greenhouse.guideSeen";
+export const GUIDE_SEEN_KEY = "farm.guideSeen";
 
 /**
  * Creates an account and opens the designer. Most tests skip the first-visit guide; the persona tests keep it to

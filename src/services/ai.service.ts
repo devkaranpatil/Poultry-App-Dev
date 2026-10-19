@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import type { GreenhouseConfig } from '@/types/greenhouse';
+import type { FarmConfig } from '@/types/farm';
 import type { FinanceAssumptions, FinancialSummary } from '@/lib/finance';
 import type { Locale } from '@/i18n/messages';
-import { toGreenhousePayload } from '@/services/calculation.service';
+import { toFarmPayload } from '@/services/calculation.service';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.trim() || (import.meta.env.DEV ? 'http://localhost:5000' : '');
@@ -105,7 +105,7 @@ export interface ChatMessage {
 }
 
 export interface AiProjectContext {
-  config: GreenhouseConfig;
+  config: FarmConfig;
   assumptions?: FinanceAssumptions;
   financials?: FinancialSummary | null;
   locale: Locale;
@@ -124,7 +124,7 @@ export class AiRequestError extends Error {
 function buildBody(context: AiProjectContext, extra: Record<string, unknown> = {}) {
   const { assumptions, financials } = context;
   return JSON.stringify({
-    config: toGreenhousePayload(context.config),
+    config: toFarmPayload(context.config),
     locale: context.locale,
     financials:
       financials && assumptions

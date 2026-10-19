@@ -1,10 +1,10 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { useState } from 'react';
-import { RiskPanel } from '@/components/greenhouse/RiskPanel';
+import { RiskPanel } from '@/components/farm/RiskPanel';
 import { useRiskSimulation, verdictFor } from '@/hooks/useRiskSimulation';
 import { I18nProvider } from '@/context/I18nContext';
-import { DEFAULT_CONFIG, type GreenhouseConfig } from '@/types/greenhouse';
+import { DEFAULT_CONFIG, type FarmConfig } from '@/types/farm';
 import type { FinanceAssumptions } from '@/lib/finance';
 import type { RiskResult } from '@/services/risk.service';
 
@@ -43,7 +43,7 @@ vi.mock('@/services/risk.service', () => ({ runRiskSimulation: (...args: unknown
 const assumptions = { subsidyPct: 50, yieldPerSqm: 12, pricePerUnit: 25, operatingCostPct: 40 };
 
 /** The risk step as the app wires it: the hook runs the simulation, the panel shows it. */
-function RiskHarness({ config = DEFAULT_CONFIG, inputs = assumptions }: { config?: GreenhouseConfig; inputs?: FinanceAssumptions }) {
+function RiskHarness({ config = DEFAULT_CONFIG, inputs = assumptions }: { config?: FarmConfig; inputs?: FinanceAssumptions }) {
   const [years, setYears] = useState(5);
   const risk = useRiskSimulation(config, inputs, years);
   return <RiskPanel risk={risk} years={years} onYearsChange={setYears} />;

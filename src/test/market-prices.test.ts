@@ -122,11 +122,11 @@ describe('with stored prices', () => {
 
   it('is attached to a calculation without changing its price', async () => {
     const body = {
-      length: 30, width: 10, gutterHeight: 4, ridgeHeight: 6, polyhouseType: 'naturally-ventilated', roofType: 'gable',
+      length: 30, width: 10, gutterHeight: 4, ridgeHeight: 6, greenhouseType: 'naturally-ventilated', roofType: 'gable',
       structureMaterial: 'gi-steel', coverMaterial: 'uv-polyfilm', sideVentilation: 'manual-rollup', doorEntry: 'single-sliding',
       state: 'Kerala', district: 'Ernakulam',
     };
-    const res = await request(app).post('/api/polyhouse/calculate').send(body);
+    const res = await request(app).post('/api/farm/calculate').send(body);
     expect(res.status).toBe(200);
     const tomato = res.body.data.reference.marketPrices.find((p: { crop: string }) => p.crop === 'Tomato');
     expect(tomato.state.markets).toBe(3);

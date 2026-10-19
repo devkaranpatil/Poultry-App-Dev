@@ -5,10 +5,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '@/context/I18nContext';
 import { AdvisorChat } from '@/components/advisor/AdvisorChat';
 import { SummaryStep } from '@/components/workspace/SummaryStep';
-import { ExportPanel } from '@/components/greenhouse/ExportPanel';
+import { ExportPanel } from '@/components/farm/ExportPanel';
 import { useAiAssistant } from '@/hooks/useAiAssistant';
 import { defaultFinanceAssumptions } from '@/lib/finance';
-import { DEFAULT_CONFIG, type CalculationResult, type GreenhouseConfig } from '@/types/greenhouse';
+import { DEFAULT_CONFIG, type CalculationResult, type FarmConfig } from '@/types/farm';
 import * as aiService from '@/services/ai.service';
 
 vi.mock('@/services/ai.service', async (importOriginal) => {
@@ -29,7 +29,7 @@ vi.mock('@/lib/export/excelReport', () => ({ exportExcelReport: (...args: unknow
 vi.mock('@/lib/modelSnapshot', () => ({ captureModelSnapshot: () => 'data:image/jpeg;base64,AAAA' }));
 
 const mocked = vi.mocked(aiService);
-const config: GreenhouseConfig = { ...DEFAULT_CONFIG, state: 'Goa', district: 'North Goa' };
+const config: FarmConfig = { ...DEFAULT_CONFIG, state: 'Goa', district: 'North Goa' };
 
 const report: aiService.AdvisorReport = {
   summary: 'A viable project with humidity risk.',
@@ -90,7 +90,7 @@ function AdvisorHarness({ signedIn = true }: { signedIn?: boolean }) {
 }
 
 function renderWithI18n(ui: React.ReactElement) {
-  window.localStorage.setItem('greenhouse.locale', 'en');
+  window.localStorage.setItem('farm.locale', 'en');
   return render(
     <MemoryRouter>
       <I18nProvider>{ui}</I18nProvider>

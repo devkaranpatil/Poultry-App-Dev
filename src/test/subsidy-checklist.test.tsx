@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { SubsidyChecklist } from '@/components/greenhouse/SubsidyChecklist';
+import { SubsidyChecklist } from '@/components/farm/SubsidyChecklist';
 import { I18nProvider, translate } from '@/context/I18nContext';
 import { buildChecklist, checklistKey, nhbApplicationFee } from '@/lib/subsidyChecklist';
 

@@ -105,9 +105,9 @@ function auditStateClimate() {
 
 // ---------------------------------------------------------------- C. inputs that do not move the price
 function auditInertInputs() {
-  const calc = createCalculator({ typeField: "polyhouseType", validate: createConfigValidator({ typeField: "polyhouseType", typeLabel: "Polyhouse" }) });
+  const calc = createCalculator({ typeField: "greenhouseType", validate: createConfigValidator({ typeField: "greenhouseType", typeLabel: "Greenhouse" }) });
   const base = {
-    length: 30, width: 10, gutterHeight: 4, ridgeHeight: 6, polyhouseType: "naturally-ventilated", roofType: "gable",
+    length: 30, width: 10, gutterHeight: 4, ridgeHeight: 6, greenhouseType: "naturally-ventilated", roofType: "gable",
     structureMaterial: "gi-steel", coverMaterial: "uv-polyfilm", sideVentilation: "manual-rollup", doorEntry: "single-sliding",
     state: "Kerala", district: "Ernakulam", selectedCrop: "tomato", irrigationSystem: "drip",
   };

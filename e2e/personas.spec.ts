@@ -182,7 +182,7 @@ test.describe("personas", () => {
     expect(xlsx.suggestedFilename()).toMatch(/\.xlsx$/);
 
     // The same journey in Hindi.
-    await page.evaluate(() => window.localStorage.setItem("greenhouse.locale", "hi"));
+    await page.evaluate(() => window.localStorage.setItem("farm.locale", "hi"));
     await page.reload();
     await page.getByRole("tab", { name: "लागत", exact: true }).click();
     await expect(page.getByRole("heading", { level: 1, name: "लागत" })).toBeVisible();

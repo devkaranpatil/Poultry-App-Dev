@@ -1,7 +1,7 @@
-import { normalizeGreenhouseConfig, type GreenhouseConfig } from '@/types/greenhouse';
+import { normalizeFarmConfig, type FarmConfig } from '@/types/farm';
 
 export const SHARE_PARAM = 'setup';
-const DRAFT_STORAGE_KEY = 'greenhouse.draft.v1';
+const DRAFT_STORAGE_KEY = 'farm.draft.v1';
 
 function toBase64Url(text: string): string {
   const bytes = new TextEncoder().encode(text);
@@ -20,35 +20,35 @@ function fromBase64Url(value: string): string {
 }
 
 /** Compact, URL-safe encoding of a setup for share links. */
-export function encodeShareParam(config: GreenhouseConfig): string {
-  return toBase64Url(JSON.stringify(normalizeGreenhouseConfig(config)));
+export function encodeShareParam(config: FarmConfig): string {
+  return toBase64Url(JSON.stringify(normalizeFarmConfig(config)));
 }
 
 /** Decodes a share link value; returns null for anything malformed. */
-export function decodeShareParam(value: string | null): GreenhouseConfig | null {
+export function decodeShareParam(value: string | null): FarmConfig | null {
   if (!value) return null;
   try {
     const parsed: unknown = JSON.parse(fromBase64Url(value));
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
-    return normalizeGreenhouseConfig(parsed as Partial<GreenhouseConfig>);
+    return normalizeFarmConfig(parsed as Partial<FarmConfig>);
   } catch {
     return null;
   }
 }
 
-export function buildShareUrl(config: GreenhouseConfig, origin = window.location.origin): string {
+export function buildShareUrl(config: FarmConfig, origin = window.location.origin): string {
   const url = new URL('/visualizer', origin);
   url.searchParams.set(SHARE_PARAM, encodeShareParam(config));
   return url.toString();
 }
 
-export function loadDraft(): GreenhouseConfig | null {
+export function loadDraft(): FarmConfig | null {
   try {
     const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
-    return normalizeGreenhouseConfig(parsed as Partial<GreenhouseConfig>);
+    return normalizeFarmConfig(parsed as Partial<FarmConfig>);
   } catch {
     return null;
   }
@@ -63,7 +63,7 @@ export function clearDraft(): void {
   }
 }
 
-export function saveDraft(config: GreenhouseConfig): void {
+export function saveDraft(config: FarmConfig): void {
   try {
     window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(config));
   } catch {

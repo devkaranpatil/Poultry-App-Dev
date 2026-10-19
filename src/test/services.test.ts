@@ -7,7 +7,7 @@ import {
   streamChat,
 } from '@/services/ai.service';
 import { createConfiguration, deleteConfiguration, listConfigurations } from '@/services/configuration.service';
-import { DEFAULT_CONFIG } from '@/types/greenhouse';
+import { DEFAULT_CONFIG } from '@/types/farm';
 
 const config = { ...DEFAULT_CONFIG, state: 'Goa', district: 'North Goa' };
 

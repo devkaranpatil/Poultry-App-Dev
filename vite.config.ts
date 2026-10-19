@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import app from "./shared/app.json";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -24,7 +25,11 @@ export default defineConfig({
       ],
     },
   },
-  plugins: [react()],
+  plugins: [
+    react(),
+    // The page title comes from shared/app.json, like every other place the app name appears.
+    { name: "app-name", transformIndexHtml: (html) => html.replaceAll("%APP_NAME%", app.name) },
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

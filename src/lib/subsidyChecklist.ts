@@ -1,4 +1,4 @@
-import type { SchemeSubsidy } from '@/types/greenhouse';
+import type { SchemeSubsidy } from '@/types/farm';
 
 // Steps to claim the polyhouse subsidy, taken from the official documents in datasets/knowledge (see its
 // manifest.json). Every step names its source; nothing here is the app's own advice. The text of each step lives

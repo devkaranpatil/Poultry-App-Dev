@@ -14,7 +14,7 @@ export interface AuthUser {
 }
 
 export const GOOGLE_CALLBACK_PATH = "/oauth/google/callback";
-const POST_AUTH_REDIRECT_KEY = "greenhouse.auth.redirect";
+const POST_AUTH_REDIRECT_KEY = "farm.auth.redirect";
 
 export function toAuthUser(user: User): AuthUser {
   const identities = user.identities ?? [];

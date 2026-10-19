@@ -5,11 +5,11 @@ import { StepViews, type ResultStepId } from '@/components/workspace/StepViews';
 import { I18nProvider } from '@/context/I18nContext';
 import { computeFinancials, defaultFinanceAssumptions } from '@/lib/finance';
 import { DEFAULT_LOAN_TERMS } from '@/lib/loan';
-import type { CalculationResult, GreenhouseConfig } from '@/types/greenhouse';
+import type { CalculationResult, FarmConfig } from '@/types/farm';
 
 vi.mock('@/services/risk.service', () => ({ runRiskSimulation: vi.fn(() => new Promise(() => {})) }));
 
-const config: GreenhouseConfig = {
+const config: FarmConfig = {
   length: 30,
   width: 10,
   gutterHeight: 4,
@@ -84,7 +84,7 @@ const result: CalculationResult = {
 const assumptions = defaultFinanceAssumptions('tomato');
 
 function renderStep(step: ResultStepId, overrides: Partial<Parameters<typeof StepViews>[0]> = {}) {
-  window.localStorage.setItem('greenhouse.locale', 'en');
+  window.localStorage.setItem('farm.locale', 'en');
   const onNavigate = vi.fn();
   const onAssumptionsChange = vi.fn();
   render(

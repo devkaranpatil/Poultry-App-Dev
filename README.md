@@ -1,6 +1,10 @@
-# Greenhouse IQ
+# Poultry Planner (working name)
 
-Greenhouse IQ is a web application for planning and evaluating greenhouse setups. It lets users configure dimensions, structure type, materials, ventilation, and location, then generates climate-aware cost estimates and crop suggestions. The project combines an interactive frontend (including 3D visualization) with a backend calculation engine to help farmers, planners, and agribusiness teams make faster, data-informed decisions.
+A planner for poultry farms in India, being built from a complete polyhouse planner (the GreenhouseIQ project). The app name is a placeholder: it is set in one place, `shared/app.json`, and every screen, the page title, the report and the emails read it from there.
+
+**Migration status:** Phase 1 of 7 is done. Code, folders, routes and storage keys use neutral "farm" names; the app still plans polyhouses until Phases 2 to 5 change the domain. The research, feature changes and phased plan are in [docs/migration](docs/migration/README.md).
+
+The rest of this README describes the polyhouse planner the code starts from, and is rewritten as the phases land.
 
 What it does today:
 

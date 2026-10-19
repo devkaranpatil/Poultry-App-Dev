@@ -1,7 +1,5 @@
-import type { GreenhouseConfig } from '@/types/greenhouse';
-import type { CalculationResult as GreenhouseCalculationResult, ClimateData } from '@/types/greenhouse';
-import type { PolyhouseConfig } from '@/types/polyhouse';
-import type { CalculationResult as PolyhouseCalculationResult } from '@/types/polyhouse';
+import type { FarmConfig } from '@/types/farm';
+import type { CalculationResult as FarmCalculationResult, ClimateData } from '@/types/farm';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.trim() ||
@@ -26,50 +24,30 @@ async function postJson<T>(path: string, body: unknown, signal?: AbortSignal): P
 }
 
 /**
- * Normalize a GreenhouseConfig to the field names the backend expects.
+ * Normalize a FarmConfig to the field names the backend expects.
  * Frontend uses `state` and `doorEntry`; backend normalizes both but
  * also validates `stateName` and `doorType` internally — sending the
  * canonical names avoids any ambiguity in the save/load cycle.
  */
-export function toGreenhousePayload(config: GreenhouseConfig): Record<string, unknown> {
+export function toFarmPayload(config: FarmConfig): Record<string, unknown> {
   const { state, doorEntry, ...rest } = config;
   return { ...rest, stateName: state, doorType: doorEntry };
 }
 
-/**
- * Normalize a PolyhouseConfig to the field names the backend expects.
- */
-function toPolyhousePayload(config: PolyhouseConfig): Record<string, unknown> {
-  const { state, doorEntry, ...rest } = config;
-  return { ...rest, stateName: state, doorType: doorEntry };
-}
-
-export async function calculateGreenhouse(
-  config: GreenhouseConfig,
+export async function calculateFarm(
+  config: FarmConfig,
   signal?: AbortSignal
-): Promise<GreenhouseCalculationResult> {
-  const response = await postJson<{ success: true; data: GreenhouseCalculationResult }>(
-    '/api/greenhouse/calculate',
-    toGreenhousePayload(config),
-    signal
-  );
-  return response.data;
-}
-
-export async function calculatePolyhouse(
-  config: PolyhouseConfig,
-  signal?: AbortSignal
-): Promise<PolyhouseCalculationResult> {
-  const response = await postJson<{ success: true; data: PolyhouseCalculationResult }>(
-    '/api/polyhouse/calculate',
-    toPolyhousePayload(config),
+): Promise<FarmCalculationResult> {
+  const response = await postJson<{ success: true; data: FarmCalculationResult }>(
+    '/api/farm/calculate',
+    toFarmPayload(config),
     signal
   );
   return response.data;
 }
 
 export async function fetchCropSuggestions(
-  config: GreenhouseConfig,
+  config: FarmConfig,
   climate: ClimateData,
   signal?: AbortSignal
 ): Promise<string> {
@@ -80,7 +58,7 @@ export async function fetchCropSuggestions(
     climateGroup: string;
     crops: unknown[];
     suggestions: string;
-  }>('/api/greenhouse/crop-suggestions', { config: toGreenhousePayload(config), climate }, signal);
+  }>('/api/farm/crop-suggestions', { config: toFarmPayload(config), climate }, signal);
 
   return response.suggestions;
 }

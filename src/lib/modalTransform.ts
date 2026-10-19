@@ -1,4 +1,4 @@
-import { DIMENSION_LIMITS, type GreenhouseConfig } from '@/types/greenhouse';
+import { DIMENSION_LIMITS, type FarmConfig } from '@/types/farm';
 import { MIN_RISE, SNAP_STEP, dragReadout, handlesForPart, resizePatch, type EditablePart, type ResizeKey } from '@/lib/sceneEdit';
 
 /**
@@ -20,13 +20,13 @@ export interface ScreenPoint {
   y: number;
 }
 
-export type ModalDimensions = Pick<GreenhouseConfig, 'length' | 'width' | 'gutterHeight' | 'ridgeHeight'>;
+export type ModalDimensions = Pick<FarmConfig, 'length' | 'width' | 'gutterHeight' | 'ridgeHeight'>;
 
 export interface ModalState {
   kind: ModalKind;
   part: EditablePart;
   /** The config when the modal began; cancelling returns exactly these sizes. */
-  start: GreenhouseConfig;
+  start: FarmConfig;
   axis: ModalAxis | null;
   /** Axes the part's grips allow (roof: only Z). */
   axes: ModalAxis[];
@@ -52,7 +52,7 @@ const MIN_LEVER = 10;
 const DIMENSION_KEYS: ResizeKey[] = ['length', 'width', 'gutterHeight', 'ridgeHeight'];
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 const round = (value: number) => Number(value.toFixed(2));
-const dimensionsOf = (config: GreenhouseConfig): ModalDimensions => ({
+const dimensionsOf = (config: FarmConfig): ModalDimensions => ({
   length: config.length,
   width: config.width,
   gutterHeight: config.gutterHeight,
@@ -60,7 +60,7 @@ const dimensionsOf = (config: GreenhouseConfig): ModalDimensions => ({
 });
 
 /** The axes a part's grips allow; empty for parts chosen from a list. */
-export function modalAxes(part: EditablePart | null, config: Pick<GreenhouseConfig, 'roofType'>): ModalAxis[] {
+export function modalAxes(part: EditablePart | null, config: Pick<FarmConfig, 'roofType'>): ModalAxis[] {
   const handles = handlesForPart(part, config);
   return (['x', 'y', 'z'] as const).filter((axis) => handles.includes(AXIS_DIMENSION[axis]));
 }
@@ -69,7 +69,7 @@ export function modalAxes(part: EditablePart | null, config: Pick<GreenhouseConf
 export function startModal(
   kind: ModalKind,
   part: EditablePart | null,
-  config: GreenhouseConfig,
+  config: FarmConfig,
   pointer: ScreenPoint,
   centre: ScreenPoint,
   metresPerPixel = DEFAULT_METRES_PER_PIXEL
@@ -176,7 +176,7 @@ export function modalDelta(state: ModalState): number {
  * Raises or lowers the house to a gutter height, keeping the roof's rise. The rise only shrinks
  * (never below MIN_RISE) when the ridge would pass its limit; a flat roof keeps ridge = gutter.
  */
-export function liftPatch(config: GreenhouseConfig, rawGutter: number): Partial<ModalDimensions> {
+export function liftPatch(config: FarmConfig, rawGutter: number): Partial<ModalDimensions> {
   if (!Number.isFinite(rawGutter)) return {};
   if (config.roofType === 'flat') return resizePatch(config, 'gutterHeight', rawGutter);
   const gutterLimits = DIMENSION_LIMITS.gutterHeight;
@@ -189,7 +189,7 @@ export function liftPatch(config: GreenhouseConfig, rawGutter: number): Partial<
 }
 
 /** The sizes for one dimension at a raw value, through the same snapping and limits as a drag. */
-function dimensionPatch(config: GreenhouseConfig, key: ResizeKey, raw: number): Partial<ModalDimensions> {
+function dimensionPatch(config: FarmConfig, key: ResizeKey, raw: number): Partial<ModalDimensions> {
   return key === 'gutterHeight' ? liftPatch(config, raw) : resizePatch(config, key, raw);
 }
 

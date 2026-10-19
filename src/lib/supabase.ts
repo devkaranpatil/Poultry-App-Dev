@@ -13,7 +13,7 @@ export const supabase = createClient(url || "http://localhost:54321", key || "mi
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    storageKey: "greenhouse.auth.session",
+    storageKey: "farm.auth.session",
   },
 });
 

@@ -104,8 +104,8 @@ export function resolveEnvironment(choice: EnvironmentChoice, state: string, dis
   return choice === 'auto' ? environmentForLocation(state, district) : choice;
 }
 
-export const ENVIRONMENT_STORAGE_KEY = 'greenhouse.scene.environment';
-export const SKY_STORAGE_KEY = 'greenhouse.scene.sky';
+export const ENVIRONMENT_STORAGE_KEY = 'farm.scene.environment';
+export const SKY_STORAGE_KEY = 'farm.scene.sky';
 
 export function readEnvironmentChoice(): EnvironmentChoice {
   try {

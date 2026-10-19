@@ -4,13 +4,13 @@ import {
   INDIAN_DISTRICTS,
   INDIAN_STATES,
   clampDimension,
-  normalizeGreenhouseConfig,
-} from '@/types/greenhouse';
+  normalizeFarmConfig,
+} from '@/types/farm';
 import { safeRedirectPath } from '@/lib/utils';
 
-describe('normalizeGreenhouseConfig', () => {
+describe('normalizeFarmConfig', () => {
   it('drops unknown fields and replaces invalid values with defaults', () => {
-    const normalized = normalizeGreenhouseConfig({
+    const normalized = normalizeFarmConfig({
       length: 40,
       roofType: 'dome',
       selectedCrop: 'banana',
@@ -24,7 +24,7 @@ describe('normalizeGreenhouseConfig', () => {
   });
 
   it('rejects non-numeric dimensions', () => {
-    expect(normalizeGreenhouseConfig({ width: Number.NaN }).width).toBe(DEFAULT_CONFIG.width);
+    expect(normalizeFarmConfig({ width: Number.NaN }).width).toBe(DEFAULT_CONFIG.width);
   });
 });
 

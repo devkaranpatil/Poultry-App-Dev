@@ -17,6 +17,16 @@ Today's figures:
 
 ## Phase 1: rename without changing behaviour (1 to 2 days)
 
+**Status: done (2026-10-20, branch `phase-1-rename`).**
+- 499 unit tests pass. The count fell from 518 because the duplicate `/api/polyhouse` tests went with that API.
+- 46 Chromium e2e tests pass, plus lint, both typechecks and the build.
+- What differs from the table below:
+  - Browser storage keys moved to the `farm.` prefix **without** reading the old `greenhouse.` keys. This is a separate app now, so carrying the polyhouse app's settings over would be wrong.
+  - Saved records keep their `configType` values (`greenhouse` and `polyhouse`) until Phase 2 changes the database. A record saved as `polyhouse` is read through `normalizeFarmConfig`.
+  - Domain names stay until their phase: the `greenhouseType` field, `GreenhouseType`, `options.greenhouse.*` i18n keys, crop and irrigation parts, and the `greenhouse_configs` table in the unused `backend/schema.sql`.
+  - The health endpoint reports `service: "farm-backend"`. Report files are named `farm-<place>-<date>`.
+
+
 This is a mechanical rename. The app still plans polyhouses afterwards, but under neutral names, so later diffs show real changes only.
 
 | From | To |

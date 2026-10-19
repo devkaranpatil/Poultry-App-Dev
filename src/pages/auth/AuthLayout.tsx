@@ -3,6 +3,7 @@ import { Check } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { TopRightMenu } from "@/components/TopRightMenu";
 import { useI18n } from "@/context/I18nContext";
+import { APP_NAME } from "@/config/app";
 
 export function AuthLayout({
   title,
@@ -23,7 +24,7 @@ export function AuthLayout({
           <span className="rounded-lg bg-white/95 p-1">
             <Logo compact className="[&>span:last-child]:hidden" />
           </span>
-          <span className="font-display text-lg font-bold">Greenhouse IQ</span>
+          <span className="font-display text-lg font-bold">{APP_NAME}</span>
         </Link>
         <div className="max-w-md">
           <h2 className="text-3xl font-bold leading-tight">{t("auth.panelTitle")}</h2>

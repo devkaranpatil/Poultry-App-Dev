@@ -1,6 +1,5 @@
-// Calculator factory shared by the greenhouse and polyhouse APIs.
-// The two products differ only in the name of the structure-type field
-// (greenhouseType vs polyhouseType) and in their validator.
+// Calculator factory behind /api/farm. The structure-type field name and its
+// validator are passed in, so the field can be renamed without touching the maths.
 
 const pricing = require("../data/pricing");
 const phase25Climate = require("./climatePhase25");
@@ -39,7 +38,7 @@ const normalizeIrrigationSystem = (value) => {
 };
 
 /**
- * @param {{ typeField: "greenhouseType" | "polyhouseType", validate: (config: object) => Record<string, string> }} options
+ * @param {{ typeField: string, validate: (config: object) => Record<string, string> }} options
  */
 function createCalculator({ typeField, validate }) {
   const enforceTypeCompatibility = (config) =>

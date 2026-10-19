@@ -174,7 +174,7 @@ describe('saved configurations', () => {
 describe('request handling', () => {
   it('returns 400 rather than 500 for malformed JSON', async () => {
     const response = await request(app)
-      .post('/api/greenhouse/calculate')
+      .post('/api/farm/calculate')
       .set('Content-Type', 'application/json')
       .send('{"length": 30,');
     expect(response.status).toBe(400);

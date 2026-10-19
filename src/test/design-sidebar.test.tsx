@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { DesignSidebar, type DesignTab } from '@/components/greenhouse/DesignSidebar';
+import { DesignSidebar, type DesignTab } from '@/components/farm/DesignSidebar';
 import { I18nProvider } from '@/context/I18nContext';
-import type { GreenhouseConfig, SetupSectionProgress } from '@/types/greenhouse';
+import type { FarmConfig, SetupSectionProgress } from '@/types/farm';
 
-const baseConfig: GreenhouseConfig = {
+const baseConfig: FarmConfig = {
   length: 30,
   width: 10,
   gutterHeight: 4,
@@ -31,12 +31,12 @@ function Harness({
   onValid,
   onPatch,
 }: {
-  initial: GreenhouseConfig;
+  initial: FarmConfig;
   initialTab?: DesignTab;
   restoredConfigVersion?: number;
   onProgress?: (progress: SetupSectionProgress) => void;
   onValid?: (valid: boolean) => void;
-  onPatch?: (patch: Partial<GreenhouseConfig>) => void;
+  onPatch?: (patch: Partial<FarmConfig>) => void;
 }) {
   const [config, setConfig] = useState(initial);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -60,7 +60,7 @@ function Harness({
 }
 
 function renderSidebar(props: Parameters<typeof Harness>[0]) {
-  window.localStorage.setItem('greenhouse.locale', 'en');
+  window.localStorage.setItem('farm.locale', 'en');
   return render(
     <I18nProvider>
       <Harness {...props} />

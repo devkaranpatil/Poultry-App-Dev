@@ -15,7 +15,7 @@ vi.mock('@/services/ai.service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/services/ai.service')>();
   return { ...actual, getAiStatus: vi.fn().mockResolvedValue({ enabled: false, model: null }) };
 });
-vi.mock('@/components/greenhouse/MiddlePanel', () => ({ MiddlePanel: () => <div data-testid="viewer" /> }));
+vi.mock('@/components/farm/MiddlePanel', () => ({ MiddlePanel: () => <div data-testid="viewer" /> }));
 
 const supa = vi.mocked(supabaseModule.supabase.auth);
 
@@ -38,7 +38,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   authMock.reset();
   window.localStorage.clear();
-  window.localStorage.setItem('greenhouse.locale', 'en');
+  window.localStorage.setItem('farm.locale', 'en');
 });
 
 describe('App routing', () => {

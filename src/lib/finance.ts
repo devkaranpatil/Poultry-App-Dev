@@ -1,4 +1,4 @@
-import type { CropType, SchemeSubsidy } from '@/types/greenhouse';
+import type { CropType, SchemeSubsidy } from '@/types/farm';
 
 export interface CropEconomics {
   /** Yield per cropped m² per year (all crops grown in a year), in `unit`. */

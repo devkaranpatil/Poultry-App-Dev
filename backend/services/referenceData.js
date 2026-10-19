@@ -86,7 +86,7 @@ async function loadDistrictClimate(state, district) {
  * Official context for one calculation, or null when the data is not available.
  * @param config  normalised + validated configuration
  * @param result  buildCalculationResult output (used for area and your own estimate)
- * @param typeField "greenhouseType" | "polyhouseType"
+ * @param typeField the structure-type field name ("greenhouseType")
  */
 async function buildReference(config, result, typeField) {
   if (getDbStatus().state !== "connected") return null;

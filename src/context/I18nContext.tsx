@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { Locale, messages } from "@/i18n/messages";
 
-const STORAGE_KEY = "greenhouse.locale";
+const STORAGE_KEY = "farm.locale";
 
 interface I18nContextType {
   language: Locale;

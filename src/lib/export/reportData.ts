@@ -2,7 +2,7 @@ import { translate } from '@/context/I18nContext';
 import { CROP_ECONOMICS, computeFinancials, type FinanceAssumptions, type FinancialSummary } from '@/lib/finance';
 import { DEFAULT_LOAN_TERMS, computeLoanPlan, type LoanPlan, type LoanTerms } from '@/lib/loan';
 import type { AdvisorReport, AiCropsResult } from '@/services/ai.service';
-import type { CalculationResult, GreenhouseConfig } from '@/types/greenhouse';
+import type { CalculationResult, FarmConfig } from '@/types/farm';
 
 /** Exports are always English: the PDF fonts cannot render Devanagari. */
 const en = (key: string, vars?: Record<string, string | number>) => translate('en', key, vars);
@@ -20,7 +20,7 @@ export interface ReportData {
   generatedAt: Date;
   title: string;
   location: string;
-  config: GreenhouseConfig;
+  config: FarmConfig;
   labels: Record<
     'type' | 'roof' | 'structure' | 'cover' | 'sideVentilation' | 'door' | 'crop' | 'irrigation',
     string
@@ -39,7 +39,7 @@ export interface ReportData {
 }
 
 export interface BuildReportInput {
-  config: GreenhouseConfig;
+  config: FarmConfig;
   result: CalculationResult;
   assumptions: FinanceAssumptions;
   /** Loan terms from the Returns tab; the published defaults when omitted. */
@@ -117,7 +117,7 @@ export function reportFileName(data: ReportData, extension: 'pdf' | 'xlsx'): str
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
   const date = data.generatedAt.toISOString().slice(0, 10);
-  return `greenhouse-${place}-${date}.${extension}`;
+  return `farm-${place}-${date}.${extension}`;
 }
 
 export function downloadBlob(blob: Blob, fileName: string): void {

@@ -1,6 +1,7 @@
 import type { Workbook, Worksheet } from 'exceljs';
 import { CULTIVABLE_AREA_SHARE, PROJECTION_YEARS, subsidyBase } from '@/lib/finance';
 import { downloadBlob, reportFileName, type ReportData } from './reportData';
+import { APP_NAME } from '@/config/app';
 
 /** Indian digit grouping (₹1,23,45,678) — Excel has no built-in lakh format. */
 const INR_FORMAT = '[>=10000000]"₹"##\\,##\\,##\\,##0;[>=100000]"₹"##\\,##\\,##0;"₹"#,##0';
@@ -31,7 +32,7 @@ function sheetTitle(sheet: Worksheet, title: string, subtitle?: string) {
 export async function buildExcelWorkbook(data: ReportData): Promise<Workbook> {
   const ExcelJS = (await import('exceljs')).default;
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'Greenhouse IQ';
+  workbook.creator = APP_NAME;
   workbook.created = data.generatedAt;
 
   const { config, labels, result, financials, assumptions } = data;
