@@ -1,0 +1,198 @@
+{
+  "description": "Poultry production, housing and cost norms shared by the frontend and backend. Every number names its source; sources with verified=false are secondary or old and are shown as unverified. See docs/migration/research.md.",
+  "sources": {
+    "nabard-unit-cost-2023": {
+      "document": "NABARD Unit Cost 2023-24, Jharkhand Regional Office, D. Poultry Farming",
+      "url": "https://www.nabard.org/auth/writereaddata/tender/pub_091023092112779.pdf",
+      "year": 2023,
+      "verified": true
+    },
+    "nabard-broiler-model": {
+      "document": "NABARD model bank project: Poultry Broiler Farming (10,000 birds)",
+      "url": "https://agritech.tnau.ac.in/banking/nabard_pdf/Animal%20husbandry/3.Poultry_Broiler_Farming.pdf",
+      "year": null,
+      "verified": true
+    },
+    "nabard-layer-model": {
+      "document": "NABARD model bank project: Poultry Layer (20,000 layers, 1:2 cage system)",
+      "url": "https://agritech.tnau.ac.in/banking/nabard_pdf/Animal%20husbandry/4.Poultry_Layer.pdf",
+      "year": null,
+      "verified": true
+    },
+    "nabard-indigenous-model": {
+      "document": "NABARD model bankable project on indigenous poultry farming (100 improved desi birds)",
+      "url": "https://www.nabard.org/auth/writereaddata/ModelBankProject/0604183125Model-_Indigenous_Poultry_Farming_English.pdf",
+      "year": null,
+      "verified": true
+    },
+    "ncdc-broiler-dpr": {
+      "document": "NCDC sample DPR: broiler farming unit for cooperatives (1,000 birds a batch)",
+      "url": "https://www.ncdc.in/documents/downloads/191804052020.Sample_DPR_Broiler-Farming.pdf",
+      "year": 2020,
+      "verified": true
+    },
+    "icar-housing": {
+      "document": "TNAU expert system, Poultry house construction; vikaspedia, Housing for layers (ICAR floor space norms)",
+      "url": "https://agritech.tnau.ac.in/expert_system/poultry/Poultry%20House%20Construction.html",
+      "year": null,
+      "verified": true
+    },
+    "ec-housing-secondary": {
+      "document": "Environment-controlled broiler house space and cost (trade and research summaries)",
+      "url": "https://epubs.icar.org.in/index.php/IJAnS/article/download/59955/24712/150146",
+      "year": 2026,
+      "verified": false
+    },
+    "market-2026-secondary": {
+      "document": "Broiler chick, feed and farm-gate prices quoted in 2025-26 project guides (agrifarming.in and others)",
+      "url": "https://www.agrifarming.in/broiler-farming-profit-per-bird",
+      "year": 2026,
+      "verified": false
+    }
+  },
+  "housingSystems": {
+    "open-sided": { "label": "Open-sided shed (deep litter, natural air)", "sources": ["icar-housing"] },
+    "environment-controlled": { "label": "Environment-controlled shed (tunnel fans and cooling pads)", "sources": ["ec-housing-secondary"] },
+    "backyard": { "label": "Backyard or low-cost shed (improved desi birds)", "sources": ["nabard-indigenous-model"] }
+  },
+  "birdTypes": {
+    "broiler": {
+      "label": "Commercial broiler",
+      "product": "meat",
+      "housing": ["open-sided", "environment-controlled"],
+      "sqftPerBird": { "open-sided": 1.0, "environment-controlled": 0.7 },
+      "sqftPerBirdSources": { "open-sided": "nabard-broiler-model", "environment-controlled": "ec-housing-secondary" },
+      "rearingDays": 42,
+      "cleaningDays": 14,
+      "mortalityPct": 5,
+      "saleWeightKg": 1.8,
+      "feedKgPerBird": 3.5,
+      "sources": {
+        "rearingDays": "nabard-broiler-model",
+        "cleaningDays": "nabard-broiler-model",
+        "mortalityPct": "nabard-unit-cost-2023",
+        "saleWeightKg": "ncdc-broiler-dpr",
+        "feedKgPerBird": "ncdc-broiler-dpr"
+      }
+    },
+    "layer-cage": {
+      "label": "Layer in cages",
+      "product": "eggs",
+      "housing": ["open-sided", "environment-controlled"],
+      "sqftPerBird": { "open-sided": 0.85, "environment-controlled": 0.85 },
+      "sqftPerBirdSources": { "open-sided": "nabard-layer-model", "environment-controlled": "nabard-layer-model" },
+      "growerWeeks": 20,
+      "growerFeedKgPerBird": 8.5,
+      "layingWeeks": 52,
+      "layingFeedKgPerBird": 40,
+      "eggsPerHen": 310,
+      "chicksPerLayerHoused": 1.05,
+      "layingMortalityPct": 10,
+      "manureKgPerBirdPerWeek": { "grower": 0.2, "layer": 0.5 },
+      "sources": {
+        "growerWeeks": "nabard-layer-model",
+        "growerFeedKgPerBird": "nabard-layer-model",
+        "layingWeeks": "nabard-layer-model",
+        "layingFeedKgPerBird": "nabard-layer-model",
+        "eggsPerHen": "nabard-layer-model",
+        "chicksPerLayerHoused": "nabard-layer-model",
+        "layingMortalityPct": "nabard-layer-model",
+        "manureKgPerBirdPerWeek": "nabard-layer-model"
+      },
+      "notes": "chicksPerLayerHoused: 10,500 chicks bought for 10,000 layers. layingMortalityPct: 10,000 layers to 9,000 culled."
+    },
+    "layer-floor": {
+      "label": "Layer on deep litter",
+      "product": "eggs",
+      "housing": ["open-sided"],
+      "sqftPerBird": { "open-sided": 2.0 },
+      "sqftPerBirdSources": { "open-sided": "icar-housing" },
+      "growerWeeks": 20,
+      "growerFeedKgPerBird": 8.5,
+      "layingWeeks": 52,
+      "layingFeedKgPerBird": 40,
+      "eggsPerHen": 310,
+      "chicksPerLayerHoused": 1.05,
+      "layingMortalityPct": 10,
+      "manureKgPerBirdPerWeek": { "grower": 0.2, "layer": 0.5 },
+      "sources": {
+        "growerWeeks": "nabard-layer-model",
+        "growerFeedKgPerBird": "nabard-layer-model",
+        "layingWeeks": "nabard-layer-model",
+        "layingFeedKgPerBird": "nabard-layer-model",
+        "eggsPerHen": "nabard-layer-model",
+        "chicksPerLayerHoused": "nabard-layer-model",
+        "layingMortalityPct": "nabard-layer-model",
+        "manureKgPerBirdPerWeek": "nabard-layer-model"
+      },
+      "notes": "Only the floor space differs from cages in the sources; production figures are the NABARD cage model's, an assumption for floor layers."
+    },
+    "desi": {
+      "label": "Improved desi bird (Vanaraja, Giriraja, Kaveri type)",
+      "product": "meat",
+      "housing": ["backyard", "open-sided"],
+      "sqftPerBird": { "backyard": 1.0, "open-sided": 1.0 },
+      "sqftPerBirdSources": { "backyard": "nabard-indigenous-model", "open-sided": "nabard-indigenous-model" },
+      "rearingDays": 58,
+      "cleaningDays": 14,
+      "mortalityPct": 9,
+      "saleWeightKg": 1.0,
+      "feedKgPerBird": 2.5,
+      "sources": {
+        "rearingDays": "nabard-indigenous-model",
+        "cleaningDays": "nabard-broiler-model",
+        "mortalityPct": "nabard-indigenous-model",
+        "saleWeightKg": "nabard-indigenous-model",
+        "feedKgPerBird": "nabard-indigenous-model"
+      },
+      "notes": "rearingDays: 55-60 days to 1 kg, midpoint. mortalityPct: 8-10%, midpoint. cleaningDays: the broiler model's two weeks, an assumption."
+    }
+  },
+  "costs": {
+    "shedInrPerSqft": {
+      "broiler": { "value": 319, "source": "nabard-unit-cost-2023" },
+      "layer": { "value": 275, "source": "nabard-unit-cost-2023" },
+      "backyard": { "value": 50, "source": "nabard-indigenous-model", "note": "Rs 5,000 for a 100 sq ft mud, bamboo and thatch shed" },
+      "environmentControlled": { "low": 800, "high": 1200, "source": "ec-housing-secondary" }
+    },
+    "equipmentInrPerBird": {
+      "broiler": { "value": 45, "source": "nabard-unit-cost-2023" },
+      "layerCage": { "value": 170, "source": "nabard-unit-cost-2023", "note": "cages and layer equipment" },
+      "desi": { "value": 15, "source": "nabard-indigenous-model", "note": "Rs 1,500 for 100 birds" }
+    },
+    "electricalPctOfCivil": { "value": 3, "source": "nabard-unit-cost-2023" },
+    "feedStore": { "sqft": 100, "inrPerSqft": 275, "source": "nabard-unit-cost-2023", "note": "layer 5,000-bird unit" },
+    "fencingInr": { "value": 12000, "source": "nabard-unit-cost-2023", "note": "layer 5,000-bird unit" },
+    "waterSupplyInr": { "value": 90000, "source": "nabard-unit-cost-2023", "note": "borewell, tank and pipes, layer 5,000-bird unit" },
+    "birdInsurancePctOfChickCost": { "value": 6, "source": "nabard-unit-cost-2023" },
+    "labourInrPerMonth": { "value": 12000, "source": "nabard-unit-cost-2023" }
+  },
+  "prices": {
+    "chickInr": [
+      { "bird": "broiler", "value": 35, "source": "nabard-unit-cost-2023" },
+      { "bird": "broiler", "value": 25, "source": "ncdc-broiler-dpr" },
+      { "bird": "broiler", "low": 38, "high": 50, "source": "market-2026-secondary" },
+      { "bird": "layer", "value": 35, "source": "nabard-unit-cost-2023" },
+      { "bird": "desi", "value": 25, "source": "nabard-indigenous-model" }
+    ],
+    "feedInrPerKg": [
+      { "value": 30, "source": "nabard-unit-cost-2023" },
+      { "value": 28, "source": "ncdc-broiler-dpr" },
+      { "low": 28, "high": 33, "source": "market-2026-secondary" },
+      { "bird": "desi", "value": 25, "source": "nabard-indigenous-model" }
+    ],
+    "vaccineMedicineInrPerBird": [
+      { "bird": "broiler", "value": 32, "source": "nabard-unit-cost-2023" },
+      { "bird": "layer", "value": 25, "source": "nabard-unit-cost-2023" },
+      { "bird": "desi", "value": 15, "source": "nabard-indigenous-model" }
+    ],
+    "broilerInrPerKgLive": [
+      { "value": 73, "source": "ncdc-broiler-dpr" },
+      { "value": 70, "source": "nabard-broiler-model" },
+      { "low": 95, "high": 105, "source": "market-2026-secondary", "note": "break-even rate, not a sale price" }
+    ],
+    "eggInr": [{ "value": 3.15, "source": "nabard-layer-model", "note": "old model price; replace with Agmarknet or NECC" }],
+    "culledLayerInr": [{ "value": 60, "source": "nabard-layer-model" }],
+    "manureInrPerTonne": [{ "value": 300, "source": "nabard-layer-model" }]
+  }
+}

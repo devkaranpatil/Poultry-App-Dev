@@ -51,6 +51,45 @@ This is a mechanical rename. The app still plans polyhouses afterwards, but unde
 
 ## Phase 2: domain data and types (3 to 4 days)
 
+**Status: code done 2026-10-20 on branch `phase-2-domain-data`. The live migration is not applied yet.**
+
+Decisions taken, since none were given:
+- Bird types: broiler, layer in cages, layer on the floor, and improved desi birds. Coloured broilers were left out because no source gave their figures.
+- Contract farming is included.
+- Maharashtra is the first state.
+
+What was built:
+- **Norms** (`shared/poultry-norms.json`, read by both sides):
+  - floor space per bird for each bird and shed
+  - production figures
+  - NABARD 2023-24 costs
+  - reference prices, each with its source
+  - Secondary or old figures carry `verified: false`.
+- **Datasets** (`datasets/csv`):
+  - `nabard_poultry_unit_costs.csv` (6 rows)
+  - `poultry_production_norms.csv` (7)
+  - `poultry_scheme_rules.csv` (3)
+  - `poultry_siting_rules.csv` (9)
+- **Engines:**
+  - `backend/data/poultry/schemes.js`: `computeSchemes` checks NLM-EDP, AHIDF and Maharashtra's scheme, gives each a verdict (eligible, check or not eligible) with reasons, and reports `noneApplies` when nothing does.
+  - `backend/data/poultry/siting.js`: `sitingRulesFor` returns the CPCB rules above 5,000 birds, NABARD's 1 km rule for bank-financed farms, and registration for every farm.
+- **Flock size:** `backend/services/flock.js` and `src/lib/flock.ts`; a test keeps the two equal.
+- **Types:** `src/types/poultry.ts` (`PoultryConfig`, defaulting to a 7 m by 14 m broiler shed of about 1,050 birds). The screens keep `FarmConfig` until Phases 3 and 4. Changing it now would break every screen at once.
+- **Database:** `supabase/migrations/20261020020000_poultry_reference_data.sql`, additive only because the database is shared with the polyhouse app.
+  - It creates four `poultry_*` tables, readable through the API and writable only by the backend.
+  - It widens `saved_configurations.config_type` to accept `poultry`.
+  - `loadReferenceData.js poultry` loads only these tables, so the polyhouse tables are never refilled from this repository.
+- **Tests:**
+  - `src/test/poultry-data.test.ts` (20 tests): every figure has a known source, the CSVs equal the code, flock size matches between browser and server, scheme verdicts, siting thresholds.
+  - `sql-database.test.ts`: the migration in PGlite, the replaced constraint, and the poultry-only load.
+
+Still open:
+- **Apply the migration to the shared Supabase database.** I wasn't allowed to change the shared database myself; see the README.
+- **Run the full unit and e2e suites.** Some tests read `backend/.env`, which points at the shared database, so they weren't run in this phase. Lint, typecheck, the build, and the poultry and database tests (in PGlite) pass.
+- **Agmarknet names for egg and poultry.** The query to data.gov.in did not finish (the API was slow); retry it in Phase 3.
+- **Official Maharashtra scheme GR, NLM 2025 copy, current prices.** Not found yet; the figures stay marked unverified.
+
+
 Data first, with tests, before any screen changes.
 
 1. **Collect the missing sources** (research.md section 7):
