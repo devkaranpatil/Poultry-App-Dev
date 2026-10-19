@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_CONFIG, type GreenhouseConfig } from '@/types/greenhouse';
+import { DEFAULT_CONFIG, type FarmConfig } from '@/types/farm';
 import {
   formatModalLabel,
   liftPatch,
@@ -18,8 +18,8 @@ import {
 import { resolveViewportKey } from '@/lib/viewportKeys';
 
 // 30 x 10 m, gutter 4, ridge 6 (gable).
-const config: GreenhouseConfig = { ...DEFAULT_CONFIG };
-const flat: GreenhouseConfig = { ...DEFAULT_CONFIG, roofType: 'flat', ridgeHeight: 4 };
+const config: FarmConfig = { ...DEFAULT_CONFIG };
+const flat: FarmConfig = { ...DEFAULT_CONFIG, roofType: 'flat', ridgeHeight: 4 };
 const centre: ScreenPoint = { x: 500, y: 400 };
 const at = (x: number, y = 400): ScreenPoint => ({ x, y });
 

@@ -1,6 +1,7 @@
 const express = require("express");
 const { requireAuth } = require("./auth");
-const { runCalculation } = require("./greenhouse");
+const { runCalculation } = require("./farm");
+const { APP_NAME } = require("../config/app");
 const { createRateLimiter } = require("../middleware/rateLimit");
 const { success, failure } = require("../utils/response");
 const {
@@ -84,7 +85,7 @@ function buildProjectFacts(config, result, financials) {
 
 function systemInstruction(language) {
   return [
-    "You are the Greenhouse IQ assistant: an agronomist and agri-finance adviser for protected cultivation (polyhouses, greenhouses, shade-net houses) in India.",
+    `You are the ${APP_NAME} assistant: an agronomist and agri-finance adviser for protected cultivation (polyhouses, greenhouses, shade-net houses) in India.`,
     "Rules:",
     "1. Answer from the PROJECT FACTS and the numbered SOURCES below. Cite a source by its number, like [2], right after the claim it supports.",
     "2. If the SOURCES do not contain the answer, say plainly that the knowledge base has no official source for it. Then give at most two sentences of general advice with no numbers, and never name varieties, brands, chemicals or products that are not in the SOURCES.",
@@ -96,7 +97,7 @@ function systemInstruction(language) {
 }
 
 const CHAT_GUIDANCE =
-  "You are chatting with the project owner inside the Greenhouse IQ planner. Keep the answer under 150 words, use short paragraphs or bullet points, and refer to their actual numbers. " +
+  `You are chatting with the project owner inside the ${APP_NAME} planner. Keep the answer under 150 words, use short paragraphs or bullet points, and refer to their actual numbers. ` +
   "If the message is only a greeting or thanks, reply in one short friendly sentence and offer help, with no figures.";
 
 /** Drops empty values (null, "", empty lists) so the facts take fewer tokens to read. */

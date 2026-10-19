@@ -2,8 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 
-const greenhouseRoutes = require("./routes/greenhouse");
-const polyhouseRoutes = require("./routes/polyhouse");
+const farmRoutes = require("./routes/farm");
 const locationRoutes = require("./routes/location");
 const healthRoutes = require("./routes/health");
 const authRoutes = require("./routes/auth");
@@ -84,8 +83,8 @@ app.get("/", (req, res) => {
   return success(
     res,
     {
-      message: "Greenhouse backend is running",
-      docsHint: "Use /api/health, /api/greenhouse/*, or /api/polyhouse/* endpoints",
+      message: "Backend is running",
+      docsHint: "Use /api/health or /api/farm/* endpoints",
     },
     200,
     req
@@ -96,7 +95,7 @@ app.get("/api/meta", (req, res) => {
   return success(
     res,
     {
-      service: "greenhouse-backend",
+      service: "farm-backend",
       version: pkg.version,
       environment: process.env.NODE_ENV || "development",
       rateLimit: {
@@ -111,8 +110,7 @@ app.get("/api/meta", (req, res) => {
 
 app.use("/api/health", healthRoutes);
 app.use("/api/location", locationRoutes);
-app.use("/api/greenhouse", greenhouseRoutes);
-app.use("/api/polyhouse", polyhouseRoutes);
+app.use("/api/farm", farmRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/configurations", configurationRoutes);
 app.use("/api/ai", aiRoutes);

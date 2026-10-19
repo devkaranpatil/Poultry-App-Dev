@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { calculateGreenhouse, fetchCropSuggestions } from '@/services/calculation.service';
-import type { CalculationResult, GreenhouseConfig } from '@/types/greenhouse';
+import { calculateFarm, fetchCropSuggestions } from '@/services/calculation.service';
+import type { CalculationResult, FarmConfig } from '@/types/farm';
 
-const config: GreenhouseConfig = {
+const config: FarmConfig = {
   length: 30,
   width: 10,
   gutterHeight: 4,
@@ -68,12 +68,12 @@ describe('calculation.service', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const result = await calculateGreenhouse(config);
+    const result = await calculateFarm(config);
 
     expect(result).toEqual(resultPayload);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, request] = fetchMock.mock.calls[0];
-    expect(String(url)).toContain('/api/greenhouse/calculate');
+    expect(String(url)).toContain('/api/farm/calculate');
     expect(request.method).toBe('POST');
     expect(request.headers['Content-Type']).toBe('application/json');
     expect(JSON.parse(request.body)).toEqual(expectedPayload);
@@ -86,7 +86,7 @@ describe('calculation.service', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(calculateGreenhouse(config)).rejects.toThrow('Validation failed');
+    await expect(calculateFarm(config)).rejects.toThrow('Validation failed');
   });
 
   it('posts config+climate to crop-suggestions endpoint and returns text', async () => {
@@ -100,7 +100,7 @@ describe('calculation.service', () => {
     expect(suggestions).toBe('Use cucumber and capsicum.');
 
     const [url, request] = fetchMock.mock.calls[0];
-    expect(String(url)).toContain('/api/greenhouse/crop-suggestions');
+    expect(String(url)).toContain('/api/farm/crop-suggestions');
     expect(JSON.parse(request.body)).toEqual({
       config: expectedPayload,
       climate: resultPayload.climate,

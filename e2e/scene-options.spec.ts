@@ -88,10 +88,10 @@ async function openScene(page: Page, overrides: Partial<Setup> = {}, view?: View
   await page.goto(shareUrl(overrides));
   const canvas = page.getByTestId("scene-canvas");
   await expect(canvas).toHaveAttribute("data-build-stage", "6", { timeout: 90_000 });
-  await page.waitForFunction(() => Boolean((window as unknown as { __greenhouseScene?: unknown }).__greenhouseScene));
+  await page.waitForFunction(() => Boolean((window as unknown as { __farmScene?: unknown }).__farmScene));
   await page.waitForFunction(
     () => {
-      const scene = (window as unknown as { __greenhouseScene: { getObjectByName(name: string): unknown } }).__greenhouseScene;
+      const scene = (window as unknown as { __farmScene: { getObjectByName(name: string): unknown } }).__farmScene;
       return Boolean(scene.getObjectByName("interior"));
     },
     undefined,
@@ -117,10 +117,10 @@ async function inspect(page: Page): Promise<SceneInfo> {
       material?: { type: string; color?: { getHexString(): string }; opacity: number; alphaMap?: unknown };
       traverse(callback: (child: Obj) => void): void;
     };
-    const scene = (window as unknown as { __greenhouseScene: Obj }).__greenhouseScene;
+    const scene = (window as unknown as { __farmScene: Obj }).__farmScene;
     const info: SceneInfo = { root: null, groups: {}, instanced: {}, meshes: {}, louverPitch: 0, louverSlats: 0 };
     scene.traverse((object) => {
-      if (object.name === "greenhouse-model") info.root = object.userData;
+      if (object.name === "farm-model") info.root = object.userData;
       if (object.name === "louver-slat") {
         info.louverSlats += 1;
         info.louverPitch = Math.max(info.louverPitch, Math.abs(object.rotation?.x ?? 0));
@@ -208,7 +208,7 @@ async function snap(page: Page, testInfo: TestInfo, name: string): Promise<Buffe
 test.describe("3D models for every option", { tag: "@scene" }, () => {
   test.beforeEach(async ({ page }) => {
     // Balanced is what most machines run; it keeps the software-rendered test fast.
-    await page.addInitScript(() => window.localStorage.setItem("greenhouse.qualityMode", "balanced"));
+    await page.addInitScript(() => window.localStorage.setItem("farm.qualityMode", "balanced"));
     await signUp(page);
   });
 
@@ -426,14 +426,14 @@ test.describe("3D models for every option", { tag: "@scene" }, () => {
     await choose("Crop", /Gerbera/);
     await expect(page.getByTestId("scene-canvas")).toHaveAttribute("data-crop", "gerbera");
     await page.waitForFunction(() => {
-      const scene = (window as unknown as { __greenhouseScene: { getObjectByName(name: string): unknown } }).__greenhouseScene;
+      const scene = (window as unknown as { __farmScene: { getObjectByName(name: string): unknown } }).__farmScene;
       return Boolean(scene.getObjectByName("crop-gerbera"));
     });
 
     await choose("Irrigation", /Hydroponic/);
     await expect(page.getByTestId("scene-canvas")).toHaveAttribute("data-irrigation", "hydroponic-nft");
     await page.waitForFunction(() => {
-      const scene = (window as unknown as { __greenhouseScene: { getObjectByName(name: string): unknown } }).__greenhouseScene;
+      const scene = (window as unknown as { __farmScene: { getObjectByName(name: string): unknown } }).__farmScene;
       return Boolean(scene.getObjectByName("irrigation-hydroponic-nft"));
     });
 
@@ -476,7 +476,7 @@ test.describe("3D models for every option", { tag: "@scene" }, () => {
     // The shared beforeEach script resets the quality on every load; this one runs after it and wins.
     await page.addInitScript(() => {
       const wanted = window.sessionStorage.getItem("testQuality");
-      if (wanted) window.localStorage.setItem("greenhouse.qualityMode", wanted);
+      if (wanted) window.localStorage.setItem("farm.qualityMode", wanted);
     });
 
     for (const quality of ["lite", "balanced", "high"] as const) {

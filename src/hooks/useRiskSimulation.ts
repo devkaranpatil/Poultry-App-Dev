@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FinanceAssumptions } from '@/lib/finance';
 import { runRiskSimulation, type RiskResult, type RiskSimulation } from '@/services/risk.service';
-import type { GreenhouseConfig } from '@/types/greenhouse';
+import type { FarmConfig } from '@/types/farm';
 
 export const RISK_HORIZONS = [5, 10, 15];
 /** Wait for typing to settle before simulating again. */
@@ -19,7 +19,7 @@ export interface RiskState {
  * Runs the simulation whenever the setup, the assumptions or the horizon change, so the answer is always there
  * without a button press.
  */
-export function useRiskSimulation(config: GreenhouseConfig, assumptions: FinanceAssumptions, years: number): RiskState {
+export function useRiskSimulation(config: FarmConfig, assumptions: FinanceAssumptions, years: number): RiskState {
   const [result, setResult] = useState<RiskResult | null>(null);
   const [status, setStatus] = useState<RiskState['status']>('idle');
   const [ranFor, setRanFor] = useState('');

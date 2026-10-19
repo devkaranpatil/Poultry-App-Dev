@@ -8,9 +8,8 @@ process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret';
 const require = createRequire(import.meta.url);
 const costModel = require('../../backend/services/costModel');
 const pricing = require('../../backend/data/pricing');
-const { __testables: polyhouse } = require('../../backend/routes/polyhouse');
-const { validatePolyhouseConfig } = require('../../backend/validators/polyhouseValidator');
-const { validateGreenhouseConfig } = require('../../backend/validators/greenhouseValidator');
+const { __testables: farm } = require('../../backend/routes/farm');
+const { validateFarmConfig } = require('../../backend/validators/farmValidator');
 const app = require('../../backend/app');
 
 const base = {
@@ -64,8 +63,8 @@ describe('climate factor', () => {
 
 describe('cost reconciliation', () => {
   it('component lines plus the climate surcharge equal the total', () => {
-    const config = polyhouse.normalizeAndSanitizeConfig({ ...base, polyhouseType: 'climate-controlled' });
-    const { cost } = polyhouse.buildCalculationResult(config);
+    const config = farm.normalizeAndSanitizeConfig({ ...base, greenhouseType: 'climate-controlled' });
+    const { cost } = farm.buildCalculationResult(config);
     const lines =
       cost.structureCost + cost.coverCost + cost.ventilationCost + cost.foundationCost +
       cost.irrigationCost + cost.electricalCost + cost.laborCost + cost.miscCost;
@@ -74,15 +73,15 @@ describe('cost reconciliation', () => {
   });
 
   it('charges labour at 25% of structure, cover and foundation', () => {
-    const config = polyhouse.normalizeAndSanitizeConfig({ ...base, polyhouseType: 'naturally-ventilated' });
-    const { cost } = polyhouse.buildCalculationResult(config);
+    const config = farm.normalizeAndSanitizeConfig({ ...base, greenhouseType: 'naturally-ventilated' });
+    const { cost } = farm.buildCalculationResult(config);
     expect(cost.laborCost).toBe(Math.round((cost.structureCost + cost.coverCost + cost.foundationCost) * 0.25));
   });
 });
 
 describe('district heat surcharge (NASA hottest-month mean)', () => {
   const factorFor = (state: string, district: string) =>
-    polyhouse.buildCalculationResult(polyhouse.normalizeAndSanitizeConfig({ ...base, polyhouseType: 'naturally-ventilated', state, district }));
+    farm.buildCalculationResult(farm.normalizeAndSanitizeConfig({ ...base, greenhouseType: 'naturally-ventilated', state, district }));
 
   it('adds 3% for a district whose hottest month averages 35 C or more', () => {
     const churu = factorFor('Rajasthan', 'Churu'); // hottest month 35.9 C (June)
@@ -98,7 +97,7 @@ describe('district heat surcharge (NASA hottest-month mean)', () => {
   });
 
   it('falls back to the state average hottest month when no district is chosen', () => {
-    const state = polyhouse.buildCalculationResult(polyhouse.normalizeAndSanitizeConfig({ ...base, polyhouseType: 'naturally-ventilated', state: 'Rajasthan', district: '' }));
+    const state = farm.buildCalculationResult(farm.normalizeAndSanitizeConfig({ ...base, greenhouseType: 'naturally-ventilated', state: 'Rajasthan', district: '' }));
     expect(state.climate.hottestMonthMeanC).toBe(35.1);
   });
 
@@ -112,7 +111,7 @@ describe('district heat surcharge (NASA hottest-month mean)', () => {
 describe('rates derived from the official cost norms', () => {
   const norm = pricing.OFFICIAL_NORM_PER_SQM;
   const structureFor = (extra: object) =>
-    polyhouse.buildCalculationResult(polyhouse.normalizeAndSanitizeConfig({ ...base, ...extra })).cost.structureCost;
+    farm.buildCalculationResult(farm.normalizeAndSanitizeConfig({ ...base, ...extra })).cost.structureCost;
 
   it('prices fan-and-pad cooling as the official fan-and-pad minus tubular norm, scaled by the model uplift', () => {
     expect(norm.fanAndPad - norm.naturallyVentilatedTubular).toBe(556);
@@ -120,23 +119,23 @@ describe('rates derived from the official cost norms', () => {
   });
 
   it('makes a shade-net structure cheaper by the official shade-net to covered-house ratio', () => {
-    const covered = structureFor({ polyhouseType: 'naturally-ventilated' });
-    const shade = structureFor({ polyhouseType: 'shade-net', coverMaterial: 'shade-net', sideVentilation: 'none', doorEntry: 'curtain' });
+    const covered = structureFor({ greenhouseType: 'naturally-ventilated' });
+    const shade = structureFor({ greenhouseType: 'shade-net', coverMaterial: 'shade-net', sideVentilation: 'none', doorEntry: 'curtain' });
     expect(shade / covered).toBeCloseTo(norm.shadeNetTubular / norm.naturallyVentilatedTubular, 3);
 
-    const bambooCovered = structureFor({ polyhouseType: 'naturally-ventilated', structureMaterial: 'bamboo' });
-    const bambooShade = structureFor({ polyhouseType: 'shade-net', structureMaterial: 'bamboo', coverMaterial: 'shade-net', sideVentilation: 'none', doorEntry: 'curtain' });
+    const bambooCovered = structureFor({ greenhouseType: 'naturally-ventilated', structureMaterial: 'bamboo' });
+    const bambooShade = structureFor({ greenhouseType: 'shade-net', structureMaterial: 'bamboo', coverMaterial: 'shade-net', sideVentilation: 'none', doorEntry: 'curtain' });
     expect(bambooShade / bambooCovered).toBeCloseTo(norm.shadeNetBamboo / norm.naturallyVentilatedBamboo, 3);
   });
 
   it('keeps the covered-house benchmark unchanged', () => {
-    const { cost } = polyhouse.buildCalculationResult(polyhouse.normalizeAndSanitizeConfig({ ...base, polyhouseType: 'naturally-ventilated' }));
+    const { cost } = farm.buildCalculationResult(farm.normalizeAndSanitizeConfig({ ...base, greenhouseType: 'naturally-ventilated' }));
     expect(cost.totalCost).toBe(495338);
   });
 
   it('lists the inputs that do not change the price, and really does not price them', () => {
     const run = (extra: object) =>
-      polyhouse.buildCalculationResult(polyhouse.normalizeAndSanitizeConfig({ ...base, polyhouseType: 'naturally-ventilated', ...extra }));
+      farm.buildCalculationResult(farm.normalizeAndSanitizeConfig({ ...base, greenhouseType: 'naturally-ventilated', ...extra }));
     const baseline = run({});
     expect(baseline.diagnostics.notPriced).toEqual(['doorType', 'selectedCrop', 'district']);
     expect(run({ doorEntry: 'roll-up' }).cost.totalCost).toBe(baseline.cost.totalCost);
@@ -145,7 +144,7 @@ describe('rates derived from the official cost norms', () => {
 
   it('prices roof shape and heights through the envelope surface relative to the NHB reference house', () => {
     const run = (extra: object) =>
-      polyhouse.buildCalculationResult(polyhouse.normalizeAndSanitizeConfig({ ...base, polyhouseType: 'naturally-ventilated', ...extra }));
+      farm.buildCalculationResult(farm.normalizeAndSanitizeConfig({ ...base, greenhouseType: 'naturally-ventilated', ...extra }));
     const baseline = run({});
     expect(baseline.diagnostics.envelopeFactor).toBe(1); // gutter 4 m, ridge 6 m, gable = the reference design
 
@@ -172,15 +171,15 @@ describe('rates derived from the official cost norms', () => {
   });
 });
 
-describe('polyhouse climate coverage', () => {
+describe('climate coverage', () => {
   it('uses real state climate data for states outside the original 11 (Assam is heavy-rain, humid)', () => {
-    const config = polyhouse.normalizeAndSanitizeConfig({
+    const config = farm.normalizeAndSanitizeConfig({
       ...base,
-      polyhouseType: 'naturally-ventilated',
+      greenhouseType: 'naturally-ventilated',
       state: 'Assam',
       district: 'Kamrup',
     });
-    const result = polyhouse.buildCalculationResult(config);
+    const result = farm.buildCalculationResult(config);
     expect(result.climate.rainfall).toBe(2800);
     expect(result.climate.climateGroup).toBe('Warm & Humid');
     expect(result.cost.climateAdjustment).toBe(0.05);
@@ -198,15 +197,15 @@ describe('validator parity', () => {
     coverMaterial: 'uv_polyfilm',
   };
 
-  it('polyhouse now enforces the same dimension limits as greenhouse', () => {
-    const tooBig = { ...valid, polyhouseType: 'naturally-ventilated', length: 5000 };
-    expect(validatePolyhouseConfig(tooBig).length).toMatch(/between 5 and 200/);
+  it('enforces the dimension limits', () => {
+    const tooBig = { ...valid, greenhouseType: 'naturally-ventilated', length: 5000 };
+    expect(validateFarmConfig(tooBig).length).toMatch(/between 5 and 200/);
   });
 
-  it('polyhouse rejects unknown roof, structure and ventilation values instead of pricing them silently', () => {
-    const errors = validatePolyhouseConfig({
+  it('rejects unknown roof, structure and ventilation values instead of pricing them silently', () => {
+    const errors = validateFarmConfig({
       ...valid,
-      polyhouseType: 'naturally-ventilated',
+      greenhouseType: 'naturally-ventilated',
       roofType: 'banana',
       structureMaterial: 'unobtainium',
       sideVentilation: 'teleport',
@@ -217,13 +216,13 @@ describe('validator parity', () => {
   });
 
   it('both validators reject non-finite numbers', () => {
-    expect(validateGreenhouseConfig({ ...valid, greenhouseType: 'naturally-ventilated', length: Infinity }).length).toBeTruthy();
-    expect(validatePolyhouseConfig({ ...valid, polyhouseType: 'naturally-ventilated', width: 'Infinity' }).width).toBeTruthy();
+    expect(validateFarmConfig({ ...valid, greenhouseType: 'naturally-ventilated', length: Infinity }).length).toBeTruthy();
+    expect(validateFarmConfig({ ...valid, greenhouseType: 'naturally-ventilated', width: 'Infinity' }).width).toBeTruthy();
   });
 });
 
 describe('calculate-area endpoint', () => {
-  it.each(['greenhouse', 'polyhouse'])('%s multiplies and rounds to 2 decimals', async (kind) => {
+  it.each(['farm'])('%s multiplies and rounds to 2 decimals', async (kind) => {
     const res = await request(app).post(`/api/${kind}/calculate-area`).send({ length: 12.345, width: 3 });
     expect(res.status).toBe(200);
     expect(res.body.area).toBe(37.04);
@@ -236,15 +235,15 @@ describe('calculate-area endpoint', () => {
     { length: -1, width: 5 },
     { width: 5 },
   ])('rejects %j', async (body) => {
-    const res = await request(app).post('/api/polyhouse/calculate-area').send(body);
+    const res = await request(app).post('/api/farm/calculate-area').send(body);
     expect(res.status).toBe(400);
   });
 });
 
 describe('cost range', () => {
   it('brackets the point estimate by +/-10%', () => {
-    const config = polyhouse.normalizeAndSanitizeConfig({ ...base, polyhouseType: 'naturally-ventilated' });
-    const { cost } = polyhouse.buildCalculationResult(config);
+    const config = farm.normalizeAndSanitizeConfig({ ...base, greenhouseType: 'naturally-ventilated' });
+    const { cost } = farm.buildCalculationResult(config);
     expect(cost.costRange.low).toBe(Math.round(cost.totalCost * 0.9));
     expect(cost.costRange.high).toBe(Math.round(cost.totalCost * 1.1));
     expect(cost.costRange.low).toBeLessThan(cost.totalCost);
@@ -253,7 +252,7 @@ describe('cost range', () => {
 
 describe('materials without an official price', () => {
   const run = (extra: object) =>
-    polyhouse.buildCalculationResult(polyhouse.normalizeAndSanitizeConfig({ ...base, polyhouseType: 'naturally-ventilated', ...extra }));
+    farm.buildCalculationResult(farm.normalizeAndSanitizeConfig({ ...base, greenhouseType: 'naturally-ventilated', ...extra }));
 
   it('flags an aluminium frame and a glass cover, and nothing else', () => {
     expect(run({}).diagnostics.unsourcedRates).toEqual([]);

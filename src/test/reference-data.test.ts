@@ -16,7 +16,7 @@ const goa = {
   width: 10,
   gutterHeight: 4,
   ridgeHeight: 6,
-  polyhouseType: 'naturally-ventilated',
+  greenhouseType: 'naturally-ventilated',
   roofType: 'gable',
   structureMaterial: 'gi-steel',
   coverMaterial: 'uv-polyfilm',
@@ -26,7 +26,7 @@ const goa = {
   district: 'North Goa',
 };
 
-const calculate = (body: object, kind = 'polyhouse') => request(app).post(`/api/${kind}/calculate`).send(body);
+const calculate = (body: object, kind = 'farm') => request(app).post(`/api/${kind}/calculate`).send(body);
 
 describe('without a database', () => {
   it('still calculates, with reference set to null, and still works out the scheme subsidy', async () => {
@@ -96,9 +96,9 @@ describe('with the official datasets loaded', () => {
 
   it('picks the norm row by structure type and material', async () => {
     const pick = async (extra: object) => (await calculate({ ...goa, ...extra })).body.data.reference.governmentNorm;
-    expect((await pick({ polyhouseType: 'climate-controlled' })).normPerSqmInr).toBe(1800);
+    expect((await pick({ greenhouseType: 'climate-controlled' })).normPerSqmInr).toBe(1800);
     expect((await pick({ structureMaterial: 'bamboo' })).normPerSqmInr).toBe(450);
-    expect((await pick({ polyhouseType: 'shade-net', coverMaterial: 'shade-net', sideVentilation: 'none', doorEntry: 'curtain' })).normPerSqmInr).toBe(710);
+    expect((await pick({ greenhouseType: 'shade-net', coverMaterial: 'shade-net', sideVentilation: 'none', doorEntry: 'curtain' })).normPerSqmInr).toBe(710);
     expect(normSelector({ structureType: 'shade-net', structureMaterial: 'bamboo' })).toEqual({ component: 'Shade Net House', structure: 'Bamboo structure' });
   });
 
@@ -122,9 +122,4 @@ describe('with the official datasets loaded', () => {
     expect(res.body.data.reference.governmentNorm.normPerSqmInr).toBe(norm);
   });
 
-  it('is available on the greenhouse endpoint too', async () => {
-    const res = await calculate({ ...goa, greenhouseType: 'naturally-ventilated', polyhouseType: undefined }, 'greenhouse');
-    expect(res.status).toBe(200);
-    expect(res.body.data.reference.governmentNorm.normPerSqmInr).toBe(1200);
-  });
 });

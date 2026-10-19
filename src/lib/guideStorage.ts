@@ -1,5 +1,5 @@
 /** Remembers in this browser that the welcome guide was seen, so it opens only on a first visit. */
-export const GUIDE_SEEN_KEY = 'greenhouse.guideSeen';
+export const GUIDE_SEEN_KEY = 'farm.guideSeen';
 
 export function hasSeenGuide() {
   try {

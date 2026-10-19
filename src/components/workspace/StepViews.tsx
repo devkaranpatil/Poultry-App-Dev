@@ -3,19 +3,19 @@ import { AlertTriangle, ArrowRight, CloudRain, Droplets, FolderOpen, Loader2, Sh
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/context/I18nContext';
 import type { AiAssistant } from '@/hooks/useAiAssistant';
-import type { CalculationResult, GreenhouseConfig } from '@/types/greenhouse';
+import type { CalculationResult, FarmConfig } from '@/types/farm';
 import { latestMandiPrice } from '@/lib/mandi';
 import type { FinanceAssumptions, FinancialSummary } from '@/lib/finance';
 import { computeLoanPlan, type LoanTerms } from '@/lib/loan';
 import { formatINR, formatINRCompact, formatNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { ReturnsPanel } from '@/components/greenhouse/ReturnsPanel';
-import { LoanPanel } from '@/components/greenhouse/LoanPanel';
-import { SubsidyChecklist } from '@/components/greenhouse/SubsidyChecklist';
-import { RiskPanel } from '@/components/greenhouse/RiskPanel';
+import { ReturnsPanel } from '@/components/farm/ReturnsPanel';
+import { LoanPanel } from '@/components/farm/LoanPanel';
+import { SubsidyChecklist } from '@/components/farm/SubsidyChecklist';
+import { RiskPanel } from '@/components/farm/RiskPanel';
 import { paybackChance, useRiskSimulation } from '@/hooks/useRiskSimulation';
-import { ExportPanel } from '@/components/greenhouse/ExportPanel';
-import { DistrictClimateCard, GovernmentNormCard, MarketPricesCard } from '@/components/greenhouse/ReferenceCards';
+import { ExportPanel } from '@/components/farm/ExportPanel';
+import { DistrictClimateCard, GovernmentNormCard, MarketPricesCard } from '@/components/farm/ReferenceCards';
 import { Block, Figures, FinishDesignFirst, StepError, StepPage } from './StepPage';
 import { Labelled } from './Explain';
 import { MoreDetails } from './MoreDetails';
@@ -28,7 +28,7 @@ export type ResultStepId = Exclude<StepId, 'design'>;
 export interface StepViewsProps {
   step: ResultStepId;
   onNavigate: (step: StepId) => void;
-  config: GreenhouseConfig;
+  config: FarmConfig;
   result: CalculationResult | null;
   isLoading: boolean;
   calculationError: string | null;
@@ -56,7 +56,7 @@ const SUITABILITY_STYLES: Record<string, string> = {
   poor: 'bg-destructive/10 text-destructive',
 };
 
-const IRRIGATION_KEYS: Record<GreenhouseConfig['irrigationSystem'], string> = {
+const IRRIGATION_KEYS: Record<FarmConfig['irrigationSystem'], string> = {
   drip: 'options.irrigation.drip',
   sprinkler: 'options.irrigation.sprinkler',
   fogger: 'options.irrigation.fogger',

@@ -10,6 +10,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { APP_NAME } = require("../../config/app");
 const { parseCsv } = require("../../scripts/loadReferenceData");
 const pricing = require("../../data/pricing");
 const { CROP_LIBRARY, CROPS_BY_CLIMATE_GROUP, IRRIGATION_PROFILES, PUBLISHED_YIELDS } = require("../../data/cultivation");
@@ -257,7 +258,7 @@ function cropDocument() {
   const doc = {
     id: "planner-crops",
     title: "Crops in the planner",
-    publisher: "Greenhouse IQ crop library (suitability ratings and seasons are the planner's own judgement)",
+    publisher: `${APP_NAME} crop library (suitability ratings and seasons are the planner's own judgement)`,
     url: null,
     priority: 0.95,
     kind: "planner",
@@ -301,7 +302,7 @@ function pricingDocument() {
   const doc = {
     id: "planner-cost-model",
     title: "How the planner prices a structure",
-    publisher: "Greenhouse IQ cost model (backend/data/pricing.js)",
+    publisher: `${APP_NAME} cost model (backend/data/pricing.js)`,
     url: null,
     priority: 1.08,
     kind: "planner",
@@ -356,7 +357,7 @@ function plannerDocs() {
   return files
     .filter(({ file }) => fs.existsSync(path.join(DOCS_DIR, file)))
     .map(({ file, title, priority }) => {
-      const doc = { id: `planner-doc-${file.replace(/\.md$/, "")}`, title, publisher: "Greenhouse IQ documentation", url: null, priority, kind: "planner" };
+      const doc = { id: `planner-doc-${file.replace(/\.md$/, "")}`, title, publisher: `${APP_NAME} documentation`, url: null, priority, kind: "planner" };
       return { doc, chunks: chunkText(readText(path.join(DOCS_DIR, file)), { maxWords: 200 }).map((piece, index) => makeChunk(doc, index, piece)) };
     });
 }
@@ -366,7 +367,7 @@ function gapsDocument(gaps) {
   const doc = {
     id: "knowledge-gaps",
     title: "What the knowledge base does not cover",
-    publisher: "Greenhouse IQ knowledge base",
+    publisher: `${APP_NAME} knowledge base`,
     url: null,
     priority: 1.0,
     kind: "planner",

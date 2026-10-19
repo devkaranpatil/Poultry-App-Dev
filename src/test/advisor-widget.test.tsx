@@ -33,7 +33,7 @@ function renderWidget(options: { ai?: AiAssistant; step?: StepId } = {}) {
   const ai = 'ai' in options ? options.ai : fakeAi();
   const step = options.step ?? 'cost';
   const onOpenSummary = vi.fn();
-  window.localStorage.setItem('greenhouse.locale', 'en');
+  window.localStorage.setItem('farm.locale', 'en');
   const ui = (props: { ai?: AiAssistant; step: StepId }) => (
     <MemoryRouter>
       <I18nProvider>

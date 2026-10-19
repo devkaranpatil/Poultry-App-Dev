@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { GreenhouseConfig } from '@/types/greenhouse';
+import type { FarmConfig } from '@/types/farm';
 import {
   EMPTY_HISTORY,
   configMatches,
@@ -16,9 +16,9 @@ import {
  * properties panel and drags in the 3D view are all undoable; the view only needs a way to apply
  * a patch. Changes made between beginGroup and endGroup (one drag) undo as a single step.
  */
-export function useEditHistory(config: GreenhouseConfig, apply: ((patch: ConfigPatch) => void) | undefined, enabled: boolean) {
+export function useEditHistory(config: FarmConfig, apply: ((patch: ConfigPatch) => void) | undefined, enabled: boolean) {
   const historyRef = useRef<HistoryState>(EMPTY_HISTORY);
-  const lastConfigRef = useRef<GreenhouseConfig | null>(null);
+  const lastConfigRef = useRef<FarmConfig | null>(null);
   const expectedRef = useRef<ConfigPatch | null>(null);
   const groupRef = useRef<string | undefined>(undefined);
   const groupCounter = useRef(0);

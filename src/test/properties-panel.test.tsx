@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { PropertiesPanel } from '@/components/greenhouse/PropertiesPanel';
+import { PropertiesPanel } from '@/components/farm/PropertiesPanel';
 import { I18nProvider } from '@/context/I18nContext';
-import { DEFAULT_CONFIG } from '@/types/greenhouse';
+import { DEFAULT_CONFIG } from '@/types/farm';
 import type { EditablePart } from '@/lib/sceneEdit';
 
 /** The panel with its selection held as MiddlePanel holds it; `pickOnModel` stands in for a tap on the 3D view. */
@@ -21,7 +21,7 @@ function Harness({ compact, pickOnModel }: { compact: boolean; pickOnModel?: Edi
 
 describe('PropertiesPanel on a phone', () => {
   it('shows a part picked on the model as a slim bar that opens on request', () => {
-    window.localStorage.setItem('greenhouse.locale', 'en');
+    window.localStorage.setItem('farm.locale', 'en');
     render(<Harness compact pickOnModel="door" />);
     fireEvent.click(screen.getByText('tap model'));
 
@@ -40,7 +40,7 @@ describe('PropertiesPanel on a phone', () => {
   });
 
   it('opens the options of a part picked from the list', () => {
-    window.localStorage.setItem('greenhouse.locale', 'en');
+    window.localStorage.setItem('farm.locale', 'en');
     render(<Harness compact />);
     fireEvent.click(screen.getByRole('button', { name: 'Roof' }));
     expect(screen.getByTestId('part-editor')).toHaveAttribute('data-part', 'roof');
@@ -48,7 +48,7 @@ describe('PropertiesPanel on a phone', () => {
   });
 
   it('always shows the full panel on a desktop', () => {
-    window.localStorage.setItem('greenhouse.locale', 'en');
+    window.localStorage.setItem('farm.locale', 'en');
     render(<Harness compact={false} pickOnModel="roof" />);
     fireEvent.click(screen.getByText('tap model'));
     expect(screen.getByRole('radiogroup')).toBeInTheDocument();

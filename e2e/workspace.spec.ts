@@ -80,7 +80,7 @@ test.describe("workspace", () => {
       ["Download Excel", ".xlsx"],
     ] as const) {
       const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: button }).click()]);
-      expect(download.suggestedFilename()).toMatch(new RegExp(`^greenhouse-north-goa-\\d{4}-\\d{2}-\\d{2}\\${extension}$`));
+      expect(download.suggestedFilename()).toMatch(new RegExp(`^farm-north-goa-\\d{4}-\\d{2}-\\d{2}\\${extension}$`));
       const path = await download.path();
       expect(path).toBeTruthy();
     }

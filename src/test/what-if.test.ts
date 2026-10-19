@@ -6,9 +6,9 @@ import { computeFinancials } from '@/lib/finance';
 const require = createRequire(import.meta.url);
 const whatIf = require('../../backend/services/whatIf');
 const { computeReturns } = require('../../backend/services/returns');
-const { runCalculation } = require('../../backend/routes/greenhouse');
+const { runCalculation } = require('../../backend/routes/farm');
 
-// The Goa benchmark as the browser sends it (toGreenhousePayload: stateName and doorType).
+// The Goa benchmark as the browser sends it (toFarmPayload: stateName and doorType).
 const goa = {
   length: 30, width: 10, gutterHeight: 4, ridgeHeight: 6, greenhouseType: 'naturally-ventilated', roofType: 'gable',
   structureMaterial: 'gi-steel', coverMaterial: 'uv-polyfilm', sideVentilation: 'manual-rollup', doorType: 'single-sliding',

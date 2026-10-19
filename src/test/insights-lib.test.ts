@@ -8,7 +8,7 @@ import {
   subsidyBase,
 } from '@/lib/finance';
 import { decodeShareParam, encodeShareParam, loadDraft, saveDraft } from '@/lib/configPersistence';
-import { DEFAULT_CONFIG } from '@/types/greenhouse';
+import { DEFAULT_CONFIG } from '@/types/farm';
 
 describe('format', () => {
   it('uses Indian digit grouping', () => {

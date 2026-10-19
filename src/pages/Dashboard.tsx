@@ -20,7 +20,7 @@ import { Logo } from '@/components/brand/Logo';
 import { TopRightMenu } from '@/components/TopRightMenu';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/context/I18nContext';
-import { calculateGreenhouse } from '@/services/calculation.service';
+import { calculateFarm } from '@/services/calculation.service';
 import {
   createConfiguration,
   deleteConfiguration,
@@ -29,19 +29,19 @@ import {
 } from '@/services/configuration.service';
 import { clearDraft, loadDraft, saveDraft } from '@/lib/configPersistence';
 import { formatINRCompact } from '@/lib/format';
-import { DEFAULT_CONFIG, normalizeGreenhouseConfig, type GreenhouseConfig } from '@/types/greenhouse';
+import { DEFAULT_CONFIG, normalizeFarmConfig, type FarmConfig } from '@/types/farm';
 
 const SAVED_QUERY_KEY = ['saved-configurations'];
 
 /** A saved setup only has a price once it names a place, because climate is part of the estimate. */
-const hasLocation = (config: GreenhouseConfig) => config.state.trim() !== '' && config.district.trim() !== '';
+const hasLocation = (config: FarmConfig) => config.state.trim() !== '' && config.district.trim() !== '';
 
-function SetupCost({ config }: { config: GreenhouseConfig }) {
+function SetupCost({ config }: { config: FarmConfig }) {
   const { t } = useI18n();
   const located = hasLocation(config);
   const cost = useQuery({
     queryKey: ['setup-cost', JSON.stringify(config)],
-    queryFn: () => calculateGreenhouse(config),
+    queryFn: () => calculateFarm(config),
     enabled: located,
     staleTime: 5 * 60_000,
     retry: false,
@@ -71,7 +71,7 @@ function SetupCard({
   busy: boolean;
 }) {
   const { t, language } = useI18n();
-  const config = normalizeGreenhouseConfig(item.config as Partial<GreenhouseConfig>);
+  const config = normalizeFarmConfig(item.config as Partial<FarmConfig>);
   const place = hasLocation(config) ? `${config.district}, ${config.state}` : t('dashboard.draftNoPlace');
   const updated = new Date(item.updatedAt).toLocaleDateString(language, { day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -176,7 +176,7 @@ export default function Dashboard() {
   const items = useMemo(() => saved.data ?? [], [saved.data]);
   const stats = useMemo(() => {
     const area = items.reduce((sum, item) => {
-      const config = normalizeGreenhouseConfig(item.config as Partial<GreenhouseConfig>);
+      const config = normalizeFarmConfig(item.config as Partial<FarmConfig>);
       return sum + config.length * config.width;
     }, 0);
     const latest = items.reduce<string | null>((best, item) => (!best || item.updatedAt > best ? item.updatedAt : best), null);
@@ -184,7 +184,7 @@ export default function Dashboard() {
   }, [items]);
 
   const openSetup = (item: SavedConfiguration) => {
-    saveDraft(normalizeGreenhouseConfig(item.config as Partial<GreenhouseConfig>));
+    saveDraft(normalizeFarmConfig(item.config as Partial<FarmConfig>));
     toast(t('dashboard.opened', { name: item.name }));
     navigate('/visualizer');
   };
@@ -195,7 +195,7 @@ export default function Dashboard() {
   };
 
   const startRecommended = () => {
-    saveDraft(normalizeGreenhouseConfig({ ...DEFAULT_CONFIG, state: '', district: '' }));
+    saveDraft(normalizeFarmConfig({ ...DEFAULT_CONFIG, state: '', district: '' }));
     navigate('/visualizer');
   };
 

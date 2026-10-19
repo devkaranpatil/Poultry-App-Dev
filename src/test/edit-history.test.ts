@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_CONFIG, type GreenhouseConfig } from '@/types/greenhouse';
+import { DEFAULT_CONFIG, type FarmConfig } from '@/types/farm';
 import {
   EMPTY_HISTORY,
   HISTORY_LIMIT,
@@ -12,8 +12,8 @@ import {
   type HistoryEntry,
 } from '@/lib/editHistory';
 
-const base: GreenhouseConfig = { ...DEFAULT_CONFIG, state: 'Goa', district: 'North Goa' };
-const step = (prev: GreenhouseConfig, patch: Partial<GreenhouseConfig>, at: number, group?: string) => {
+const base: FarmConfig = { ...DEFAULT_CONFIG, state: 'Goa', district: 'North Goa' };
+const step = (prev: FarmConfig, patch: Partial<FarmConfig>, at: number, group?: string) => {
   const entry = diffConfig(prev, { ...prev, ...patch }, at) as HistoryEntry;
   return group ? { ...entry, group } : entry;
 };

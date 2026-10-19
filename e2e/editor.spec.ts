@@ -10,7 +10,7 @@ async function waitForScene(page: Page) {
 /** Where a named scene object appears on screen (page pixels). */
 async function screenPosition(page: Page, name: string, centre = false) {
   const point = await page.evaluate(
-    ([target, middle]) => (window as unknown as { __greenhouseProject: Project }).__greenhouseProject(target, middle),
+    ([target, middle]) => (window as unknown as { __farmProject: Project }).__farmProject(target, middle),
     [name, centre] as const
   );
   expect(point, `${name} is in the scene`).not.toBeNull();
@@ -19,14 +19,14 @@ async function screenPosition(page: Page, name: string, centre = false) {
 
 const sceneOption = (page: Page, key: string) =>
   page.evaluate((field) => {
-    const scene = (window as unknown as { __greenhouseScene: { getObjectByName: (name: string) => { userData: Record<string, unknown> } } }).__greenhouseScene;
-    return scene.getObjectByName("greenhouse-model").userData[field];
+    const scene = (window as unknown as { __farmScene: { getObjectByName: (name: string) => { userData: Record<string, unknown> } } }).__farmScene;
+    return scene.getObjectByName("farm-model").userData[field];
   }, key);
 
 const hasHandle = (page: Page, name: string) =>
   page.evaluate(
     (target) =>
-      Boolean((window as unknown as { __greenhouseScene: { getObjectByName: (name: string) => unknown } }).__greenhouseScene.getObjectByName(target)),
+      Boolean((window as unknown as { __farmScene: { getObjectByName: (name: string) => unknown } }).__farmScene.getObjectByName(target)),
     name
   );
 
@@ -50,7 +50,7 @@ test("the recommended greenhouse shows its crop before a location is chosen", as
   await expect
     .poll(() =>
       page.evaluate(() => {
-        const scene = (window as unknown as { __greenhouseScene?: { getObjectByName: (name: string) => unknown } }).__greenhouseScene;
+        const scene = (window as unknown as { __farmScene?: { getObjectByName: (name: string) => unknown } }).__farmScene;
         return Boolean(scene?.getObjectByName("crop-tomato"));
       })
     )
@@ -72,7 +72,7 @@ test.describe("editing the model in 3D", () => {
     await selectPart(page, "Size");
     await expect.poll(() => hasHandle(page, "handle-length")).toBe(true);
     const handle = await screenPosition(page, "handle-length");
-    const centre = await screenPosition(page, "greenhouse-model");
+    const centre = await screenPosition(page, "farm-model");
     // Drag away from the middle of the house, which lengthens it.
     const dx = handle.x - centre.x;
     const dy = handle.y - centre.y;
@@ -96,13 +96,13 @@ test.describe("editing the model in 3D", () => {
     await selectPart(page, "Size");
     await expect.poll(() => hasHandle(page, "handle-width")).toBe(true);
     const handle = await screenPosition(page, "handle-width");
-    const house = await screenPosition(page, "greenhouse-model");
+    const house = await screenPosition(page, "farm-model");
     await page.mouse.move(handle.x, handle.y);
     await page.mouse.down();
     await page.mouse.move(handle.x + 40, handle.y + 10, { steps: 8 });
     await page.mouse.up();
     // With the camera held still the house stays where it was on screen, unless the model grew around its centre.
-    const after = await screenPosition(page, "greenhouse-model");
+    const after = await screenPosition(page, "farm-model");
     expect(Math.abs(after.x - house.x)).toBeLessThan(2);
     expect(Math.abs(after.y - house.y)).toBeLessThan(2);
   });
@@ -244,7 +244,7 @@ test.describe("editing the model in 3D", () => {
     const [side, view] = [(await sidebar.boundingBox())!, (await canvas.boundingBox())!];
     expect(side.x).toBeGreaterThanOrEqual(view.x + view.width - 1); // beside the model, not over it
     // Choosing a part on the model (here through the editor hook) opens its tab.
-    await page.evaluate(() => (window as unknown as { __greenhouseEditor: { select: (part: string) => void } }).__greenhouseEditor.select("door"));
+    await page.evaluate(() => (window as unknown as { __farmEditor: { select: (part: string) => void } }).__farmEditor.select("door"));
     await expect(page.getByTestId("part-editor")).toHaveAttribute("data-part", "door");
     await expect(sidebar.getByRole("button", { name: "Door", exact: true })).toHaveAttribute("aria-pressed", "true");
   });

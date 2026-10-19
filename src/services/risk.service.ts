@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { FinanceAssumptions } from '@/lib/finance';
-import type { GreenhouseConfig } from '@/types/greenhouse';
-import { toGreenhousePayload } from '@/services/calculation.service';
+import type { FarmConfig } from '@/types/farm';
+import { toFarmPayload } from '@/services/calculation.service';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.trim() || (import.meta.env.DEV ? 'http://localhost:5000' : '');
@@ -54,7 +54,7 @@ export interface RiskOptions {
 
 /** Runs the Monte Carlo simulation for a setup and the user's planning assumptions. */
 export async function runRiskSimulation(
-  config: GreenhouseConfig,
+  config: FarmConfig,
   assumptions: FinanceAssumptions,
   options: RiskOptions = {},
   signal?: AbortSignal
@@ -63,7 +63,7 @@ export async function runRiskSimulation(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     signal,
-    body: JSON.stringify({ config: toGreenhousePayload(config), assumptions, options }),
+    body: JSON.stringify({ config: toFarmPayload(config), assumptions, options }),
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok || payload?.success === false) throw new Error(payload?.message || 'Request failed');

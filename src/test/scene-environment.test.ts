@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ENVIRONMENTS, SKIES, sceneReach } from '@/lib/sceneEnvironment';
-import type { RenderQuality } from '@/components/greenhouse/scene/cropLayout';
+import type { RenderQuality } from '@/components/farm/scene/cropLayout';
 import {
   buildBackdropPlan,
   CAMERA_FAR,
@@ -12,8 +12,8 @@ import {
   LANDSCAPE_LOOKS,
   sceneFog,
   SKY_LOOKS,
-} from '@/components/greenhouse/scene/environmentLooks';
-import { farShape, groundShape, treeShapes } from '@/components/greenhouse/scene/environmentGeometry';
+} from '@/components/farm/scene/environmentLooks';
+import { farShape, groundShape, treeShapes } from '@/components/farm/scene/environmentGeometry';
 
 const QUALITIES: RenderQuality[] = ['high', 'balanced', 'lite'];
 const HOUSES = [

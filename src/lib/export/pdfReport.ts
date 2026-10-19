@@ -2,6 +2,7 @@ import type { jsPDF as JsPdf } from 'jspdf';
 import { formatINRPlain, formatNumber } from '@/lib/format';
 import { PROJECTION_YEARS, SUBSIDY_AREA_CAP_SQM } from '@/lib/finance';
 import { downloadBlob, reportFileName, type ReportData } from './reportData';
+import { APP_NAME } from '@/config/app';
 
 type Rgb = [number, number, number];
 
@@ -471,7 +472,7 @@ export async function buildPdfReport(data: ReportData): Promise<JsPdf> {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     setColor(MUTED);
-    doc.text('Greenhouse IQ - planning estimate, not a quotation. Confirm prices and subsidies locally.', PAGE_MARGIN, pageHeight - 7);
+    doc.text(`${APP_NAME} - planning estimate, not a quotation. Confirm prices and subsidies locally.`, PAGE_MARGIN, pageHeight - 7);
     doc.text(`Page ${page} of ${pageCount}`, pageWidth - PAGE_MARGIN, pageHeight - 7, { align: 'right' });
   }
 

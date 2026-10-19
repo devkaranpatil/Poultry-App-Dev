@@ -1,5 +1,5 @@
-// Route factory shared by /api/greenhouse and /api/polyhouse. The only per-product
-// differences are the URL of the config endpoint and the structure-type field name.
+// Route factory for /api/farm. `kind` names the config endpoint (/farm-config) and the messages;
+// the calculator carries the structure-type field name and its validator.
 
 const express = require("express");
 const { success, failure } = require("../utils/response");
@@ -9,7 +9,7 @@ const { deriveCrops, toSuggestionText } = require("../services/cropAdvisor");
 const { buildReference } = require("../services/referenceData");
 
 /**
- * @param {{ kind: "greenhouse" | "polyhouse", calculator: ReturnType<typeof import("../services/calculator").createCalculator> }} options
+ * @param {{ kind: string, calculator: ReturnType<typeof import("../services/calculator").createCalculator> }} options
  */
 function createCalculatorRouter({ kind, calculator }) {
   const router = express.Router();

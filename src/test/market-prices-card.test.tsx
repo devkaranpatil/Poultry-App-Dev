@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { MarketPricesCard } from '@/components/greenhouse/ReferenceCards';
+import { MarketPricesCard } from '@/components/farm/ReferenceCards';
 import { I18nProvider } from '@/context/I18nContext';
-import type { CropMarketPrice, ReferenceContext } from '@/types/greenhouse';
+import type { CropMarketPrice, ReferenceContext } from '@/types/farm';
 
 const price = (over: Partial<CropMarketPrice> = {}): CropMarketPrice => ({
   crop: 'Tomato',

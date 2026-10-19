@@ -28,7 +28,7 @@ beforeEach(() => {
   authMock.reset();
   window.localStorage.clear();
   window.sessionStorage.clear();
-  window.localStorage.setItem('greenhouse.locale', 'en');
+  window.localStorage.setItem('farm.locale', 'en');
 });
 
 describe('auth.service', () => {

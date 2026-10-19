@@ -108,7 +108,7 @@ function applyChanges(rawConfig, extracted) {
       config[field] = next;
     }
   }
-  // The browser sends stateName (toGreenhousePayload); older clients and tests send state.
+  // The browser sends stateName (toFarmPayload); older clients and tests send state.
   const currentState = rawConfig.stateName ?? rawConfig.state ?? null;
   if (extracted.state && extracted.state !== UNCHANGED && extracted.state !== currentState) {
     changes.push({ field: "state", from: currentState, to: extracted.state });

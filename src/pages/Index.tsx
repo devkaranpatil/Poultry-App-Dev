@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Box, CheckCircle2, FolderOpen, HelpCircle, LayoutDashboard, Share2, SlidersHorizontal } from 'lucide-react';
-import { DesignSidebar, type DesignTab } from '@/components/greenhouse/DesignSidebar';
+import { DesignSidebar, type DesignTab } from '@/components/farm/DesignSidebar';
 import type { EditablePart } from '@/lib/sceneEdit';
-import { SavedSetupsDialog } from '@/components/greenhouse/SavedSetupsDialog';
+import { SavedSetupsDialog } from '@/components/farm/SavedSetupsDialog';
 import { StepBar } from '@/components/workspace/StepBar';
 import { StepViews } from '@/components/workspace/StepViews';
 import { WelcomeGuide } from '@/components/workspace/WelcomeGuide';
@@ -11,14 +11,14 @@ import { AdvisorWidget } from '@/components/advisor/AdvisorWidget';
 import { hasSeenGuide } from '@/lib/guideStorage';
 import { type StepId } from '@/components/workspace/steps';
 import {
-  GreenhouseConfig,
+  FarmConfig,
   DEFAULT_CONFIG,
   SetupSectionProgress,
-  normalizeGreenhouseConfig,
+  normalizeFarmConfig,
   clampDimension,
-} from '@/types/greenhouse';
+} from '@/types/farm';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { useGreenhouseCalculations } from '@/hooks/useGreenhouseCalculations';
+import { useFarmCalculations } from '@/hooks/useFarmCalculations';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/context/AuthContext';
@@ -34,11 +34,11 @@ import { formatINRCompact } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 const MiddlePanel = lazy(async () => {
-  const module = await import('@/components/greenhouse/MiddlePanel');
+  const module = await import('@/components/farm/MiddlePanel');
   return { default: module.MiddlePanel };
 });
 
-const EMPTY_CONFIG: GreenhouseConfig = normalizeGreenhouseConfig({
+const EMPTY_CONFIG: FarmConfig = normalizeFarmConfig({
   ...DEFAULT_CONFIG,
   length: 0,
   width: 0,
@@ -54,7 +54,7 @@ const AUTO_CALCULATE_DELAY_MS = 600;
 type InitialSource = 'shared' | 'draft' | 'empty';
 type MobileDesignView = 'setup' | 'model';
 
-function readInitialConfig(): { config: GreenhouseConfig; source: InitialSource } {
+function readInitialConfig(): { config: FarmConfig; source: InitialSource } {
   const shared = decodeShareParam(new URLSearchParams(window.location.search).get(SHARE_PARAM));
   if (shared) return { config: shared, source: 'shared' };
   const draft = loadDraft();
@@ -69,7 +69,7 @@ const Index = () => {
   const { token } = useAuth();
 
   const [initial] = useState(readInitialConfig);
-  const [config, setConfig] = useState<GreenhouseConfig>(initial.config);
+  const [config, setConfig] = useState<FarmConfig>(initial.config);
   // Bumped whenever a complete setup arrives from outside the form.
   const [restoredConfigVersion, setRestoredConfigVersion] = useState(initial.source === 'empty' ? 0 : 1);
   const [step, setStep] = useState<StepId>('design');
@@ -107,7 +107,7 @@ const Index = () => {
     defaultFinanceAssumptions(initial.config.selectedCrop)
   );
 
-  const { calculate, isLoading, result, error: calculationError, lastCalculatedKey } = useGreenhouseCalculations();
+  const { calculate, isLoading, result, error: calculationError, lastCalculatedKey } = useFarmCalculations();
   const currentConfigKey = JSON.stringify(config);
   const hasFreshResult = lastCalculatedKey === currentConfigKey;
   const activeResult = hasFreshResult ? result : null;
@@ -143,7 +143,7 @@ const Index = () => {
   const area = config.length * config.width;
   // The 3D scene's geometry scales with the dimensions, so never hand it values
   // beyond the supported limits even while the user is mid-way through typing.
-  const modelConfig = useMemo<GreenhouseConfig>(
+  const modelConfig = useMemo<FarmConfig>(
     () => ({
       ...config,
       length: clampDimension('length', config.length),
@@ -210,7 +210,7 @@ const Index = () => {
   }, [config, t]);
 
   const handleConfigPatch = useCallback(
-    (patch: Partial<GreenhouseConfig>) => setConfig((prev) => normalizeGreenhouseConfig({ ...prev, ...patch })),
+    (patch: Partial<FarmConfig>) => setConfig((prev) => normalizeFarmConfig({ ...prev, ...patch })),
     []
   );
 
@@ -270,7 +270,7 @@ const Index = () => {
   }, []);
 
   const startRecommended = useCallback(() => {
-    setConfig(normalizeGreenhouseConfig({ ...DEFAULT_CONFIG, state: '', district: '' }));
+    setConfig(normalizeFarmConfig({ ...DEFAULT_CONFIG, state: '', district: '' }));
     setRestoredConfigVersion((version) => version + 1);
     setStep('design');
     setMobileDesignView('setup');
@@ -473,7 +473,7 @@ const Index = () => {
         token={token}
         currentConfig={config}
         onLoad={(loaded) => {
-          setConfig(normalizeGreenhouseConfig(loaded));
+          setConfig(normalizeFarmConfig(loaded));
           setRestoredConfigVersion((version) => version + 1);
         }}
         financeAssumptions={financeAssumptions}

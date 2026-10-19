@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { defaultFinanceAssumptions } from '@/lib/finance';
-import { DEFAULT_CONFIG } from '@/types/greenhouse';
+import { DEFAULT_CONFIG } from '@/types/farm';
 import type { AdvisorReport } from '@/services/ai.service';
 import type { Locale } from '@/i18n/messages';
 import { useAiAssistant } from '@/hooks/useAiAssistant';

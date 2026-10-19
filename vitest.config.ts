@@ -19,18 +19,13 @@ export default defineConfig({
         "src/components/ui/**", // generated shadcn primitives
         "src/main.tsx",
         "src/vite-env.d.ts",
-        // Polyhouse variant of the API (same calculator, other field name). Listed by path: a
-        // "*polyhouse*" glob would match the project folder name itself.
-        "src/types/polyhouse.ts",
-        "backend/routes/polyhouse.js",
-        "backend/validators/polyhouseValidator.js",
         "src/hooks/use-toast.ts", // shadcn toast store; the app uses sonner
         "backend/node_modules/**",
         "backend/index.js", // process bootstrap; exercised by the e2e suite
         // Three.js scene graph: needs WebGL, covered by the Playwright e2e suite.
-        "src/components/greenhouse/GreenhouseModel.tsx",
-        "src/components/greenhouse/CameraController.tsx",
-        "src/components/greenhouse/MiddlePanel.tsx",
+        "src/components/farm/FarmModel.tsx",
+        "src/components/farm/CameraController.tsx",
+        "src/components/farm/MiddlePanel.tsx",
       ],
       // Floors, not goals: CI fails if coverage regresses below these.
       thresholds: {

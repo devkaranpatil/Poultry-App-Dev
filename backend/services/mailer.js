@@ -1,4 +1,5 @@
 // Transactional email through Resend's HTTP API (no SMTP server or extra dependency needed).
+const { APP_NAME } = require("../config/app");
 const RESEND_URL = "https://api.resend.com/emails";
 
 function isMailerConfigured() {
@@ -20,11 +21,11 @@ async function sendPasswordResetEmail({ to, name, resetUrl }) {
     body: JSON.stringify({
       from: String(process.env.MAIL_FROM).trim(),
       to: [to],
-      subject: "Reset your Greenhouse IQ password",
+      subject: `Reset your ${APP_NAME} password`,
       text: [
         greeting,
         "",
-        "We received a request to reset your Greenhouse IQ password.",
+        `We received a request to reset your ${APP_NAME} password.`,
         `Open this link within 30 minutes to choose a new password:\n${resetUrl}`,
         "",
         "If you did not request this, you can ignore this email.",

@@ -3,6 +3,7 @@ import { Mail, MessageCircleQuestion, Phone, Sprout } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { TopRightMenu } from "@/components/TopRightMenu";
 import { useI18n } from "@/context/I18nContext";
+import { SUPPORT_EMAIL } from "@/config/app";
 
 export default function SupportPage() {
   const { t } = useI18n();
@@ -32,7 +33,7 @@ export default function SupportPage() {
                 <Mail className="h-4 w-4 text-primary" />
               </div>
               <p className="mt-3 text-sm font-semibold">{t("support.email")}</p>
-              <p className="text-xs text-muted-foreground">support@greenhouseiq.com</p>
+              <p className="text-xs text-muted-foreground">{SUPPORT_EMAIL}</p>
             </Card>
 
             <Card className="rounded-xl p-4">

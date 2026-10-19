@@ -2,11 +2,11 @@
    SHARED CONFIG VALIDATOR
    Location: backend/validators/configValidator.js
 
-   One rule set for both products. greenhouseValidator.js and
-   polyhouseValidator.js only choose the structure-type field name.
+   One rule set. farmValidator.js chooses the structure-type
+   field name.
 ===================================================== */
 
-const DIMENSION_LIMITS = require("../../shared/greenhouse-limits.json");
+const DIMENSION_LIMITS = require("../../shared/farm-limits.json");
 const INDIA_LOCATIONS = require("../../shared/india-locations.json");
 
 /* ===================== HELPERS ===================== */

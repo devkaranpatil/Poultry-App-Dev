@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
-import type { RenderQuality } from '@/components/greenhouse/scene/cropLayout';
-import { createCoverMaterial, createInsectNetMaterial } from '@/components/greenhouse/scene/structureMaterials';
+import type { RenderQuality } from '@/components/farm/scene/cropLayout';
+import { createCoverMaterial, createInsectNetMaterial } from '@/components/farm/scene/structureMaterials';
 
 const QUALITIES: RenderQuality[] = ['high', 'balanced', 'lite'];
 

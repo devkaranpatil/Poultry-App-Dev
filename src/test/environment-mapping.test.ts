@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { INDIAN_DISTRICTS, INDIAN_STATES } from '@/types/greenhouse';
+import { INDIAN_DISTRICTS, INDIAN_STATES } from '@/types/farm';
 import {
   DEFAULT_ENVIRONMENT,
   ENVIRONMENTS,

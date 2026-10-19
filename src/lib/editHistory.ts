@@ -1,6 +1,6 @@
-import type { GreenhouseConfig } from '@/types/greenhouse';
+import type { FarmConfig } from '@/types/farm';
 
-export type ConfigPatch = Partial<GreenhouseConfig>;
+export type ConfigPatch = Partial<FarmConfig>;
 
 /** One undoable step: the values of the changed fields before and after it. */
 export interface HistoryEntry {
@@ -18,7 +18,7 @@ export interface HistoryState {
 }
 
 /** The fields that describe the model. The location is not undone from the 3D view. */
-export const HISTORY_KEYS: Array<keyof GreenhouseConfig> = [
+export const HISTORY_KEYS: Array<keyof FarmConfig> = [
   'length',
   'width',
   'gutterHeight',
@@ -33,7 +33,7 @@ export const HISTORY_KEYS: Array<keyof GreenhouseConfig> = [
   'irrigationSystem',
 ];
 
-const DIMENSION_KEYS = new Set<keyof GreenhouseConfig>(['length', 'width', 'gutterHeight', 'ridgeHeight']);
+const DIMENSION_KEYS = new Set<keyof FarmConfig>(['length', 'width', 'gutterHeight', 'ridgeHeight']);
 
 /** Slider and number changes this close together count as one step. */
 export const MERGE_WINDOW_MS = 800;
@@ -41,16 +41,16 @@ export const HISTORY_LIMIT = 100;
 
 export const EMPTY_HISTORY: HistoryState = { past: [], future: [] };
 
-const assign = (patch: ConfigPatch, key: keyof GreenhouseConfig, value: unknown) => {
+const assign = (patch: ConfigPatch, key: keyof FarmConfig, value: unknown) => {
   (patch as Record<string, unknown>)[key] = value;
 };
 
 /** The step between two configs, or null when no model field changed. */
 export function diffConfig(
-  prev: GreenhouseConfig,
-  next: GreenhouseConfig,
+  prev: FarmConfig,
+  next: FarmConfig,
   at: number,
-  keys: Array<keyof GreenhouseConfig> = HISTORY_KEYS
+  keys: Array<keyof FarmConfig> = HISTORY_KEYS
 ): HistoryEntry | null {
   const before: ConfigPatch = {};
   const after: ConfigPatch = {};
@@ -70,13 +70,13 @@ const sameKeys = (a: ConfigPatch, b: ConfigPatch) => {
 };
 
 const onlyDimensions = (patch: ConfigPatch) =>
-  Object.keys(patch).every((key) => DIMENSION_KEYS.has(key as keyof GreenhouseConfig));
+  Object.keys(patch).every((key) => DIMENSION_KEYS.has(key as keyof FarmConfig));
 
 /** Folds a later step into an earlier one; null when the two cancel out. */
 function merge(first: HistoryEntry, second: HistoryEntry): HistoryEntry | null {
   const before: ConfigPatch = { ...second.before, ...first.before };
   const after: ConfigPatch = { ...first.after, ...second.after };
-  for (const key of Object.keys(after) as Array<keyof GreenhouseConfig>) {
+  for (const key of Object.keys(after) as Array<keyof FarmConfig>) {
     if (before[key] === after[key]) {
       delete before[key];
       delete after[key];
@@ -128,6 +128,6 @@ export function redo(state: HistoryState): { state: HistoryState; patch: ConfigP
 }
 
 /** True when the config already holds every value of a patch. */
-export function configMatches(config: GreenhouseConfig, patch: ConfigPatch): boolean {
-  return (Object.keys(patch) as Array<keyof GreenhouseConfig>).every((key) => config[key] === patch[key]);
+export function configMatches(config: FarmConfig, patch: ConfigPatch): boolean {
+  return (Object.keys(patch) as Array<keyof FarmConfig>).every((key) => config[key] === patch[key]);
 }

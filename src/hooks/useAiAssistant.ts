@@ -14,11 +14,11 @@ import {
 } from '@/services/ai.service';
 import type { FinanceAssumptions, FinancialSummary } from '@/lib/finance';
 import type { Locale } from '@/i18n/messages';
-import type { GreenhouseConfig } from '@/types/greenhouse';
+import type { FarmConfig } from '@/types/farm';
 
 interface UseAiAssistantInput {
   token: string | null;
-  config: GreenhouseConfig;
+  config: FarmConfig;
   assumptions: FinanceAssumptions;
   financials: FinancialSummary | null;
   locale: Locale;

@@ -9,6 +9,7 @@ import { useI18n } from "@/context/I18nContext";
 import { TopRightMenu } from "@/components/TopRightMenu";
 import { BadgeCheck, KeyRound, Link2, Mail, ShieldCheck, Sparkles, Sprout, UserRound, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { APP_NAME } from "@/config/app";
 
 export default function AccountPage() {
   const { t } = useI18n();
@@ -91,7 +92,7 @@ export default function AccountPage() {
         <div className="glass mx-auto flex max-w-5xl items-center justify-between rounded-2xl px-4 py-3">
           <Link to="/" className="inline-flex items-center gap-2 font-semibold">
             <Sprout className="h-5 w-5 text-primary" />
-            Greenhouse IQ
+            {APP_NAME}
           </Link>
           <TopRightMenu />
         </div>

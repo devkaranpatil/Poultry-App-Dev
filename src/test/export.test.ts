@@ -7,12 +7,12 @@ import { buildExcelWorkbook } from '@/lib/export/excelReport';
 import { defaultFinanceAssumptions } from '@/lib/finance';
 import { DEFAULT_LOAN_TERMS } from '@/lib/loan';
 import type { AdvisorReport } from '@/services/ai.service';
-import type { CalculationResult, GreenhouseConfig } from '@/types/greenhouse';
+import type { CalculationResult, FarmConfig } from '@/types/farm';
 
 const require = createRequire(import.meta.url);
-const { runCalculation } = require('../../backend/routes/greenhouse.js');
+const { runCalculation } = require('../../backend/routes/farm.js');
 
-const config: GreenhouseConfig = {
+const config: FarmConfig = {
   length: 30,
   width: 10,
   gutterHeight: 4,
@@ -59,7 +59,7 @@ describe('report data', () => {
     const share = data.costItems.reduce((sum, item) => sum + item.share, 0);
     expect(share).toBeCloseTo(1);
     expect(data.cropsSource).toBe('rules');
-    expect(reportFileName(data, 'pdf')).toBe('greenhouse-north-goa-2026-10-10.pdf');
+    expect(reportFileName(data, 'pdf')).toBe('farm-north-goa-2026-10-10.pdf');
   });
 
   it('carries the loan plan, with the published defaults unless the user changed them', () => {

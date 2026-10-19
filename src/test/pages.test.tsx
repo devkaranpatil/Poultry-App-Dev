@@ -7,26 +7,26 @@ import LoginPage from '@/pages/auth/LoginPage';
 import Landing from '@/pages/Landing';
 import Index from '@/pages/Index';
 import { saveDraft } from '@/lib/configPersistence';
-import { DEFAULT_CONFIG } from '@/types/greenhouse';
+import { DEFAULT_CONFIG } from '@/types/farm';
 import { authMock, makeSession, supabaseModule } from './helpers/mockSupabase';
 import * as calculationService from '@/services/calculation.service';
 
 vi.mock('@/lib/supabase', async () => (await import('./helpers/mockSupabase')).supabaseModule);
 vi.mock('@/services/calculation.service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/services/calculation.service')>();
-  return { ...actual, calculateGreenhouse: vi.fn() };
+  return { ...actual, calculateFarm: vi.fn() };
 });
 vi.mock('@/services/ai.service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/services/ai.service')>();
   return { ...actual, getAiStatus: vi.fn().mockResolvedValue({ enabled: false, model: null }) };
 });
 // WebGL is unavailable in jsdom; the 3D viewer is covered by the Playwright suite.
-vi.mock('@/components/greenhouse/MiddlePanel', () => ({ MiddlePanel: () => <div data-testid="viewer" /> }));
+vi.mock('@/components/farm/MiddlePanel', () => ({ MiddlePanel: () => <div data-testid="viewer" /> }));
 
 const supa = vi.mocked(supabaseModule.supabase.auth);
 const calc = vi.mocked(calculationService);
 function wrap(ui: React.ReactElement, path = '/') {
-  window.localStorage.setItem('greenhouse.locale', 'en');
+  window.localStorage.setItem('farm.locale', 'en');
   return render(
     <MemoryRouter initialEntries={[path]}>
       <I18nProvider>
@@ -140,14 +140,14 @@ describe('Workspace (Index)', () => {
 
   it('restores the saved draft and calculates it automatically', async () => {
     authMock.setSession(makeSession());
-    calc.calculateGreenhouse.mockResolvedValue(result);
+    calc.calculateFarm.mockResolvedValue(result);
     saveDraft({ ...DEFAULT_CONFIG, state: 'Goa', district: 'North Goa' });
 
     wrap(<Index />, '/visualizer');
 
     expect(await screen.findByText('North Goa, Goa')).toBeInTheDocument();
-    await waitFor(() => expect(calc.calculateGreenhouse).toHaveBeenCalledTimes(1), { timeout: 3000 });
-    expect(calc.calculateGreenhouse.mock.calls[0][0]).toMatchObject({ state: 'Goa', district: 'North Goa' });
+    await waitFor(() => expect(calc.calculateFarm).toHaveBeenCalledTimes(1), { timeout: 3000 });
+    expect(calc.calculateFarm.mock.calls[0][0]).toMatchObject({ state: 'Goa', district: 'North Goa' });
     expect(await screen.findByText('₹4.95 L')).toBeInTheDocument();
   });
 
@@ -155,7 +155,7 @@ describe('Workspace (Index)', () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
     saveDraft({ ...DEFAULT_CONFIG, state: 'Goa', district: 'North Goa' });
-    calc.calculateGreenhouse.mockResolvedValue(result);
+    calc.calculateFarm.mockResolvedValue(result);
 
     wrap(<Index />, '/visualizer');
     fireEvent.click(await screen.findByRole('button', { name: 'Share' }));

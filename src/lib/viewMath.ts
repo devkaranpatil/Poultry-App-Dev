@@ -4,8 +4,8 @@
  * orbit like Blender's numpad, the orientation gizmo, and where each named view puts the camera.
  */
 
-import type { GreenhouseConfig } from '@/types/greenhouse';
-import { antechamber } from '@/components/greenhouse/scene/structureLayout';
+import type { FarmConfig } from '@/types/farm';
+import { antechamber } from '@/components/farm/scene/structureLayout';
 
 export type Vec3 = [number, number, number];
 
@@ -239,7 +239,7 @@ export type CameraPreset =
   | 'focus-irrigation'
   | 'focus-climate';
 
-export type HouseShape = Pick<GreenhouseConfig, 'length' | 'width' | 'gutterHeight' | 'ridgeHeight' | 'greenhouseType' | 'doorEntry'>;
+export type HouseShape = Pick<FarmConfig, 'length' | 'width' | 'gutterHeight' | 'ridgeHeight' | 'greenhouseType' | 'doorEntry'>;
 
 /** Eye height of someone standing beside the house. */
 const EYE = 1.7;

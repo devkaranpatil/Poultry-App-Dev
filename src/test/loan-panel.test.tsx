@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { LoanPanel } from '@/components/greenhouse/LoanPanel';
+import { LoanPanel } from '@/components/farm/LoanPanel';
 import { I18nProvider } from '@/context/I18nContext';
 import { computeFinancials } from '@/lib/finance';
 import { DEFAULT_LOAN_TERMS, type LoanTerms } from '@/lib/loan';

@@ -12,7 +12,7 @@ router.get("/", (req, res) => {
     res,
     {
       status: "healthy",
-      service: "greenhouse-backend",
+      service: "farm-backend",
       uptimeSeconds,
       nodeVersion: process.version,
       env: process.env.NODE_ENV || "development",
