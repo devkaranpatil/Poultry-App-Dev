@@ -1,0 +1,64 @@
+name: 3D scene coverage
+
+# The @scene tests open every setup option in the 3D viewer and compare screenshots. GitHub runners have no GPU,
+# so WebGL runs on the CPU (SwiftShader) and the sweep takes far longer than the 25-minute e2e job allows.
+# It runs here instead: when the 3D code changes, once a week, and on demand.
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "src/components/greenhouse/**"
+      - "src/lib/sceneEdit.ts"
+      - "src/lib/renderCapability.ts"
+      - "e2e/scene-options.spec.ts"
+  schedule:
+    # Mondays 02:00 UTC.
+    - cron: "0 2 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scene-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scene:
+    name: 3D models for every option
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm ci --prefix backend
+
+      - name: Install Playwright Chromium
+        run: npm run test:e2e:install
+
+      - name: Run the 3D scene sweep
+        run: npm run test:e2e:scene
+
+      - name: Upload screenshots and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scene-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14

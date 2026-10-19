@@ -1,0 +1,318 @@
+/* Greenhouse IQ design system: clean agri-tech.
+   Off-white canvas, white cards, 1px borders, one deep-green accent. */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 140 20% 97.5%;
+    --foreground: 155 18% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 155 18% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 155 18% 11%;
+
+    /* Deep field green */
+    --primary: 153 56% 27%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 140 14% 93%;
+    --secondary-foreground: 155 18% 16%;
+
+    --muted: 140 14% 95%;
+    --muted-foreground: 155 6% 40%;
+
+    /* Soft green surface for selected / highlighted states */
+    --accent: 148 38% 93%;
+    --accent-foreground: 153 56% 22%;
+
+    --destructive: 4 66% 47%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 140 12% 88%;
+    --input: 140 10% 84%;
+    --ring: 153 56% 27%;
+
+    --radius: 0.625rem;
+
+    --success: 153 56% 32%;
+    --warning: 35 92% 42%;
+    --info: 206 72% 42%;
+
+    --shadow-soft: 0 1px 2px hsl(155 18% 11% / 0.05);
+    --shadow-card: 0 1px 3px hsl(155 18% 11% / 0.06), 0 1px 2px hsl(155 18% 11% / 0.04);
+    --shadow-elevated: 0 10px 30px -10px hsl(155 18% 11% / 0.18);
+
+    --panel-left: 0 0% 100%;
+    --panel-middle: 140 16% 96%;
+    --panel-right: 0 0% 100%;
+
+    --scene-ground: 35 30% 65%;
+    --scene-structure: 35 25% 55%;
+    --scene-cover: 120 35% 75%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 155 18% 11%;
+    --sidebar-primary: 153 56% 27%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 148 38% 93%;
+    --sidebar-accent-foreground: 153 56% 22%;
+    --sidebar-border: 140 12% 88%;
+    --sidebar-ring: 153 56% 27%;
+  }
+
+  .dark {
+    --background: 155 14% 6.5%;
+    --foreground: 140 12% 93%;
+
+    --card: 155 12% 9.5%;
+    --card-foreground: 140 12% 93%;
+
+    --popover: 155 12% 10.5%;
+    --popover-foreground: 140 12% 93%;
+
+    --primary: 152 48% 46%;
+    --primary-foreground: 155 30% 6%;
+
+    --secondary: 155 10% 15%;
+    --secondary-foreground: 140 12% 90%;
+
+    --muted: 155 10% 13%;
+    --muted-foreground: 145 6% 62%;
+
+    --accent: 153 30% 15%;
+    --accent-foreground: 150 45% 72%;
+
+    --destructive: 4 62% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 155 9% 18%;
+    --input: 155 9% 22%;
+    --ring: 152 48% 46%;
+
+    --success: 152 48% 46%;
+    --warning: 38 88% 55%;
+    --info: 206 70% 60%;
+
+    --shadow-soft: 0 1px 2px hsl(0 0% 0% / 0.4);
+    --shadow-card: 0 1px 3px hsl(0 0% 0% / 0.45);
+    --shadow-elevated: 0 12px 32px -10px hsl(0 0% 0% / 0.6);
+
+    --panel-left: 155 12% 9.5%;
+    --panel-middle: 155 12% 8%;
+    --panel-right: 155 12% 9.5%;
+
+    --sidebar-background: 155 12% 9.5%;
+    --sidebar-foreground: 140 12% 93%;
+    --sidebar-primary: 152 48% 46%;
+    --sidebar-primary-foreground: 155 30% 6%;
+    --sidebar-accent: 153 30% 15%;
+    --sidebar-accent-foreground: 150 45% 72%;
+    --sidebar-border: 155 9% 18%;
+    --sidebar-ring: 152 48% 46%;
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display tracking-tight;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.18);
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Surfaces */
+  .surface {
+    @apply rounded-xl border border-border bg-card shadow-card;
+  }
+
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground;
+  }
+
+  .kpi-value {
+    @apply font-display text-xl font-semibold tabular-nums tracking-tight text-foreground;
+  }
+
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 999px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* Rows that scroll sideways on phones (tab strips) without a visible bar. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* 3D viewer */
+  .panel-middle {
+    background: hsl(var(--panel-middle));
+  }
+
+  .canvas-container {
+    @apply relative h-full w-full overflow-hidden;
+  }
+
+  .pulse-dot {
+    @apply h-2 w-2 rounded-full bg-primary;
+    animation: pulse-dot 1.2s ease-in-out infinite;
+  }
+
+  .badge-info {
+    @apply inline-flex items-center rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-foreground;
+  }
+
+  .metric-card {
+    @apply rounded-xl border border-border bg-card p-4;
+  }
+
+  /* Compatibility: older class names now render as flat, solid surfaces so
+     any remaining usage matches the design system. */
+  .glass,
+  .glass-card,
+  .glass-section,
+  .glass-shell {
+    @apply border border-border bg-card;
+  }
+
+  .glass-elevated {
+    @apply border border-border bg-card shadow-elevated;
+  }
+
+  .glass-pill,
+  .glass-chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-border bg-card;
+  }
+
+  .panel-right {
+    background: hsl(var(--panel-right));
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ===== Interaction layer (src/components/motion/InteractionLayer.tsx) ===== */
+@layer components {
+  .fx-progress {
+    position: fixed; top: 0; left: 0; right: 0; height: 2px;
+    transform-origin: 0 50%; background: hsl(var(--primary));
+    z-index: 50; pointer-events: none;
+  }
+  .fx-cursor {
+    position: fixed; top: 0; left: 0; width: 34px; height: 34px; margin: -17px 0 0 -17px;
+    border-radius: 999px; border: 1.5px solid hsl(var(--primary) / 0.7);
+    background: hsl(var(--primary) / 0.08);
+    pointer-events: none; z-index: 160; opacity: 0; transition: opacity 0.2s ease;
+  }
+  .fx-burst-host { position: fixed; inset: 0; pointer-events: none; z-index: 155; overflow: hidden; }
+  .fx-ripple {
+    position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 999px;
+    border: 2px solid hsl(var(--primary) / 0.7); animation: fx-ripple 0.65s ease-out forwards;
+  }
+  .fx-sparks { position: absolute; width: 0; height: 0; }
+  .fx-sparks i {
+    position: absolute; width: 5px; height: 5px; margin: -2.5px; border-radius: 999px;
+    background: hsl(var(--primary)); animation: fx-spark 0.6s ease-out forwards;
+  }
+  @keyframes fx-ripple { to { transform: scale(9); opacity: 0; } }
+  @keyframes fx-spark { to { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; } }
+
+  /* Cursor spotlight on cards: --px/--py are written by InteractionLayer. */
+  .surface, [data-spotlight] { position: relative; }
+  .surface::before, [data-spotlight]::before {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    opacity: 0; transition: opacity 0.25s ease;
+    background: radial-gradient(240px circle at var(--px, 50%) var(--py, 50%), hsl(var(--primary) / 0.13), transparent 65%);
+  }
+  .surface:hover::before, [data-spotlight]:hover::before { opacity: 1; }
+
+  /* 3D tilt toward the pointer. */
+  [data-tilt] {
+    transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition: transform 0.2s ease-out, box-shadow 0.25s ease, border-color 0.25s ease;
+    will-change: transform;
+  }
+  [data-tilt]:hover { border-color: hsl(var(--primary) / 0.45); box-shadow: 0 14px 34px -14px hsl(var(--primary) / 0.35); }
+
+  /* Magnetic buttons lean toward the pointer and squash on press. */
+  [data-magnetic] {
+    transform: translate(var(--mx, 0px), var(--my, 0px));
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  [data-magnetic]:active { transform: translate(var(--mx, 0px), var(--my, 0px)) scale(0.96); }
+
+  @media (pointer: coarse) {
+    .fx-cursor, .fx-burst-host { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-tilt], [data-magnetic] { transform: none !important; }
+    .surface::before, [data-spotlight]::before { display: none; }
+  }
+}

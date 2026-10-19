@@ -1,0 +1,4 @@
+{
+  "source": "Not imported yet. Run datasets/scripts/build_rainfall_profiles.mjs on the IMD district rainfall normals (data.gov.in, 1951-2000); see datasets/README.md",
+  "districts": {}
+}

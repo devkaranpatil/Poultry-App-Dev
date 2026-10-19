@@ -1,0 +1,6 @@
+{
+  "length": { "min": 5, "max": 200 },
+  "width": { "min": 5, "max": 100 },
+  "gutterHeight": { "min": 2, "max": 8 },
+  "ridgeHeight": { "min": 3, "max": 12 }
+}

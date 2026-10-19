@@ -1,0 +1,2318 @@
+{
+ "source": "NASA POWER 25-year monthly climatology (2001-2025), community AG, parameters T2M and RH2M; see datasets/README.md",
+ "generatedFrom": "datasets/csv/district_climate_monthly.csv",
+ "states": {
+  "Andhra Pradesh": {
+   "districts": 8,
+   "annualMeanTempC": 27.2,
+   "annualHumidityPct": 69,
+   "hottestMonthMeanC": 32.1
+  },
+  "Assam": {
+   "districts": 22,
+   "annualMeanTempC": 23.5,
+   "annualHumidityPct": 76,
+   "hottestMonthMeanC": 28.2
+  },
+  "Bihar": {
+   "districts": 33,
+   "annualMeanTempC": 25.9,
+   "annualHumidityPct": 58,
+   "hottestMonthMeanC": 33.9
+  },
+  "Chhattisgarh": {
+   "districts": 22,
+   "annualMeanTempC": 25.4,
+   "annualHumidityPct": 62,
+   "hottestMonthMeanC": 34.3
+  },
+  "Gujarat": {
+   "districts": 20,
+   "annualMeanTempC": 27.3,
+   "annualHumidityPct": 55,
+   "hottestMonthMeanC": 33.4
+  },
+  "Haryana": {
+   "districts": 22,
+   "annualMeanTempC": 25.5,
+   "annualHumidityPct": 44,
+   "hottestMonthMeanC": 35.6
+  },
+  "Himachal Pradesh": {
+   "districts": 10,
+   "annualMeanTempC": 17.4,
+   "annualHumidityPct": 53,
+   "hottestMonthMeanC": 26.2
+  },
+  "Jharkhand": {
+   "districts": 19,
+   "annualMeanTempC": 24.6,
+   "annualHumidityPct": 63,
+   "hottestMonthMeanC": 32.5
+  },
+  "Karnataka": {
+   "districts": 23,
+   "annualMeanTempC": 25.1,
+   "annualHumidityPct": 65,
+   "hottestMonthMeanC": 30.1
+  },
+  "Kerala": {
+   "districts": 13,
+   "annualMeanTempC": 26.1,
+   "annualHumidityPct": 79,
+   "hottestMonthMeanC": 28.5
+  },
+  "Madhya Pradesh": {
+   "districts": 48,
+   "annualMeanTempC": 25.6,
+   "annualHumidityPct": 52,
+   "hottestMonthMeanC": 34.9
+  },
+  "Maharashtra": {
+   "districts": 31,
+   "annualMeanTempC": 26.3,
+   "annualHumidityPct": 58,
+   "hottestMonthMeanC": 33.4
+  },
+  "Manipur": {
+   "districts": 12,
+   "annualMeanTempC": 21.4,
+   "annualHumidityPct": 73,
+   "hottestMonthMeanC": 25.1
+  },
+  "Mizoram": {
+   "districts": 10,
+   "annualMeanTempC": 22.1,
+   "annualHumidityPct": 74,
+   "hottestMonthMeanC": 25.1
+  },
+  "Nagaland": {
+   "districts": 13,
+   "annualMeanTempC": 20.2,
+   "annualHumidityPct": 75,
+   "hottestMonthMeanC": 24.8
+  },
+  "Odisha": {
+   "districts": 25,
+   "annualMeanTempC": 26,
+   "annualHumidityPct": 69,
+   "hottestMonthMeanC": 32.8
+  },
+  "Punjab": {
+   "districts": 20,
+   "annualMeanTempC": 25.3,
+   "annualHumidityPct": 42,
+   "hottestMonthMeanC": 35.8
+  },
+  "Rajasthan": {
+   "districts": 41,
+   "annualMeanTempC": 26.2,
+   "annualHumidityPct": 42,
+   "hottestMonthMeanC": 35.1
+  },
+  "Sikkim": {
+   "districts": 6,
+   "annualMeanTempC": 12.6,
+   "annualHumidityPct": 71,
+   "hottestMonthMeanC": 18.1
+  },
+  "Tamil Nadu": {
+   "districts": 33,
+   "annualMeanTempC": 27.2,
+   "annualHumidityPct": 71,
+   "hottestMonthMeanC": 30.6
+  },
+  "Telangana": {
+   "districts": 20,
+   "annualMeanTempC": 27.1,
+   "annualHumidityPct": 59,
+   "hottestMonthMeanC": 34.7
+  },
+  "Tripura": {
+   "districts": 1,
+   "annualMeanTempC": 24.6,
+   "annualHumidityPct": 78,
+   "hottestMonthMeanC": 27.9
+  },
+  "Uttar Pradesh": {
+   "districts": 66,
+   "annualMeanTempC": 25.9,
+   "annualHumidityPct": 50,
+   "hottestMonthMeanC": 35.6
+  },
+  "Uttarakhand": {
+   "districts": 10,
+   "annualMeanTempC": 16.4,
+   "annualHumidityPct": 56,
+   "hottestMonthMeanC": 23.9
+  },
+  "West Bengal": {
+   "districts": 12,
+   "annualMeanTempC": 24.3,
+   "annualHumidityPct": 69,
+   "hottestMonthMeanC": 30.2
+  }
+ },
+ "districts": {
+  "Andhra Pradesh|Anantapur": {
+   "hottestMonthMeanC": 31.9,
+   "hottestMonth": "APR"
+  },
+  "Andhra Pradesh|Chittoor": {
+   "hottestMonthMeanC": 31.5,
+   "hottestMonth": "MAY"
+  },
+  "Andhra Pradesh|Guntur": {
+   "hottestMonthMeanC": 33.7,
+   "hottestMonth": "MAY"
+  },
+  "Andhra Pradesh|Kurnool": {
+   "hottestMonthMeanC": 33.5,
+   "hottestMonth": "MAY"
+  },
+  "Andhra Pradesh|Srikakulam": {
+   "hottestMonthMeanC": 32.1,
+   "hottestMonth": "MAY"
+  },
+  "Andhra Pradesh|Visakhapatnam": {
+   "hottestMonthMeanC": 30.9,
+   "hottestMonth": "MAY"
+  },
+  "Andhra Pradesh|Vizianagaram": {
+   "hottestMonthMeanC": 31.2,
+   "hottestMonth": "MAY"
+  },
+  "Andhra Pradesh|West Godavari": {
+   "hottestMonthMeanC": 32.4,
+   "hottestMonth": "MAY"
+  },
+  "Assam|Barpeta": {
+   "hottestMonthMeanC": 29.2,
+   "hottestMonth": "JUN"
+  },
+  "Assam|Biswanath": {
+   "hottestMonthMeanC": 28.3,
+   "hottestMonth": "AUG"
+  },
+  "Assam|Bongaigaon": {
+   "hottestMonthMeanC": 29,
+   "hottestMonth": "JUN"
+  },
+  "Assam|Darrang": {
+   "hottestMonthMeanC": 29.1,
+   "hottestMonth": "JUN"
+  },
+  "Assam|Dhemaji": {
+   "hottestMonthMeanC": 27.1,
+   "hottestMonth": "AUG"
+  },
+  "Assam|Dhubri": {
+   "hottestMonthMeanC": 29.3,
+   "hottestMonth": "JUN"
+  },
+  "Assam|Dibrugarh": {
+   "hottestMonthMeanC": 29.7,
+   "hottestMonth": "AUG"
+  },
+  "Assam|Goalpara": {
+   "hottestMonthMeanC": 29,
+   "hottestMonth": "JUN"
+  },
+  "Assam|Golaghat": {
+   "hottestMonthMeanC": 28.5,
+   "hottestMonth": "JUN"
+  },
+  "Assam|Hailakandi": {
+   "hottestMonthMeanC": 28.5,
+   "hottestMonth": "AUG"
+  },
+  "Assam|Hojai": {
+   "hottestMonthMeanC": 28.5,
+   "hottestMonth": "JUN"
+  },
+  "Assam|Jorhat": {
+   "hottestMonthMeanC": 28.9,
+   "hottestMonth": "AUG"
+  },
+  "Assam|Karimganj": {
+   "hottestMonthMeanC": 27.5,
+   "hottestMonth": "AUG"
+  },
+  "Assam|Kokrajhar": {
+   "hottestMonthMeanC": 28.6,
+   "hottestMonth": "JUN"
+  },
+  "Assam|Lakhimpur": {
+   "hottestMonthMeanC": 28.9,
+   "hottestMonth": "AUG"
+  },
+  "Assam|Majuli": {
+   "hottestMonthMeanC": 28.9,
+   "hottestMonth": "AUG"
+  },
+  "Assam|Morigaon": {
+   "hottestMonthMeanC": 27.9,
+   "hottestMonth": "JUN"
+  },
+  "Assam|Nagaon": {
+   "hottestMonthMeanC": 29.1,
+   "hottestMonth": "JUN"
+  },
+  "Assam|Nalbari": {
+   "hottestMonthMeanC": 29.2,
+   "hottestMonth": "JUN"
+  },
+  "Assam|Sonitpur": {
+   "hottestMonthMeanC": 24.5,
+   "hottestMonth": "AUG"
+  },
+  "Assam|Tinsukia": {
+   "hottestMonthMeanC": 29.6,
+   "hottestMonth": "AUG"
+  },
+  "Assam|Udalguri": {
+   "hottestMonthMeanC": 22,
+   "hottestMonth": "AUG"
+  },
+  "Bihar|Araria": {
+   "hottestMonthMeanC": 31.9,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Arwal": {
+   "hottestMonthMeanC": 35.4,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Aurangabad": {
+   "hottestMonthMeanC": 35.4,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Banka": {
+   "hottestMonthMeanC": 33,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Begusarai": {
+   "hottestMonthMeanC": 34,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Bhagalpur": {
+   "hottestMonthMeanC": 33,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Bhojpur": {
+   "hottestMonthMeanC": 35.2,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Buxar": {
+   "hottestMonthMeanC": 35.6,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Darbhanga": {
+   "hottestMonthMeanC": 34.1,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Gaya": {
+   "hottestMonthMeanC": 35.1,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Gopalganj": {
+   "hottestMonthMeanC": 34.1,
+   "hottestMonth": "JUN"
+  },
+  "Bihar|Jamui": {
+   "hottestMonthMeanC": 33.8,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Jehanabad": {
+   "hottestMonthMeanC": 35.1,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Katihar": {
+   "hottestMonthMeanC": 32.5,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Khagaria": {
+   "hottestMonthMeanC": 34,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Kishanganj": {
+   "hottestMonthMeanC": 31.1,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Madhepura": {
+   "hottestMonthMeanC": 32.7,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Madhubani": {
+   "hottestMonthMeanC": 32.4,
+   "hottestMonth": "JUN"
+  },
+  "Bihar|Munger": {
+   "hottestMonthMeanC": 34,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Muzaffarpur": {
+   "hottestMonthMeanC": 34.1,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Nawada": {
+   "hottestMonthMeanC": 34.5,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Patna": {
+   "hottestMonthMeanC": 35,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Purnia": {
+   "hottestMonthMeanC": 31.9,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Rohtas": {
+   "hottestMonthMeanC": 35.1,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Saharsa": {
+   "hottestMonthMeanC": 32.7,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Samastipur": {
+   "hottestMonthMeanC": 34.1,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Saran": {
+   "hottestMonthMeanC": 35,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Sheikhpura": {
+   "hottestMonthMeanC": 34.5,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Sheohar": {
+   "hottestMonthMeanC": 33.7,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Sitamarhi": {
+   "hottestMonthMeanC": 33.3,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Siwan": {
+   "hottestMonthMeanC": 34.7,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Supaul": {
+   "hottestMonthMeanC": 32.7,
+   "hottestMonth": "MAY"
+  },
+  "Bihar|Vaishali": {
+   "hottestMonthMeanC": 34.5,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Balod": {
+   "hottestMonthMeanC": 34.8,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Baloda Bazar": {
+   "hottestMonthMeanC": 36.3,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Balrampur": {
+   "hottestMonthMeanC": 32.3,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Bastar": {
+   "hottestMonthMeanC": 31.8,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Bemetara": {
+   "hottestMonthMeanC": 36,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Bijapur": {
+   "hottestMonthMeanC": 34.1,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Bilaspur": {
+   "hottestMonthMeanC": 36.1,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Dhamtari": {
+   "hottestMonthMeanC": 34.8,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Durg": {
+   "hottestMonthMeanC": 35.8,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Gariaband": {
+   "hottestMonthMeanC": 34.6,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Jashpur": {
+   "hottestMonthMeanC": 31.8,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Kanker": {
+   "hottestMonthMeanC": 34.8,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Kondagaon": {
+   "hottestMonthMeanC": 31.8,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Korba": {
+   "hottestMonthMeanC": 34.9,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Mahasamund": {
+   "hottestMonthMeanC": 35.8,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Mungeli": {
+   "hottestMonthMeanC": 36.1,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Narayanpur": {
+   "hottestMonthMeanC": 32.3,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Raigarh": {
+   "hottestMonthMeanC": 35.6,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Raipur": {
+   "hottestMonthMeanC": 35.8,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Sukma": {
+   "hottestMonthMeanC": 32.4,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Surajpur": {
+   "hottestMonthMeanC": 32.8,
+   "hottestMonth": "MAY"
+  },
+  "Chhattisgarh|Surguja": {
+   "hottestMonthMeanC": 34.9,
+   "hottestMonth": "MAY"
+  },
+  "Gujarat|Ahmedabad": {
+   "hottestMonthMeanC": 35.1,
+   "hottestMonth": "MAY"
+  },
+  "Gujarat|Amreli": {
+   "hottestMonthMeanC": 33.1,
+   "hottestMonth": "MAY"
+  },
+  "Gujarat|Anand": {
+   "hottestMonthMeanC": 35,
+   "hottestMonth": "MAY"
+  },
+  "Gujarat|Bharuch": {
+   "hottestMonthMeanC": 33.3,
+   "hottestMonth": "MAY"
+  },
+  "Gujarat|Bhavnagar": {
+   "hottestMonthMeanC": 35,
+   "hottestMonth": "MAY"
+  },
+  "Gujarat|Botad": {
+   "hottestMonthMeanC": 35,
+   "hottestMonth": "MAY"
+  },
+  "Gujarat|Gandhinagar": {
+   "hottestMonthMeanC": 35.1,
+   "hottestMonth": "MAY"
+  },
+  "Gujarat|Jamnagar": {
+   "hottestMonthMeanC": 30.9,
+   "hottestMonth": "JUN"
+  },
+  "Gujarat|Junagadh": {
+   "hottestMonthMeanC": 32,
+   "hottestMonth": "MAY"
+  },
+  "Gujarat|Kheda": {
+   "hottestMonthMeanC": 35.1,
+   "hottestMonth": "MAY"
+  },
+  "Gujarat|Mehsana": {
+   "hottestMonthMeanC": 34.7,
+   "hottestMonth": "MAY"
+  },
+  "Gujarat|Navsari": {
+   "hottestMonthMeanC": 32.3,
+   "hottestMonth": "MAY"
+  },
+  "Gujarat|Patan": {
+   "hottestMonthMeanC": 34.6,
+   "hottestMonth": "MAY"
+  },
+  "Gujarat|Porbandar": {
+   "hottestMonthMeanC": 29.5,
+   "hottestMonth": "JUN"
+  },
+  "Gujarat|Rajkot": {
+   "hottestMonthMeanC": 32.3,
+   "hottestMonth": "MAY"
+  },
+  "Gujarat|Surat": {
+   "hottestMonthMeanC": 32.3,
+   "hottestMonth": "MAY"
+  },
+  "Gujarat|Surendranagar": {
+   "hottestMonthMeanC": 34.8,
+   "hottestMonth": "MAY"
+  },
+  "Gujarat|Vadodara": {
+   "hottestMonthMeanC": 35,
+   "hottestMonth": "MAY"
+  },
+  "Gujarat|Valsad": {
+   "hottestMonthMeanC": 31.4,
+   "hottestMonth": "MAY"
+  },
+  "Gujarat|Vapi": {
+   "hottestMonthMeanC": 31.4,
+   "hottestMonth": "MAY"
+  },
+  "Haryana|Ambala": {
+   "hottestMonthMeanC": 33.8,
+   "hottestMonth": "JUN"
+  },
+  "Haryana|Bhiwani": {
+   "hottestMonthMeanC": 35.8,
+   "hottestMonth": "JUN"
+  },
+  "Haryana|Charkhi Dadri": {
+   "hottestMonthMeanC": 35.8,
+   "hottestMonth": "JUN"
+  },
+  "Haryana|Faridabad": {
+   "hottestMonthMeanC": 35.9,
+   "hottestMonth": "JUN"
+  },
+  "Haryana|Fatehabad": {
+   "hottestMonthMeanC": 36.1,
+   "hottestMonth": "JUN"
+  },
+  "Haryana|Gurugram": {
+   "hottestMonthMeanC": 35.8,
+   "hottestMonth": "JUN"
+  },
+  "Haryana|Hisar": {
+   "hottestMonthMeanC": 36.1,
+   "hottestMonth": "JUN"
+  },
+  "Haryana|Jhajjar": {
+   "hottestMonthMeanC": 35.8,
+   "hottestMonth": "JUN"
+  },
+  "Haryana|Jind": {
+   "hottestMonthMeanC": 35.8,
+   "hottestMonth": "JUN"
+  },
+  "Haryana|Kaithal": {
+   "hottestMonthMeanC": 35.8,
+   "hottestMonth": "JUN"
+  },
+  "Haryana|Karnal": {
+   "hottestMonthMeanC": 35.5,
+   "hottestMonth": "JUN"
+  },
+  "Haryana|Kurukshetra": {
+   "hottestMonthMeanC": 35.2,
+   "hottestMonth": "JUN"
+  },
+  "Haryana|Mahendragarh": {
+   "hottestMonthMeanC": 35.8,
+   "hottestMonth": "JUN"
+  },
+  "Haryana|Nuh": {
+   "hottestMonthMeanC": 35.8,
+   "hottestMonth": "JUN"
+  },
+  "Haryana|Palwal": {
+   "hottestMonthMeanC": 36.2,
+   "hottestMonth": "JUN"
+  },
+  "Haryana|Panchkula": {
+   "hottestMonthMeanC": 33.8,
+   "hottestMonth": "JUN"
+  },
+  "Haryana|Panipat": {
+   "hottestMonthMeanC": 35.5,
+   "hottestMonth": "JUN"
+  },
+  "Haryana|Rewari": {
+   "hottestMonthMeanC": 35.8,
+   "hottestMonth": "JUN"
+  },
+  "Haryana|Rohtak": {
+   "hottestMonthMeanC": 35.8,
+   "hottestMonth": "JUN"
+  },
+  "Haryana|Sirsa": {
+   "hottestMonthMeanC": 36.4,
+   "hottestMonth": "JUN"
+  },
+  "Haryana|Sonipat": {
+   "hottestMonthMeanC": 35.8,
+   "hottestMonth": "JUN"
+  },
+  "Haryana|Yamunanagar": {
+   "hottestMonthMeanC": 34.3,
+   "hottestMonth": "JUN"
+  },
+  "Himachal Pradesh|Bilaspur": {
+   "hottestMonthMeanC": 27.4,
+   "hottestMonth": "JUN"
+  },
+  "Himachal Pradesh|Chamba": {
+   "hottestMonthMeanC": 19.3,
+   "hottestMonth": "JUN"
+  },
+  "Himachal Pradesh|Hamirpur": {
+   "hottestMonthMeanC": 33.8,
+   "hottestMonth": "JUN"
+  },
+  "Himachal Pradesh|Kangra": {
+   "hottestMonthMeanC": 28.9,
+   "hottestMonth": "JUN"
+  },
+  "Himachal Pradesh|Kinnaur": {
+   "hottestMonthMeanC": 11,
+   "hottestMonth": "JUL"
+  },
+  "Himachal Pradesh|Kullu": {
+   "hottestMonthMeanC": 19.7,
+   "hottestMonth": "JUN"
+  },
+  "Himachal Pradesh|Mandi": {
+   "hottestMonthMeanC": 27.4,
+   "hottestMonth": "JUN"
+  },
+  "Himachal Pradesh|Shimla": {
+   "hottestMonthMeanC": 30.3,
+   "hottestMonth": "JUN"
+  },
+  "Himachal Pradesh|Solan": {
+   "hottestMonthMeanC": 30.3,
+   "hottestMonth": "JUN"
+  },
+  "Himachal Pradesh|Una": {
+   "hottestMonthMeanC": 33.8,
+   "hottestMonth": "JUN"
+  },
+  "Jharkhand|Bokaro": {
+   "hottestMonthMeanC": 32.7,
+   "hottestMonth": "MAY"
+  },
+  "Jharkhand|Chatra": {
+   "hottestMonthMeanC": 33.1,
+   "hottestMonth": "MAY"
+  },
+  "Jharkhand|Deoghar": {
+   "hottestMonthMeanC": 32.3,
+   "hottestMonth": "MAY"
+  },
+  "Jharkhand|Dhanbad": {
+   "hottestMonthMeanC": 32.6,
+   "hottestMonth": "MAY"
+  },
+  "Jharkhand|Dumka": {
+   "hottestMonthMeanC": 32.2,
+   "hottestMonth": "MAY"
+  },
+  "Jharkhand|Garhwa": {
+   "hottestMonthMeanC": 34.6,
+   "hottestMonth": "MAY"
+  },
+  "Jharkhand|Giridih": {
+   "hottestMonthMeanC": 32.6,
+   "hottestMonth": "MAY"
+  },
+  "Jharkhand|Godda": {
+   "hottestMonthMeanC": 32.3,
+   "hottestMonth": "MAY"
+  },
+  "Jharkhand|Gumla": {
+   "hottestMonthMeanC": 31.8,
+   "hottestMonth": "MAY"
+  },
+  "Jharkhand|Hazaribagh": {
+   "hottestMonthMeanC": 32.5,
+   "hottestMonth": "MAY"
+  },
+  "Jharkhand|Jamtara": {
+   "hottestMonthMeanC": 32.4,
+   "hottestMonth": "MAY"
+  },
+  "Jharkhand|Khunti": {
+   "hottestMonthMeanC": 32,
+   "hottestMonth": "MAY"
+  },
+  "Jharkhand|Latehar": {
+   "hottestMonthMeanC": 31.8,
+   "hottestMonth": "MAY"
+  },
+  "Jharkhand|Lohardaga": {
+   "hottestMonthMeanC": 31.8,
+   "hottestMonth": "MAY"
+  },
+  "Jharkhand|Pakur": {
+   "hottestMonthMeanC": 32.3,
+   "hottestMonth": "MAY"
+  },
+  "Jharkhand|Palamu": {
+   "hottestMonthMeanC": 32.6,
+   "hottestMonth": "MAY"
+  },
+  "Jharkhand|Ramgarh": {
+   "hottestMonthMeanC": 32.4,
+   "hottestMonth": "MAY"
+  },
+  "Jharkhand|Ranchi": {
+   "hottestMonthMeanC": 31.7,
+   "hottestMonth": "MAY"
+  },
+  "Jharkhand|Simdega": {
+   "hottestMonthMeanC": 33.8,
+   "hottestMonth": "MAY"
+  },
+  "Karnataka|Bagalkot": {
+   "hottestMonthMeanC": 31.1,
+   "hottestMonth": "APR"
+  },
+  "Karnataka|Ballari": {
+   "hottestMonthMeanC": 31.6,
+   "hottestMonth": "APR"
+  },
+  "Karnataka|Belagavi": {
+   "hottestMonthMeanC": 28.7,
+   "hottestMonth": "APR"
+  },
+  "Karnataka|Bidar": {
+   "hottestMonthMeanC": 33.7,
+   "hottestMonth": "MAY"
+  },
+  "Karnataka|Chamarajanagar": {
+   "hottestMonthMeanC": 28.1,
+   "hottestMonth": "APR"
+  },
+  "Karnataka|Chikkamagaluru": {
+   "hottestMonthMeanC": 26.6,
+   "hottestMonth": "APR"
+  },
+  "Karnataka|Chitradurga": {
+   "hottestMonthMeanC": 29.4,
+   "hottestMonth": "APR"
+  },
+  "Karnataka|Dharwad": {
+   "hottestMonthMeanC": 29.6,
+   "hottestMonth": "APR"
+  },
+  "Karnataka|Gadag": {
+   "hottestMonthMeanC": 30.5,
+   "hottestMonth": "APR"
+  },
+  "Karnataka|Hassan": {
+   "hottestMonthMeanC": 27.6,
+   "hottestMonth": "APR"
+  },
+  "Karnataka|Haveri": {
+   "hottestMonthMeanC": 30.2,
+   "hottestMonth": "APR"
+  },
+  "Karnataka|Kalaburagi": {
+   "hottestMonthMeanC": 33.5,
+   "hottestMonth": "MAY"
+  },
+  "Karnataka|Kodagu": {
+   "hottestMonthMeanC": 28.9,
+   "hottestMonth": "APR"
+  },
+  "Karnataka|Kolar": {
+   "hottestMonthMeanC": 28.2,
+   "hottestMonth": "APR"
+  },
+  "Karnataka|Koppal": {
+   "hottestMonthMeanC": 31.2,
+   "hottestMonth": "APR"
+  },
+  "Karnataka|Mandya": {
+   "hottestMonthMeanC": 29.1,
+   "hottestMonth": "APR"
+  },
+  "Karnataka|Mysuru": {
+   "hottestMonthMeanC": 29.1,
+   "hottestMonth": "APR"
+  },
+  "Karnataka|Raichur": {
+   "hottestMonthMeanC": 33.2,
+   "hottestMonth": "MAY"
+  },
+  "Karnataka|Shivamogga": {
+   "hottestMonthMeanC": 28.5,
+   "hottestMonth": "APR"
+  },
+  "Karnataka|Tumakuru": {
+   "hottestMonthMeanC": 29.1,
+   "hottestMonth": "APR"
+  },
+  "Karnataka|Udupi": {
+   "hottestMonthMeanC": 28.3,
+   "hottestMonth": "APR"
+  },
+  "Karnataka|Vijayapura": {
+   "hottestMonthMeanC": 32.2,
+   "hottestMonth": "APR"
+  },
+  "Karnataka|Yadgir": {
+   "hottestMonthMeanC": 33.8,
+   "hottestMonth": "MAY"
+  },
+  "Kerala|Alappuzha": {
+   "hottestMonthMeanC": 29.3,
+   "hottestMonth": "MAR"
+  },
+  "Kerala|Ernakulam": {
+   "hottestMonthMeanC": 29.4,
+   "hottestMonth": "MAR"
+  },
+  "Kerala|Idukki": {
+   "hottestMonthMeanC": 25.8,
+   "hottestMonth": "APR"
+  },
+  "Kerala|Kannur": {
+   "hottestMonthMeanC": 27.7,
+   "hottestMonth": "APR"
+  },
+  "Kerala|Kasaragod": {
+   "hottestMonthMeanC": 29.1,
+   "hottestMonth": "APR"
+  },
+  "Kerala|Kollam": {
+   "hottestMonthMeanC": 28.5,
+   "hottestMonth": "MAR"
+  },
+  "Kerala|Kottayam": {
+   "hottestMonthMeanC": 29.3,
+   "hottestMonth": "MAR"
+  },
+  "Kerala|Kozhikode": {
+   "hottestMonthMeanC": 29.1,
+   "hottestMonth": "APR"
+  },
+  "Kerala|Malappuram": {
+   "hottestMonthMeanC": 28.1,
+   "hottestMonth": "MAR"
+  },
+  "Kerala|Palakkad": {
+   "hottestMonthMeanC": 28.4,
+   "hottestMonth": "APR"
+  },
+  "Kerala|Pathanamthitta": {
+   "hottestMonthMeanC": 27.2,
+   "hottestMonth": "MAR"
+  },
+  "Kerala|Thiruvananthapuram": {
+   "hottestMonthMeanC": 29,
+   "hottestMonth": "MAR"
+  },
+  "Kerala|Thrissur": {
+   "hottestMonthMeanC": 29.7,
+   "hottestMonth": "MAR"
+  },
+  "Madhya Pradesh|Alirajpur": {
+   "hottestMonthMeanC": 33.7,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Anuppur": {
+   "hottestMonthMeanC": 33.3,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Ashoknagar": {
+   "hottestMonthMeanC": 34.7,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Balaghat": {
+   "hottestMonthMeanC": 35.3,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Barwani": {
+   "hottestMonthMeanC": 34,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Betul": {
+   "hottestMonthMeanC": 33.7,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Bhind": {
+   "hottestMonthMeanC": 36.5,
+   "hottestMonth": "JUN"
+  },
+  "Madhya Pradesh|Bhopal": {
+   "hottestMonthMeanC": 34.9,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Burhanpur": {
+   "hottestMonthMeanC": 34.9,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Chhatarpur": {
+   "hottestMonthMeanC": 36.3,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Chhindwara": {
+   "hottestMonthMeanC": 33.9,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Damoh": {
+   "hottestMonthMeanC": 35.7,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Datia": {
+   "hottestMonthMeanC": 36.5,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Dewas": {
+   "hottestMonthMeanC": 34.3,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Dhar": {
+   "hottestMonthMeanC": 34,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Dindori": {
+   "hottestMonthMeanC": 32.7,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Guna": {
+   "hottestMonthMeanC": 34.7,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Gwalior": {
+   "hottestMonthMeanC": 36,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Harda": {
+   "hottestMonthMeanC": 36,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Indore": {
+   "hottestMonthMeanC": 34.4,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Jabalpur": {
+   "hottestMonthMeanC": 35.1,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Jhabua": {
+   "hottestMonthMeanC": 33.8,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Katni": {
+   "hottestMonthMeanC": 35.3,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Khandwa": {
+   "hottestMonthMeanC": 35.6,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Khargone": {
+   "hottestMonthMeanC": 34.9,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Mandla": {
+   "hottestMonthMeanC": 33.9,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Mandsaur": {
+   "hottestMonthMeanC": 34.1,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Morena": {
+   "hottestMonthMeanC": 36.4,
+   "hottestMonth": "JUN"
+  },
+  "Madhya Pradesh|Narsinghpur": {
+   "hottestMonthMeanC": 35.7,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Panna": {
+   "hottestMonthMeanC": 35.6,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Raisen": {
+   "hottestMonthMeanC": 34.9,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Rajgarh": {
+   "hottestMonthMeanC": 35.3,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Ratlam": {
+   "hottestMonthMeanC": 33.8,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Rewa": {
+   "hottestMonthMeanC": 35.5,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Sagar": {
+   "hottestMonthMeanC": 35.2,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Satna": {
+   "hottestMonthMeanC": 35.5,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Sehore": {
+   "hottestMonthMeanC": 35.1,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Seoni": {
+   "hottestMonthMeanC": 34.7,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Shahdol": {
+   "hottestMonthMeanC": 34.5,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Shajapur": {
+   "hottestMonthMeanC": 34.8,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Sheopur": {
+   "hottestMonthMeanC": 35.5,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Shivpuri": {
+   "hottestMonthMeanC": 35,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Sidhi": {
+   "hottestMonthMeanC": 35.5,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Singrauli": {
+   "hottestMonthMeanC": 34.7,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Tikamgarh": {
+   "hottestMonthMeanC": 35.6,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Ujjain": {
+   "hottestMonthMeanC": 33.6,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Umaria": {
+   "hottestMonthMeanC": 34.7,
+   "hottestMonth": "MAY"
+  },
+  "Madhya Pradesh|Vidisha": {
+   "hottestMonthMeanC": 34.9,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Akola": {
+   "hottestMonthMeanC": 35,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Amravati": {
+   "hottestMonthMeanC": 35.6,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Aurangabad": {
+   "hottestMonthMeanC": 33,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Beed": {
+   "hottestMonthMeanC": 33,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Bhandara": {
+   "hottestMonthMeanC": 36.7,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Chandrapur": {
+   "hottestMonthMeanC": 36.8,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Dhule": {
+   "hottestMonthMeanC": 34.2,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Gadchiroli": {
+   "hottestMonthMeanC": 36.1,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Gondia": {
+   "hottestMonthMeanC": 36.2,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Hingoli": {
+   "hottestMonthMeanC": 35,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Jalgaon": {
+   "hottestMonthMeanC": 34.6,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Jalna": {
+   "hottestMonthMeanC": 33,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Kolhapur": {
+   "hottestMonthMeanC": 29.7,
+   "hottestMonth": "APR"
+  },
+  "Maharashtra|Latur": {
+   "hottestMonthMeanC": 33.7,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Nagpur": {
+   "hottestMonthMeanC": 36.7,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Nanded": {
+   "hottestMonthMeanC": 35.3,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Nandurbar": {
+   "hottestMonthMeanC": 33.1,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Nashik": {
+   "hottestMonthMeanC": 29.5,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Osmanabad": {
+   "hottestMonthMeanC": 33,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Palghar": {
+   "hottestMonthMeanC": 29.3,
+   "hottestMonth": "JUN"
+  },
+  "Maharashtra|Parbhani": {
+   "hottestMonthMeanC": 35,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Pune": {
+   "hottestMonthMeanC": 28.9,
+   "hottestMonth": "APR"
+  },
+  "Maharashtra|Ratnagiri": {
+   "hottestMonthMeanC": 29.3,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Sangli": {
+   "hottestMonthMeanC": 30.1,
+   "hottestMonth": "APR"
+  },
+  "Maharashtra|Satara": {
+   "hottestMonthMeanC": 29.6,
+   "hottestMonth": "APR"
+  },
+  "Maharashtra|Sindhudurg": {
+   "hottestMonthMeanC": 29.9,
+   "hottestMonth": "APR"
+  },
+  "Maharashtra|Solapur": {
+   "hottestMonthMeanC": 33,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Thane": {
+   "hottestMonthMeanC": 31.2,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Wardha": {
+   "hottestMonthMeanC": 36.9,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Washim": {
+   "hottestMonthMeanC": 34.5,
+   "hottestMonth": "MAY"
+  },
+  "Maharashtra|Yavatmal": {
+   "hottestMonthMeanC": 36.3,
+   "hottestMonth": "MAY"
+  },
+  "Manipur|Bishnupur": {
+   "hottestMonthMeanC": 24.9,
+   "hottestMonth": "JUN"
+  },
+  "Manipur|Chandel": {
+   "hottestMonthMeanC": 24.9,
+   "hottestMonth": "JUN"
+  },
+  "Manipur|Churachandpur": {
+   "hottestMonthMeanC": 24.9,
+   "hottestMonth": "JUN"
+  },
+  "Manipur|Jiribam": {
+   "hottestMonthMeanC": 26.6,
+   "hottestMonth": "JUN"
+  },
+  "Manipur|Kakching": {
+   "hottestMonthMeanC": 24.9,
+   "hottestMonth": "JUN"
+  },
+  "Manipur|Kamjong": {
+   "hottestMonthMeanC": 24,
+   "hottestMonth": "JUN"
+  },
+  "Manipur|Kangpokpi": {
+   "hottestMonthMeanC": 24.2,
+   "hottestMonth": "JUN"
+  },
+  "Manipur|Pherzawl": {
+   "hottestMonthMeanC": 26.9,
+   "hottestMonth": "JUN"
+  },
+  "Manipur|Tamenglong": {
+   "hottestMonthMeanC": 24.2,
+   "hottestMonth": "JUN"
+  },
+  "Manipur|Tengnoupal": {
+   "hottestMonthMeanC": 27.6,
+   "hottestMonth": "JUN"
+  },
+  "Manipur|Thoubal": {
+   "hottestMonthMeanC": 24.9,
+   "hottestMonth": "JUN"
+  },
+  "Manipur|Ukhrul": {
+   "hottestMonthMeanC": 24,
+   "hottestMonth": "JUN"
+  },
+  "Mizoram|Aizawl": {
+   "hottestMonthMeanC": 26,
+   "hottestMonth": "MAY"
+  },
+  "Mizoram|Hnahthial": {
+   "hottestMonthMeanC": 24,
+   "hottestMonth": "MAY"
+  },
+  "Mizoram|Khawzawl": {
+   "hottestMonthMeanC": 24,
+   "hottestMonth": "JUN"
+  },
+  "Mizoram|Kolasib": {
+   "hottestMonthMeanC": 26.7,
+   "hottestMonth": "MAY"
+  },
+  "Mizoram|Lawngtlai": {
+   "hottestMonthMeanC": 24.1,
+   "hottestMonth": "MAY"
+  },
+  "Mizoram|Lunglei": {
+   "hottestMonthMeanC": 27.5,
+   "hottestMonth": "MAY"
+  },
+  "Mizoram|Mamit": {
+   "hottestMonthMeanC": 26.7,
+   "hottestMonth": "MAY"
+  },
+  "Mizoram|Saiha": {
+   "hottestMonthMeanC": 24.1,
+   "hottestMonth": "MAY"
+  },
+  "Mizoram|Saitual": {
+   "hottestMonthMeanC": 24,
+   "hottestMonth": "JUN"
+  },
+  "Mizoram|Serchhip": {
+   "hottestMonthMeanC": 24,
+   "hottestMonth": "JUN"
+  },
+  "Nagaland|Dimapur": {
+   "hottestMonthMeanC": 27.1,
+   "hottestMonth": "JUN"
+  },
+  "Nagaland|Kiphire": {
+   "hottestMonthMeanC": 22.4,
+   "hottestMonth": "AUG"
+  },
+  "Nagaland|Kohima": {
+   "hottestMonthMeanC": 22.8,
+   "hottestMonth": "AUG"
+  },
+  "Nagaland|Longleng": {
+   "hottestMonthMeanC": 24.7,
+   "hottestMonth": "AUG"
+  },
+  "Nagaland|Mokokchung": {
+   "hottestMonthMeanC": 27.5,
+   "hottestMonth": "JUN"
+  },
+  "Nagaland|Mon": {
+   "hottestMonthMeanC": 24.7,
+   "hottestMonth": "AUG"
+  },
+  "Nagaland|Niuland": {
+   "hottestMonthMeanC": 27.1,
+   "hottestMonth": "JUN"
+  },
+  "Nagaland|Noklak": {
+   "hottestMonthMeanC": 22.4,
+   "hottestMonth": "AUG"
+  },
+  "Nagaland|Peren": {
+   "hottestMonthMeanC": 24.6,
+   "hottestMonth": "AUG"
+  },
+  "Nagaland|Tseminyu": {
+   "hottestMonthMeanC": 24.8,
+   "hottestMonth": "JUN"
+  },
+  "Nagaland|Tuensang": {
+   "hottestMonthMeanC": 24.7,
+   "hottestMonth": "AUG"
+  },
+  "Nagaland|Wokha": {
+   "hottestMonthMeanC": 24.8,
+   "hottestMonth": "JUN"
+  },
+  "Nagaland|Zunheboto": {
+   "hottestMonthMeanC": 24.8,
+   "hottestMonth": "JUN"
+  },
+  "Odisha|Angul": {
+   "hottestMonthMeanC": 33.6,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Balangir": {
+   "hottestMonthMeanC": 34.4,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Balasore": {
+   "hottestMonthMeanC": 31.3,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Bargarh": {
+   "hottestMonthMeanC": 35.5,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Bhadrak": {
+   "hottestMonthMeanC": 32.1,
+   "hottestMonth": "APR"
+  },
+  "Odisha|Cuttack": {
+   "hottestMonthMeanC": 32.6,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Deogarh": {
+   "hottestMonthMeanC": 33.3,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Dhenkanal": {
+   "hottestMonthMeanC": 32.6,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Ganjam": {
+   "hottestMonthMeanC": 31.4,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Jagatsinghpur": {
+   "hottestMonthMeanC": 31.6,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Jajpur": {
+   "hottestMonthMeanC": 32.1,
+   "hottestMonth": "APR"
+  },
+  "Odisha|Jharsuguda": {
+   "hottestMonthMeanC": 35,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Kalahandi": {
+   "hottestMonthMeanC": 32.6,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Kendrapara": {
+   "hottestMonthMeanC": 31.6,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Kendujhar": {
+   "hottestMonthMeanC": 35.7,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Khordha": {
+   "hottestMonthMeanC": 31.3,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Koraput": {
+   "hottestMonthMeanC": 30.8,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Mayurbhanj": {
+   "hottestMonthMeanC": 32.2,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Nabarangpur": {
+   "hottestMonthMeanC": 30.8,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Nayagarh": {
+   "hottestMonthMeanC": 32.6,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Nuapada": {
+   "hottestMonthMeanC": 35.4,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Puri": {
+   "hottestMonthMeanC": 31.3,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Rayagada": {
+   "hottestMonthMeanC": 30.7,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Sambalpur": {
+   "hottestMonthMeanC": 35.5,
+   "hottestMonth": "MAY"
+  },
+  "Odisha|Subarnapur": {
+   "hottestMonthMeanC": 34.6,
+   "hottestMonth": "MAY"
+  },
+  "Punjab|Amritsar": {
+   "hottestMonthMeanC": 36.4,
+   "hottestMonth": "JUN"
+  },
+  "Punjab|Barnala": {
+   "hottestMonthMeanC": 36.1,
+   "hottestMonth": "JUN"
+  },
+  "Punjab|Bathinda": {
+   "hottestMonthMeanC": 36.4,
+   "hottestMonth": "JUN"
+  },
+  "Punjab|Faridkot": {
+   "hottestMonthMeanC": 36.5,
+   "hottestMonth": "JUN"
+  },
+  "Punjab|Fazilka": {
+   "hottestMonthMeanC": 37.3,
+   "hottestMonth": "JUN"
+  },
+  "Punjab|Ferozepur": {
+   "hottestMonthMeanC": 36.9,
+   "hottestMonth": "JUN"
+  },
+  "Punjab|Gurdaspur": {
+   "hottestMonthMeanC": 34.8,
+   "hottestMonth": "JUN"
+  },
+  "Punjab|Hoshiarpur": {
+   "hottestMonthMeanC": 35.6,
+   "hottestMonth": "JUN"
+  },
+  "Punjab|Jalandhar": {
+   "hottestMonthMeanC": 35.6,
+   "hottestMonth": "JUN"
+  },
+  "Punjab|Kapurthala": {
+   "hottestMonthMeanC": 35.6,
+   "hottestMonth": "JUN"
+  },
+  "Punjab|Ludhiana": {
+   "hottestMonthMeanC": 36,
+   "hottestMonth": "JUN"
+  },
+  "Punjab|Mansa": {
+   "hottestMonthMeanC": 36.2,
+   "hottestMonth": "JUN"
+  },
+  "Punjab|Moga": {
+   "hottestMonthMeanC": 36.6,
+   "hottestMonth": "JUN"
+  },
+  "Punjab|Mohali": {
+   "hottestMonthMeanC": 33.8,
+   "hottestMonth": "JUN"
+  },
+  "Punjab|Muktsar": {
+   "hottestMonthMeanC": 37,
+   "hottestMonth": "JUN"
+  },
+  "Punjab|Pathankot": {
+   "hottestMonthMeanC": 29.6,
+   "hottestMonth": "JUN"
+  },
+  "Punjab|Patiala": {
+   "hottestMonthMeanC": 35.6,
+   "hottestMonth": "JUN"
+  },
+  "Punjab|Rupnagar": {
+   "hottestMonthMeanC": 37.3,
+   "hottestMonth": "JUN"
+  },
+  "Punjab|Sangrur": {
+   "hottestMonthMeanC": 36.2,
+   "hottestMonth": "JUN"
+  },
+  "Punjab|Tarn Taran": {
+   "hottestMonthMeanC": 36.4,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Ajmer": {
+   "hottestMonthMeanC": 34.1,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Alwar": {
+   "hottestMonthMeanC": 36,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Anupgarh": {
+   "hottestMonthMeanC": 37.2,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Balotra": {
+   "hottestMonthMeanC": 35.1,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Banswara": {
+   "hottestMonthMeanC": 34.5,
+   "hottestMonth": "MAY"
+  },
+  "Rajasthan|Baran": {
+   "hottestMonthMeanC": 36,
+   "hottestMonth": "MAY"
+  },
+  "Rajasthan|Barmer": {
+   "hottestMonthMeanC": 34.9,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Beawar": {
+   "hottestMonthMeanC": 33.7,
+   "hottestMonth": "MAY"
+  },
+  "Rajasthan|Bharatpur": {
+   "hottestMonthMeanC": 36.5,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Bhilwara": {
+   "hottestMonthMeanC": 33.8,
+   "hottestMonth": "MAY"
+  },
+  "Rajasthan|Bikaner": {
+   "hottestMonthMeanC": 36.4,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Bundi": {
+   "hottestMonthMeanC": 35.7,
+   "hottestMonth": "MAY"
+  },
+  "Rajasthan|Chittorgarh": {
+   "hottestMonthMeanC": 34.1,
+   "hottestMonth": "MAY"
+  },
+  "Rajasthan|Churu": {
+   "hottestMonthMeanC": 35.9,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Dausa": {
+   "hottestMonthMeanC": 35,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Deeg": {
+   "hottestMonthMeanC": 36.6,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Dholpur": {
+   "hottestMonthMeanC": 36.4,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Dudu": {
+   "hottestMonthMeanC": 35.5,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Dungarpur": {
+   "hottestMonthMeanC": 34,
+   "hottestMonth": "MAY"
+  },
+  "Rajasthan|Hanumangarh": {
+   "hottestMonthMeanC": 36.8,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Jaisalmer": {
+   "hottestMonthMeanC": 36,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Jhalawar": {
+   "hottestMonthMeanC": 35.6,
+   "hottestMonth": "MAY"
+  },
+  "Rajasthan|Jhunjhunu": {
+   "hottestMonthMeanC": 35,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Karauli": {
+   "hottestMonthMeanC": 35.6,
+   "hottestMonth": "MAY"
+  },
+  "Rajasthan|Kekri": {
+   "hottestMonthMeanC": 34.7,
+   "hottestMonth": "MAY"
+  },
+  "Rajasthan|Kota": {
+   "hottestMonthMeanC": 35.2,
+   "hottestMonth": "MAY"
+  },
+  "Rajasthan|Nagaur": {
+   "hottestMonthMeanC": 34.9,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Neem Ka Thana": {
+   "hottestMonthMeanC": 34.2,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Pali": {
+   "hottestMonthMeanC": 34.8,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Phalodi": {
+   "hottestMonthMeanC": 35.5,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Pratapgarh": {
+   "hottestMonthMeanC": 34.1,
+   "hottestMonth": "MAY"
+  },
+  "Rajasthan|Rajsamand": {
+   "hottestMonthMeanC": 32.4,
+   "hottestMonth": "MAY"
+  },
+  "Rajasthan|Salumbar": {
+   "hottestMonthMeanC": 34,
+   "hottestMonth": "MAY"
+  },
+  "Rajasthan|Sanchore": {
+   "hottestMonthMeanC": 34.8,
+   "hottestMonth": "MAY"
+  },
+  "Rajasthan|Sawai Madhopur": {
+   "hottestMonthMeanC": 35.7,
+   "hottestMonth": "MAY"
+  },
+  "Rajasthan|Shahpura": {
+   "hottestMonthMeanC": 34.6,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Sikar": {
+   "hottestMonthMeanC": 34.6,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Sirohi": {
+   "hottestMonthMeanC": 33.2,
+   "hottestMonth": "MAY"
+  },
+  "Rajasthan|Sri Ganganagar": {
+   "hottestMonthMeanC": 37.3,
+   "hottestMonth": "JUN"
+  },
+  "Rajasthan|Tonk": {
+   "hottestMonthMeanC": 35.4,
+   "hottestMonth": "MAY"
+  },
+  "Rajasthan|Udaipur": {
+   "hottestMonthMeanC": 32.8,
+   "hottestMonth": "MAY"
+  },
+  "Sikkim|Gangtok": {
+   "hottestMonthMeanC": 13.6,
+   "hottestMonth": "JUL"
+  },
+  "Sikkim|Gyalshing": {
+   "hottestMonthMeanC": 11.7,
+   "hottestMonth": "JUL"
+  },
+  "Sikkim|Mangan": {
+   "hottestMonthMeanC": 13.6,
+   "hottestMonth": "JUL"
+  },
+  "Sikkim|Namchi": {
+   "hottestMonthMeanC": 23.1,
+   "hottestMonth": "JUN"
+  },
+  "Sikkim|Pakyong": {
+   "hottestMonthMeanC": 23.4,
+   "hottestMonth": "JUN"
+  },
+  "Sikkim|Soreng": {
+   "hottestMonthMeanC": 23.1,
+   "hottestMonth": "JUN"
+  },
+  "Tamil Nadu|Ariyalur": {
+   "hottestMonthMeanC": 31.2,
+   "hottestMonth": "MAY"
+  },
+  "Tamil Nadu|Chengalpattu": {
+   "hottestMonthMeanC": 31,
+   "hottestMonth": "MAY"
+  },
+  "Tamil Nadu|Chennai": {
+   "hottestMonthMeanC": 31.5,
+   "hottestMonth": "MAY"
+  },
+  "Tamil Nadu|Coimbatore": {
+   "hottestMonthMeanC": 28.4,
+   "hottestMonth": "APR"
+  },
+  "Tamil Nadu|Cuddalore": {
+   "hottestMonthMeanC": 30.6,
+   "hottestMonth": "MAY"
+  },
+  "Tamil Nadu|Dharmapuri": {
+   "hottestMonthMeanC": 30.2,
+   "hottestMonth": "APR"
+  },
+  "Tamil Nadu|Dindigul": {
+   "hottestMonthMeanC": 30.9,
+   "hottestMonth": "APR"
+  },
+  "Tamil Nadu|Erode": {
+   "hottestMonthMeanC": 30.6,
+   "hottestMonth": "APR"
+  },
+  "Tamil Nadu|Kallakurichi": {
+   "hottestMonthMeanC": 30.6,
+   "hottestMonth": "APR"
+  },
+  "Tamil Nadu|Karur": {
+   "hottestMonthMeanC": 31.5,
+   "hottestMonth": "APR"
+  },
+  "Tamil Nadu|Krishnagiri": {
+   "hottestMonthMeanC": 29.2,
+   "hottestMonth": "APR"
+  },
+  "Tamil Nadu|Madurai": {
+   "hottestMonthMeanC": 30.5,
+   "hottestMonth": "APR"
+  },
+  "Tamil Nadu|Mayiladuthurai": {
+   "hottestMonthMeanC": 31.2,
+   "hottestMonth": "MAY"
+  },
+  "Tamil Nadu|Nagapattinam": {
+   "hottestMonthMeanC": 30.3,
+   "hottestMonth": "MAY"
+  },
+  "Tamil Nadu|Namakkal": {
+   "hottestMonthMeanC": 31.5,
+   "hottestMonth": "APR"
+  },
+  "Tamil Nadu|Perambalur": {
+   "hottestMonthMeanC": 31.2,
+   "hottestMonth": "APR"
+  },
+  "Tamil Nadu|Pudukkottai": {
+   "hottestMonthMeanC": 31.3,
+   "hottestMonth": "APR"
+  },
+  "Tamil Nadu|Ramanathapuram": {
+   "hottestMonthMeanC": 30.4,
+   "hottestMonth": "APR"
+  },
+  "Tamil Nadu|Ranipet": {
+   "hottestMonthMeanC": 31.5,
+   "hottestMonth": "MAY"
+  },
+  "Tamil Nadu|Salem": {
+   "hottestMonthMeanC": 31.1,
+   "hottestMonth": "APR"
+  },
+  "Tamil Nadu|Sivaganga": {
+   "hottestMonthMeanC": 30.8,
+   "hottestMonth": "APR"
+  },
+  "Tamil Nadu|Tenkasi": {
+   "hottestMonthMeanC": 29,
+   "hottestMonth": "APR"
+  },
+  "Tamil Nadu|Thanjavur": {
+   "hottestMonthMeanC": 31.2,
+   "hottestMonth": "MAY"
+  },
+  "Tamil Nadu|Theni": {
+   "hottestMonthMeanC": 27.3,
+   "hottestMonth": "APR"
+  },
+  "Tamil Nadu|Thoothukudi": {
+   "hottestMonthMeanC": 30.3,
+   "hottestMonth": "APR"
+  },
+  "Tamil Nadu|Tiruchirappalli": {
+   "hottestMonthMeanC": 31.2,
+   "hottestMonth": "APR"
+  },
+  "Tamil Nadu|Tirunelveli": {
+   "hottestMonthMeanC": 28.6,
+   "hottestMonth": "APR"
+  },
+  "Tamil Nadu|Tirupattur": {
+   "hottestMonthMeanC": 30.1,
+   "hottestMonth": "APR"
+  },
+  "Tamil Nadu|Tiruppur": {
+   "hottestMonthMeanC": 31.3,
+   "hottestMonth": "APR"
+  },
+  "Tamil Nadu|Tiruvallur": {
+   "hottestMonthMeanC": 31.5,
+   "hottestMonth": "MAY"
+  },
+  "Tamil Nadu|Tiruvannamalai": {
+   "hottestMonthMeanC": 31.5,
+   "hottestMonth": "MAY"
+  },
+  "Tamil Nadu|Tiruvarur": {
+   "hottestMonthMeanC": 31.2,
+   "hottestMonth": "MAY"
+  },
+  "Tamil Nadu|Vellore": {
+   "hottestMonthMeanC": 31.5,
+   "hottestMonth": "MAY"
+  },
+  "Telangana|Adilabad": {
+   "hottestMonthMeanC": 36,
+   "hottestMonth": "MAY"
+  },
+  "Telangana|Hanumakonda": {
+   "hottestMonthMeanC": 34.9,
+   "hottestMonth": "MAY"
+  },
+  "Telangana|Hyderabad": {
+   "hottestMonthMeanC": 33.3,
+   "hottestMonth": "MAY"
+  },
+  "Telangana|Jagtial": {
+   "hottestMonthMeanC": 35.6,
+   "hottestMonth": "MAY"
+  },
+  "Telangana|Jangaon": {
+   "hottestMonthMeanC": 34.6,
+   "hottestMonth": "MAY"
+  },
+  "Telangana|Karimnagar": {
+   "hottestMonthMeanC": 35.8,
+   "hottestMonth": "MAY"
+  },
+  "Telangana|Khammam": {
+   "hottestMonthMeanC": 34.6,
+   "hottestMonth": "MAY"
+  },
+  "Telangana|Mancherial": {
+   "hottestMonthMeanC": 36.2,
+   "hottestMonth": "MAY"
+  },
+  "Telangana|Medak": {
+   "hottestMonthMeanC": 33.8,
+   "hottestMonth": "MAY"
+  },
+  "Telangana|Mulugu": {
+   "hottestMonthMeanC": 35,
+   "hottestMonth": "MAY"
+  },
+  "Telangana|Nalgonda": {
+   "hottestMonthMeanC": 34.7,
+   "hottestMonth": "MAY"
+  },
+  "Telangana|Narayanpet": {
+   "hottestMonthMeanC": 33.4,
+   "hottestMonth": "MAY"
+  },
+  "Telangana|Nirmal": {
+   "hottestMonthMeanC": 35.4,
+   "hottestMonth": "MAY"
+  },
+  "Telangana|Nizamabad": {
+   "hottestMonthMeanC": 34.7,
+   "hottestMonth": "MAY"
+  },
+  "Telangana|Peddapalli": {
+   "hottestMonthMeanC": 35.8,
+   "hottestMonth": "MAY"
+  },
+  "Telangana|Siddipet": {
+   "hottestMonthMeanC": 33.9,
+   "hottestMonth": "MAY"
+  },
+  "Telangana|Suryapet": {
+   "hottestMonthMeanC": 34.7,
+   "hottestMonth": "MAY"
+  },
+  "Telangana|Vikarabad": {
+   "hottestMonthMeanC": 33,
+   "hottestMonth": "MAY"
+  },
+  "Telangana|Wanaparthy": {
+   "hottestMonthMeanC": 33.1,
+   "hottestMonth": "MAY"
+  },
+  "Telangana|Warangal": {
+   "hottestMonthMeanC": 34.9,
+   "hottestMonth": "MAY"
+  },
+  "Tripura|Khowai": {
+   "hottestMonthMeanC": 27.9,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Agra": {
+   "hottestMonthMeanC": 36.6,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Aligarh": {
+   "hottestMonthMeanC": 36.1,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Amethi": {
+   "hottestMonthMeanC": 36,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Amroha": {
+   "hottestMonthMeanC": 35,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Auraiya": {
+   "hottestMonthMeanC": 36.4,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Ayodhya": {
+   "hottestMonthMeanC": 34.7,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Azamgarh": {
+   "hottestMonthMeanC": 35.4,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Baghpat": {
+   "hottestMonthMeanC": 35.5,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Bahraich": {
+   "hottestMonthMeanC": 34.5,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Ballia": {
+   "hottestMonthMeanC": 35.7,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Balrampur": {
+   "hottestMonthMeanC": 34.5,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Banda": {
+   "hottestMonthMeanC": 36.8,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Bareilly": {
+   "hottestMonthMeanC": 35.2,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Basti": {
+   "hottestMonthMeanC": 34.7,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Bhadohi": {
+   "hottestMonthMeanC": 36.3,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Bijnor": {
+   "hottestMonthMeanC": 34.6,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Budaun": {
+   "hottestMonthMeanC": 35.7,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Bulandshahr": {
+   "hottestMonthMeanC": 35.8,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Chandauli": {
+   "hottestMonthMeanC": 36,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Chitrakoot": {
+   "hottestMonthMeanC": 36,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Deoria": {
+   "hottestMonthMeanC": 34.5,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Etah": {
+   "hottestMonthMeanC": 36.4,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Etawah": {
+   "hottestMonthMeanC": 36.6,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Farrukhabad": {
+   "hottestMonthMeanC": 36.1,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Fatehpur": {
+   "hottestMonthMeanC": 36.4,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Firozabad": {
+   "hottestMonthMeanC": 36.6,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Ghaziabad": {
+   "hottestMonthMeanC": 35.9,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Ghazipur": {
+   "hottestMonthMeanC": 35.6,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Gonda": {
+   "hottestMonthMeanC": 36.1,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Gorakhpur": {
+   "hottestMonthMeanC": 34.3,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Hamirpur": {
+   "hottestMonthMeanC": 36.6,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Hapur": {
+   "hottestMonthMeanC": 35.9,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Hardoi": {
+   "hottestMonthMeanC": 35.7,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Hathras": {
+   "hottestMonthMeanC": 36.5,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Jalaun": {
+   "hottestMonthMeanC": 36.7,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Jaunpur": {
+   "hottestMonthMeanC": 35.8,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Jhansi": {
+   "hottestMonthMeanC": 36.5,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Kannauj": {
+   "hottestMonthMeanC": 36,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Kasganj": {
+   "hottestMonthMeanC": 36,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Kushinagar": {
+   "hottestMonthMeanC": 34.5,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Lakhimpur Kheri": {
+   "hottestMonthMeanC": 34.1,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Lalitpur": {
+   "hottestMonthMeanC": 35.5,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Lucknow": {
+   "hottestMonthMeanC": 35.7,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Maharajganj": {
+   "hottestMonthMeanC": 33.7,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Mahoba": {
+   "hottestMonthMeanC": 36.8,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Mainpuri": {
+   "hottestMonthMeanC": 36.6,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Mathura": {
+   "hottestMonthMeanC": 36.6,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Mau": {
+   "hottestMonthMeanC": 35,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Meerut": {
+   "hottestMonthMeanC": 35.5,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Mirzapur": {
+   "hottestMonthMeanC": 36.1,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Moradabad": {
+   "hottestMonthMeanC": 35,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Muzaffarnagar": {
+   "hottestMonthMeanC": 35.1,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Pilibhit": {
+   "hottestMonthMeanC": 34.7,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Pratapgarh": {
+   "hottestMonthMeanC": 36,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Prayagraj": {
+   "hottestMonthMeanC": 36.5,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Raebareli": {
+   "hottestMonthMeanC": 36.2,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Rampur": {
+   "hottestMonthMeanC": 35,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Saharanpur": {
+   "hottestMonthMeanC": 34.3,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Sambhal": {
+   "hottestMonthMeanC": 35.6,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Shahjahanpur": {
+   "hottestMonthMeanC": 35.3,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Shamli": {
+   "hottestMonthMeanC": 35.1,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Shravasti": {
+   "hottestMonthMeanC": 34.5,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Sitapur": {
+   "hottestMonthMeanC": 35.4,
+   "hottestMonth": "JUN"
+  },
+  "Uttar Pradesh|Sultanpur": {
+   "hottestMonthMeanC": 35.6,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Unnao": {
+   "hottestMonthMeanC": 36,
+   "hottestMonth": "MAY"
+  },
+  "Uttar Pradesh|Varanasi": {
+   "hottestMonthMeanC": 36,
+   "hottestMonth": "MAY"
+  },
+  "Uttarakhand|Almora": {
+   "hottestMonthMeanC": 28.1,
+   "hottestMonth": "JUN"
+  },
+  "Uttarakhand|Bageshwar": {
+   "hottestMonthMeanC": 19.3,
+   "hottestMonth": "JUN"
+  },
+  "Uttarakhand|Chamoli": {
+   "hottestMonthMeanC": 13.9,
+   "hottestMonth": "JUL"
+  },
+  "Uttarakhand|Champawat": {
+   "hottestMonthMeanC": 25.2,
+   "hottestMonth": "JUN"
+  },
+  "Uttarakhand|Dehradun": {
+   "hottestMonthMeanC": 26.1,
+   "hottestMonth": "JUN"
+  },
+  "Uttarakhand|Haridwar": {
+   "hottestMonthMeanC": 32.4,
+   "hottestMonth": "JUN"
+  },
+  "Uttarakhand|Nainital": {
+   "hottestMonthMeanC": 28.1,
+   "hottestMonth": "JUN"
+  },
+  "Uttarakhand|Pithoragarh": {
+   "hottestMonthMeanC": 25.2,
+   "hottestMonth": "JUN"
+  },
+  "Uttarakhand|Rudraprayag": {
+   "hottestMonthMeanC": 20.5,
+   "hottestMonth": "JUN"
+  },
+  "Uttarakhand|Uttarkashi": {
+   "hottestMonthMeanC": 20.5,
+   "hottestMonth": "JUN"
+  },
+  "West Bengal|Bankura": {
+   "hottestMonthMeanC": 32.3,
+   "hottestMonth": "MAY"
+  },
+  "West Bengal|Cooch Behar": {
+   "hottestMonthMeanC": 28.8,
+   "hottestMonth": "MAY"
+  },
+  "West Bengal|Darjeeling": {
+   "hottestMonthMeanC": 23.1,
+   "hottestMonth": "JUN"
+  },
+  "West Bengal|Hooghly": {
+   "hottestMonthMeanC": 32.1,
+   "hottestMonth": "MAY"
+  },
+  "West Bengal|Howrah": {
+   "hottestMonthMeanC": 31.5,
+   "hottestMonth": "MAY"
+  },
+  "West Bengal|Jalpaiguri": {
+   "hottestMonthMeanC": 29.8,
+   "hottestMonth": "MAY"
+  },
+  "West Bengal|Jhargram": {
+   "hottestMonthMeanC": 32.4,
+   "hottestMonth": "MAY"
+  },
+  "West Bengal|Kalimpong": {
+   "hottestMonthMeanC": 23.4,
+   "hottestMonth": "JUN"
+  },
+  "West Bengal|Kolkata": {
+   "hottestMonthMeanC": 31.5,
+   "hottestMonth": "MAY"
+  },
+  "West Bengal|Malda": {
+   "hottestMonthMeanC": 32.1,
+   "hottestMonth": "MAY"
+  },
+  "West Bengal|Murshidabad": {
+   "hottestMonthMeanC": 32.4,
+   "hottestMonth": "MAY"
+  },
+  "West Bengal|Purulia": {
+   "hottestMonthMeanC": 32.7,
+   "hottestMonth": "MAY"
+  }
+ }
+}

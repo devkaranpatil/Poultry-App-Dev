@@ -1,0 +1,64 @@
+name: Mandi prices
+
+# data.gov.in publishes only the current day's mandi prices, so this job stores a snapshot every
+# day and the history builds up in public.mandi_prices_daily. Re-running a day is safe (upsert).
+#
+# Repository secrets to add (Settings > Secrets and variables > Actions):
+#   DATABASE_URL          the Supabase Session pooler connection string (same value as backend/.env)
+#   DATA_GOV_IN_API_KEY   your data.gov.in API key
+
+on:
+  schedule:
+    # 16:30 UTC = 22:00 IST, after the day's mandi arrivals have been reported. GitHub may delay it.
+    - cron: "30 16 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mandi-prices
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    name: Fetch and store today's prices
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # Until both secrets are added the job reports a notice instead of failing every night.
+      # Once they exist, any failure (bad key, outage, zero rows) still turns the run red.
+      - name: Check secrets
+        id: secrets
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATA_GOV_IN_API_KEY: ${{ secrets.DATA_GOV_IN_API_KEY }}
+        run: |
+          if [ -z "$DATABASE_URL" ] || [ -z "$DATA_GOV_IN_API_KEY" ]; then
+            echo "::notice title=Mandi prices skipped::Add the DATABASE_URL and DATA_GOV_IN_API_KEY repository secrets to store daily prices."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.secrets.outputs.ready == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        if: steps.secrets.outputs.ready == 'true'
+        run: npm ci --prefix backend
+
+      - name: Ingest mandi prices
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          NODE_ENV: production
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATA_GOV_IN_API_KEY: ${{ secrets.DATA_GOV_IN_API_KEY }}
+        run: node backend/scripts/ingestMandiPrices.js

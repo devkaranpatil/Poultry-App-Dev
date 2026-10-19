@@ -1,0 +1,141 @@
+{
+  "description": "Official and institutional documents the planner's assistant retrieves from (RAG). Each entry is downloaded and converted to plain text by datasets/scripts/fetch_knowledge.py. The text itself is not committed (some sources are copyrighted); only this list is.",
+  "retrieved": "2026-10-13",
+  "sources": [
+    {
+      "id": "midh-operational-guidelines-2025",
+      "title": "MIDH Operational Guidelines 2025 (guidelines dated 31.12.2024)",
+      "publisher": "Ministry of Agriculture & Farmers Welfare, Horticulture Division (hosted by National Horticulture Board)",
+      "url": "https://nhb.gov.in/writereaddata/082825102800MIDH%20Guideline%202025.pdf",
+      "format": "pdf",
+      "status": "current",
+      "priority": 1.0,
+      "scope": "India",
+      "note": "Scheme rules, pattern of assistance and cost norms for protected cultivation. Later MoA&FW letters can modify it; the 2025-08-12 letter in the curated facts sets the 4000 sq m limit."
+    },
+    {
+      "id": "nhb-cost-norms",
+      "title": "NHB Cost Norms and Pattern of Assistance (Appendix-1)",
+      "publisher": "National Horticulture Board",
+      "url": "https://nhb.gov.in/hindi/pdf/Cost%20Norms.pdf",
+      "format": "pdf",
+      "layout": true,
+      "status": "current",
+      "priority": 1.0,
+      "scope": "India",
+      "note": "Undated document; treat the rates as the current published norms. States may use their own rates."
+    },
+    {
+      "id": "nhb-scheme1-guidelines",
+      "title": "NHB Scheme-1 Operational Guidelines: Development of Commercial Horticulture",
+      "publisher": "National Horticulture Board",
+      "url": "https://nhb.gov.in/pdf/SCHEME1Guidelinefinal.pdf",
+      "format": "pdf",
+      "status": "older",
+      "priority": 0.6,
+      "scope": "India",
+      "note": "Older guidelines. Its area thresholds (2500 sq m, 1000 sq m in the North East) were replaced by the MoA&FW letter of 2025-08-12 (4000 sq m); prefer the current facts where they differ."
+    },
+    {
+      "id": "telangana-polyhouse-technical-spec",
+      "title": "Green Houses / Polyhouses: technical specifications for naturally ventilated poly house",
+      "publisher": "Department of Horticulture, Government of Telangana",
+      "url": "https://horticulture.tg.nic.in/polyhouse/Downloads/Technical%20Specification.pdf",
+      "format": "pdf",
+      "layout": true,
+      "status": "current",
+      "priority": 0.8,
+      "scope": "Telangana",
+      "note": "State specification used for subsidy-eligible structures; other states may differ."
+    },
+    {
+      "id": "ncert-protected-cultivation",
+      "title": "Protected Cultivation (Job Role) Textbook for Class XI, Agriculture sector",
+      "publisher": "PSS Central Institute of Vocational Education, NCERT",
+      "url": "https://www.psscive.ac.in/storage/uploads/textbooks/pdf/english/floriculturist-protected-cultivation-english-class-11.pdf",
+      "format": "pdf",
+      "status": "current",
+      "priority": 0.9,
+      "scope": "India",
+      "note": "Copyright NCERT 2018. Used here only to answer questions with attribution."
+    },
+    {
+      "id": "tnau-ipm-vegetables",
+      "title": "IPM Schedule for Vegetables (insect and disease management, including polyhouse packages)",
+      "publisher": "Tamil Nadu Agricultural University, Agritech Portal (national technical bulletin)",
+      "url": "https://agritech.tnau.ac.in/horticulture/pdf/tech_bulletin/national/IPM-Schedule-for-vegetables.pdf",
+      "format": "pdf",
+      "status": "current",
+      "priority": 1.0,
+      "scope": "India",
+      "note": "Chemical recommendations change over time and by label; confirm with the state agriculture department."
+    },
+    {
+      "id": "tnau-tomato-protected",
+      "title": "Tomato: protected cultivation",
+      "publisher": "Tamil Nadu Agricultural University, Agritech Portal",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_tomato_protected.html",
+      "format": "html",
+      "status": "current",
+      "priority": 1.0,
+      "scope": "India"
+    },
+    {
+      "id": "tnau-cucumber",
+      "title": "Cucumber: crop production guide",
+      "publisher": "Tamil Nadu Agricultural University, Agritech Portal",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_cucumber.html",
+      "format": "html",
+      "status": "current",
+      "priority": 1.0,
+      "scope": "India"
+    },
+    {
+      "id": "tnau-capsicum",
+      "title": "Capsicum: crop production guide",
+      "publisher": "Tamil Nadu Agricultural University, Agritech Portal",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_vegetables_capsicum.html",
+      "format": "html",
+      "status": "current",
+      "priority": 1.0,
+      "scope": "India"
+    },
+    {
+      "id": "tnau-gerbera",
+      "title": "Gerbera: crop production guide",
+      "publisher": "Tamil Nadu Agricultural University, Agritech Portal",
+      "url": "https://agritech.tnau.ac.in/horticulture/horti_flower%20crops_gerbera.html",
+      "format": "html",
+      "status": "current",
+      "priority": 1.0,
+      "scope": "India"
+    },
+    {
+      "id": "vikaspedia-capsicum-protected",
+      "title": "Protected cultivation of capsicum",
+      "publisher": "Vikaspedia (Government of India knowledge portal)",
+      "url": "https://www.vikaspedia.in/agriculture/crop-production/package-of-practices/vegetables-1/protected-cultivation-of-capsicum",
+      "format": "html",
+      "fixDegreeSigns": true,
+      "status": "current",
+      "priority": 0.9,
+      "scope": "India"
+    },
+    {
+      "id": "aau-strawberry",
+      "title": "Strawberry: package of practices",
+      "publisher": "Krishi Vigyan Kendra Chirang, Assam Agricultural University",
+      "url": "https://kvkchirang.aau.ac.in/pdf/package_of_practice/fruits/Strawberry.pdf",
+      "format": "pdf",
+      "status": "current",
+      "priority": 0.8,
+      "scope": "Assam",
+      "note": "Open-field oriented, from Assam; use with care for polyhouse planning elsewhere."
+    }
+  ],
+  "gaps": [
+    "No official lettuce or hydroponic NFT guide was found; the assistant must say so rather than guess.",
+    "NHB Technical Standard NHB-PH-Type 02-2011 (design loads) could not be downloaded from nhb.gov.in.",
+    "State-specific subsidy rates other than Telangana are not included."
+  ]
+}

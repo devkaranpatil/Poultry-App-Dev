@@ -1,0 +1,32 @@
+{
+  "name": "greenhouse-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Greenhouse backend API",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "models:download": "node scripts/downloadModels.js",
+    "dev": "nodemon index.js",
+    "eval:assistant": "node scripts/evalAssistant.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "node-llama-cpp": "^3.22.1",
+    "pg": "^8.23.1",
+    "three": "^0.160.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "nodemon": "^3.1.11"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "overrides": {
+    "simple-git": "4.0.2"
+  }
+}

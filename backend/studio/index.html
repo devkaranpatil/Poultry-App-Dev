@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Polyhouse API Studio</title>
+  <style>
+    :root { --bg:#0b1511; --panel:rgba(14,28,22,.78); --line:rgba(120,220,170,.18); --fg:#e6f4ec; --muted:#8fb3a1; --ok:#5ef0a8; --warn:#ffcf5a; --bad:#ff7a7a; }
+    * { box-sizing:border-box; }
+    html,body { margin:0; height:100%; background:var(--bg); color:var(--fg); font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; overflow:hidden; }
+    canvas { display:block; position:fixed; inset:0; width:100%; height:100%; }
+    .hud { position:fixed; top:16px; left:16px; width:min(320px,calc(100vw - 32px)); padding:16px; border:1px solid var(--line); border-radius:14px; background:var(--panel); backdrop-filter:blur(10px); }
+    h1 { margin:0 0 2px; font-size:16px; letter-spacing:.02em; }
+    .sub { color:var(--muted); font-size:12px; margin-bottom:12px; }
+    dl { display:grid; grid-template-columns:auto 1fr; gap:6px 12px; margin:0; }
+    dt { color:var(--muted); } dd { margin:0; text-align:right; font-variant-numeric:tabular-nums; }
+    .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; background:var(--muted); box-shadow:0 0 8px currentColor; }
+    .ok { color:var(--ok); } .ok .dot { background:var(--ok); } .warn { color:var(--warn); } .warn .dot { background:var(--warn); } .bad { color:var(--bad); } .bad .dot { background:var(--bad); }
+    .hint { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); max-width:calc(100vw - 32px); color:var(--muted); font-size:12px; padding:6px 12px; border-radius:999px; background:var(--panel); border:1px solid var(--line); text-align:center; }
+    button { margin-top:12px; width:100%; padding:8px; border-radius:8px; border:1px solid var(--line); background:rgba(94,240,168,.1); color:var(--fg); font:inherit; cursor:pointer; }
+    button:hover { background:rgba(94,240,168,.2); }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <h1>Polyhouse API Studio</h1>
+    <div class="sub">Live 3D view of the backend &middot; refreshes every 5s</div>
+    <dl>
+      <dt>API</dt><dd id="api" class="warn"><span class="dot"></span>connecting</dd>
+      <dt>Database</dt><dd id="db" class="warn"><span class="dot"></span>unknown</dd>
+      <dt>Uptime</dt><dd id="uptime">&ndash;</dd>
+      <dt>Latency</dt><dd id="latency">&ndash;</dd>
+      <dt>Node</dt><dd id="node">&ndash;</dd>
+      <dt>Environment</dt><dd id="env">&ndash;</dd>
+    </dl>
+    <button id="sprinklers" type="button">Toggle sprinklers</button>
+  </div>
+  <div class="hint">Drag to orbit &middot; each health check sends a pulse down the pipe</div>
+
+  <script type="importmap">
+    { "imports": { "three": "/studio/vendor/three.module.js" } }
+  </script>
+  <script type="module" src="/studio/studio.js"></script>
+</body>
+</html>
