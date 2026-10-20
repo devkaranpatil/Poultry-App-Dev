@@ -76,7 +76,7 @@ numbers, "what if" questions answered by the planner, Hindi and Marathi, edge ca
 premises, doses, typos, follow-ups) and request validation. Each case has regular expressions the answer must and must
 not match, and a `source` saying where the answer comes from. Run it with `cd backend && npm run eval:assistant` (real
 models; about an hour and a half on a laptop CPU, or `-- --only=id1,id2`). The latest result is in
-`docs/migration/remaining-work.md`.
+`docs/remaining/01-run-ai-evaluation.md`.
 
 ## Planning defaults
 
