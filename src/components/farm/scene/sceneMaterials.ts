@@ -2,7 +2,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 /**
- * Animated materials for the crop and irrigation models.
+ * Animated materials, first built for the polyhouse crops and water; the landscape still uses `sway` for its trees and grass.
  *
  * Thousands of leaves and droplets are drawn as instanced meshes, so their motion is done in the
  * vertex shader (no per-frame matrix updates on the CPU). Each mode patches the standard material:

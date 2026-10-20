@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_CONFIG, DIMENSION_LIMITS, type FarmConfig } from '@/components/farm/scene/legacyConfig';
+import { DEFAULT_CONFIG, DIMENSION_LIMITS, ROOF_SHEET_OPTIONS, type FarmConfig } from '@/types/farm';
 import {
   HANDLE_GAP,
   MIN_RISE,
+  PART_ORDER,
   PART_VALUES,
   cornerPatch,
   cycleOptionPatch,
@@ -11,31 +12,34 @@ import {
   handlesForPart,
   isOptionLocked,
   objectBelongsToPart,
+  optionLabelKey,
   optionPatch,
   partForObject,
   partForObjectName,
+  partLabelKey,
   resizePatch,
-  roofPatch,
-  typeCompatibilityPatch,
+  roofSurface,
 } from '@/lib/sceneEdit';
+import { DESIGN_TABS } from '@/components/farm/DesignSidebar';
 
-const base: FarmConfig = { ...DEFAULT_CONFIG, state: 'Goa', district: 'North Goa' };
+// The recommended shed: 14 x 7 m, 2.1 m to the eaves, 3.5 m at the ridge, open-sided, broilers.
+const base: FarmConfig = { ...DEFAULT_CONFIG, state: 'Maharashtra', district: 'Nagpur' };
 const apply = (config: FarmConfig, patch: Partial<FarmConfig>) => ({ ...config, ...patch });
 
 describe('resizePatch', () => {
-  it('snaps the footprint to whole metres and heights to half metres', () => {
-    expect(resizePatch(base, 'length', 41.4)).toEqual({ length: 41 });
-    expect(resizePatch(base, 'width', 12.6)).toEqual({ width: 13 });
-    expect(resizePatch(base, 'gutterHeight', 4.8)).toEqual({ gutterHeight: 5, ridgeHeight: 6 });
-    expect(resizePatch(base, 'ridgeHeight', 7.3)).toEqual({ ridgeHeight: 7.5 });
+  it('snaps the footprint to half metres and heights to 10 cm, as the sidebar steps', () => {
+    expect(resizePatch(base, 'length', 41.3)).toEqual({ length: 41.5 });
+    expect(resizePatch(base, 'width', 8.8)).toEqual({ width: 9 });
+    expect(resizePatch(base, 'eavesHeight', 2.34)).toEqual({ eavesHeight: 2.3, ridgeHeight: 3.5 });
+    expect(resizePatch(base, 'ridgeHeight', 4.27)).toEqual({ ridgeHeight: 4.3 });
   });
 
   it('never leaves the supported limits, however far the handle is dragged', () => {
-    for (const key of ['length', 'width', 'gutterHeight', 'ridgeHeight'] as const) {
+    for (const key of ['length', 'width', 'eavesHeight', 'ridgeHeight'] as const) {
       const { min, max } = DIMENSION_LIMITS[key];
       for (const raw of [-50, 0, min - 3, max + 3, 9999]) {
         const next = apply(base, resizePatch(base, key, raw));
-        for (const dimension of ['length', 'width', 'gutterHeight', 'ridgeHeight'] as const) {
+        for (const dimension of ['length', 'width', 'eavesHeight', 'ridgeHeight'] as const) {
           expect(next[dimension], `${key} dragged to ${raw}`).toBeGreaterThanOrEqual(DIMENSION_LIMITS[dimension].min);
           expect(next[dimension], `${key} dragged to ${raw}`).toBeLessThanOrEqual(DIMENSION_LIMITS[dimension].max);
         }
@@ -43,25 +47,21 @@ describe('resizePatch', () => {
     }
   });
 
-  it('keeps the roof above the gutter on a gable or gothic roof', () => {
-    for (const roofType of ['gable', 'gothic'] as const) {
+  it('keeps the ridge above the eaves, pushing it up when the eaves rise', () => {
+    expect(resizePatch(base, 'eavesHeight', 3.4)).toEqual({ eavesHeight: 3.4, ridgeHeight: 3.9 });
+    for (const roofType of ['gable', 'monitor', 'lean-to'] as const) {
       const config = { ...base, roofType };
-      const raisedGutter = apply(config, resizePatch(config, 'gutterHeight', 8));
-      expect(raisedGutter.ridgeHeight - raisedGutter.gutterHeight).toBeGreaterThanOrEqual(MIN_RISE);
-      const loweredRidge = apply(config, resizePatch(config, 'ridgeHeight', 3));
-      expect(loweredRidge.ridgeHeight - loweredRidge.gutterHeight).toBeGreaterThanOrEqual(MIN_RISE);
+      const raised = apply(config, resizePatch(config, 'eavesHeight', 9));
+      expect(raised.ridgeHeight - raised.eavesHeight).toBeGreaterThanOrEqual(MIN_RISE - 1e-9);
+      const lowered = apply(config, resizePatch(config, 'ridgeHeight', 1));
+      expect(lowered.ridgeHeight - lowered.eavesHeight).toBeGreaterThanOrEqual(MIN_RISE - 1e-9);
     }
   });
 
-  it('moves both heights together on a flat roof and offers no separate ridge', () => {
-    const flat = { ...base, roofType: 'flat' as const, ridgeHeight: 4 };
-    expect(resizePatch(flat, 'gutterHeight', 5)).toEqual({ gutterHeight: 5, ridgeHeight: 5 });
-    expect(resizePatch(flat, 'ridgeHeight', 7)).toEqual({});
-  });
-
   it('returns an empty patch when nothing changes, so a drag does not re-render the scene', () => {
-    expect(resizePatch(base, 'length', 30.2)).toEqual({});
-    expect(resizePatch(base, 'ridgeHeight', 6.1)).toEqual({});
+    expect(resizePatch(base, 'length', 14.1)).toEqual({});
+    expect(resizePatch(base, 'width', 7.2)).toEqual({});
+    expect(resizePatch(base, 'ridgeHeight', 3.52)).toEqual({});
   });
 
   it('ignores a non-finite drag value', () => {
@@ -69,34 +69,46 @@ describe('resizePatch', () => {
   });
 });
 
+describe('parts', () => {
+  it('are the design sidebar tabs without the location, so picking one opens the other', () => {
+    expect(PART_ORDER).toEqual(DESIGN_TABS.filter((tab) => tab !== 'location'));
+    expect(partLabelKey('roofSheet')).toBe('design.tab.roofSheet');
+  });
+
+  it('offer every value the sidebar offers, with its label', () => {
+    expect(PART_VALUES.roofSheet).toEqual(ROOF_SHEET_OPTIONS.map((option) => option.value));
+    expect(PART_VALUES.birds).toHaveLength(4);
+    expect(optionLabelKey('birds', 'layer-cage')).toBe('options.bird.layerCage');
+    expect(optionLabelKey('sideWalls', 'mesh-auto-curtain')).toBe('options.sideWalls.meshAutoCurtain');
+  });
+});
+
 describe('option patches', () => {
-  it('locks cover, vents and door when switching to a shade-net house, and restores sensible ones after', () => {
-    const shade = apply(base, typeCompatibilityPatch('shade-net', base));
-    expect(shade).toMatchObject({ greenhouseType: 'shade-net', coverMaterial: 'shade-net', sideVentilation: 'none', doorEntry: 'curtain' });
-    const back = apply(shade, typeCompatibilityPatch('naturally-ventilated', shade));
-    expect(back).toMatchObject({ coverMaterial: 'uv-polyfilm', sideVentilation: 'manual-rollup', doorEntry: 'single-sliding' });
+  it('make the knock-on changes the setup needs (keepCompatible)', () => {
+    expect(optionPatch('birds', 'layer-cage', base)).toEqual({ birdType: 'layer-cage', feedingSystem: 'trough' });
+    expect(optionPatch('housing', 'environment-controlled', base)).toEqual({ housingSystem: 'environment-controlled', sideWalls: 'closed-tunnel' });
+    expect(optionPatch('entry', 'anteroom', base)).toEqual({ entry: 'anteroom' });
+    const desi = apply(base, optionPatch('birds', 'desi', base));
+    expect(optionPatch('housing', 'backyard', desi)).toEqual({ housingSystem: 'backyard', frameMaterial: 'bamboo-wood' });
   });
 
-  it('keeps the user choices when switching between covered types', () => {
-    const custom = { ...base, coverMaterial: 'glass' as const, sideVentilation: 'louver' as const };
-    expect(apply(custom, typeCompatibilityPatch('climate-controlled', custom))).toMatchObject({
-      coverMaterial: 'glass',
-      sideVentilation: 'louver',
-    });
+  it('lock the choices that do not fit the bird or the shed', () => {
+    expect(isOptionLocked('housing', 'backyard', base)).toBe(true);
+    expect(isOptionLocked('sideWalls', 'closed-tunnel', base)).toBe(true);
+    expect(isOptionLocked('frame', 'bamboo-wood', base)).toBe(true);
+    expect(isOptionLocked('roofSheet', 'thatch', base)).toBe(true);
+    expect(isOptionLocked('feeding', 'trough', base)).toBe(true);
+    expect(isOptionLocked('roof', 'monitor', base)).toBe(false);
+    const controlled = apply(base, optionPatch('housing', 'environment-controlled', base));
+    expect(isOptionLocked('sideWalls', 'mesh-curtain', controlled)).toBe(true);
   });
 
-  it('levels the ridge for a flat roof and restores a rise afterwards', () => {
-    const flat = apply(base, roofPatch('flat', base));
-    expect(flat.ridgeHeight).toBe(flat.gutterHeight);
-    const gable = apply(flat, roofPatch('gable', flat));
-    expect(gable.ridgeHeight).toBeGreaterThan(gable.gutterHeight);
-  });
-
-  it('offers every value the form offers', () => {
-    expect(PART_VALUES.crop).toHaveLength(6);
-    expect(PART_VALUES.irrigation).toHaveLength(4);
-    expect(PART_VALUES.vents).toHaveLength(4);
-    expect(PART_VALUES.door).toHaveLength(4);
+  it('cycle to the next available option, skipping locked ones and wrapping around', () => {
+    expect(cycleOptionPatch('roof', base, 1)).toEqual({ roofType: 'monitor' });
+    expect(cycleOptionPatch('roof', base, -1)).toEqual({ roofType: 'lean-to' });
+    expect(cycleOptionPatch('frame', base, -1)).toEqual({ frameMaterial: 'rcc-pillars' });
+    const auto = { ...base, sideWalls: 'mesh-auto-curtain' as const };
+    expect(cycleOptionPatch('sideWalls', auto, 1)).toEqual({ sideWalls: 'mesh-curtain' });
   });
 });
 
@@ -104,85 +116,75 @@ describe('part detection', () => {
   const node = (name: string, parent: unknown = null) => ({ name, parent });
 
   it('maps the named groups in the model to the part they edit', () => {
-    expect(partForObjectName('roof-cover')).toBe('roof');
-    expect(partForObjectName('side-wall-cover')).toBe('cover');
-    expect(partForObjectName('vents-louver')).toBe('vents');
-    expect(partForObjectName('door-roll-up')).toBe('door');
-    expect(partForObjectName('irrigation-drip')).toBe('irrigation');
-    expect(partForObjectName('pump-house-fogger')).toBe('irrigation');
-    expect(partForObjectName('crop-tomato')).toBe('crop');
-    expect(partForObjectName('climate-equipment')).toBe('type');
-    expect(partForObjectName('frame-hoops')).toBe('frame');
-    expect(partForObjectName('frame-purlins')).toBe('frame');
+    expect(partForObjectName('roof-sheet')).toBe('roof');
+    expect(partForObjectName('roof-vent')).toBe('roof');
+    expect(partForObjectName('frame-posts')).toBe('frame');
+    expect(partForObjectName('walls-curtains')).toBe('sideWalls');
+    expect(partForObjectName('tunnel-fans')).toBe('housing');
+    expect(partForObjectName('entry-footbath')).toBe('entry');
+    expect(partForObjectName('birds-flock')).toBe('birds');
+    expect(partForObjectName('cages-rows')).toBe('birds');
+    expect(partForObjectName('litter')).toBe('birds');
+    expect(partForObjectName('feeding-silo')).toBe('feeding');
     expect(partForObjectName('farm-model')).toBe('size');
-    expect(partForObjectName('louver-slat')).toBeNull();
+    expect(partForObjectName('site-tank')).toBeNull();
   });
 
   it('finds the part from any mesh inside it', () => {
-    const door = node('door-single-sliding', node('farm-model'));
-    const panel = node('panel', node('track', door));
-    expect(partForObject(panel)).toBe('door');
-    // Anything else inside the model (the foundation, a gutter) selects the house as a whole.
-    expect(partForObject(node('mystery', node('farm-model')))).toBe('size');
+    const entry = node('entry-model', node('farm-model'));
+    const panel = node('', node('entry-door', entry));
+    expect(partForObject(panel)).toBe('entry');
+    // Anything else inside the model (the plinth, the water tank) selects the shed as a whole.
+    expect(partForObject(node('site-tank', node('farm-model')))).toBe('size');
     expect(partForObject(node('grass'))).toBeNull();
     expect(partForObject(null)).toBeNull();
   });
 
   it('collects the groups that make up a part for its selection outline', () => {
-    expect(objectBelongsToPart('frame-arches', 'frame')).toBe(true);
-    expect(objectBelongsToPart('roof-cover', 'roof')).toBe(true);
-    expect(objectBelongsToPart('roof-cover', 'cover')).toBe(true);
-    expect(objectBelongsToPart('end-wall-cover', 'cover')).toBe(true);
+    expect(objectBelongsToPart('roof-model', 'roof')).toBe(true);
+    expect(objectBelongsToPart('roof-sheet', 'roofSheet')).toBe(true);
+    expect(objectBelongsToPart('roof-ridge', 'roofSheet')).toBe(false);
+    expect(objectBelongsToPart('walls-model', 'housing')).toBe(true);
+    expect(objectBelongsToPart('tunnel-equipment', 'housing')).toBe(true);
     expect(objectBelongsToPart('farm-model', 'size')).toBe(false);
-    expect(objectBelongsToPart('door-roll-up', 'vents')).toBe(false);
+    expect(objectBelongsToPart('entry-model', 'sideWalls')).toBe(false);
   });
 });
 
 describe('grips', () => {
-  it('offers resize grips on the house, cover and frame, height grips on the roof, none on listed parts', () => {
-    expect(handlesForPart('size', base)).toEqual(['length', 'width', 'corner', 'gutterHeight', 'ridgeHeight']);
-    expect(handlesForPart('roof', base)).toEqual(['gutterHeight', 'ridgeHeight']);
-    expect(handlesForPart('roof', { roofType: 'flat' })).toEqual(['gutterHeight']);
-    expect(handlesForPart('cover', base)).not.toContain('ridgeHeight');
-    expect(handlesForPart('door', base)).toEqual([]);
-    expect(handlesForPart(null, base)).toEqual([]);
+  it('offers resize grips on the shed, frame and walls, height grips on the roof, none on listed parts', () => {
+    expect(handlesForPart('size')).toEqual(['length', 'width', 'corner', 'eavesHeight', 'ridgeHeight']);
+    expect(handlesForPart('roof')).toEqual(['eavesHeight', 'ridgeHeight']);
+    expect(handlesForPart('roofSheet')).toEqual(['eavesHeight', 'ridgeHeight']);
+    expect(handlesForPart('sideWalls')).not.toContain('ridgeHeight');
+    expect(handlesForPart('entry')).toEqual([]);
+    expect(handlesForPart('birds')).toEqual([]);
+    expect(handlesForPart(null)).toEqual([]);
   });
 
   it('turns a grip position back into the dimension it controls', () => {
-    expect(handleValue('length', 15 + HANDLE_GAP)).toBeCloseTo(30, 9);
-    expect(handleValue('width', 7 + HANDLE_GAP)).toBeCloseTo(14, 9);
-    expect(handleValue('gutterHeight', 4.5)).toBe(4.5);
+    expect(handleValue('length', 7 + HANDLE_GAP)).toBeCloseTo(14, 9);
+    expect(handleValue('width', 3.5 + HANDLE_GAP)).toBeCloseTo(7, 9);
+    expect(handleValue('eavesHeight', 2.4)).toBe(2.4);
   });
 
   it('resizes both footprint sides from the corner grip', () => {
-    expect(cornerPatch(base, 6 + HANDLE_GAP, 20 + HANDLE_GAP)).toEqual({ width: 12, length: 40 });
-    expect(cornerPatch(base, 5 + HANDLE_GAP, 15 + HANDLE_GAP)).toEqual({});
+    expect(cornerPatch(base, 4 + HANDLE_GAP, 10 + HANDLE_GAP)).toEqual({ width: 8, length: 20 });
+    expect(cornerPatch(base, 3.5 + HANDLE_GAP, 7 + HANDLE_GAP)).toEqual({});
   });
 
   it('describes a drag the way Blender does in its header', () => {
     expect(dragReadout('Length', 32, 28)).toBe('Length 32 m (+4)');
-    expect(dragReadout('Gutter', 3.5, 4)).toBe('Gutter 3.5 m (−0.5)');
+    expect(dragReadout('Eaves', 2.1, 2.4)).toBe('Eaves 2.1 m (−0.3)');
     expect(dragReadout('Width', 10, 10)).toBe('Width 10 m (±0)');
   });
 });
 
-describe('choosing options in the properties panel', () => {
-  it('cycles to the next option and wraps around', () => {
-    expect(cycleOptionPatch('crop', { ...base, selectedCrop: 'tomato' }, 1)).toEqual({ selectedCrop: 'capsicum' });
-    expect(cycleOptionPatch('crop', { ...base, selectedCrop: 'tomato' }, -1)).toEqual({ selectedCrop: 'gerbera' });
-  });
-
-  it('skips options a shade-net house cannot have', () => {
-    const shade = apply(base, typeCompatibilityPatch('shade-net', base));
-    expect(isOptionLocked('cover', 'glass', shade)).toBe(true);
-    expect(isOptionLocked('cover', 'shade-net', shade)).toBe(false);
-    expect(cycleOptionPatch('cover', shade, 1)).toEqual({});
-    expect(cycleOptionPatch('frame', shade, 1)).toEqual({ structureMaterial: 'aluminium' });
-  });
-
-  it('keeps the knock-on changes of roof and house type choices', () => {
-    expect(optionPatch('roof', 'flat', base)).toEqual({ roofType: 'flat', ridgeHeight: base.gutterHeight });
-    expect(optionPatch('type', 'shade-net', base)).toMatchObject({ coverMaterial: 'shade-net' });
-    expect(optionPatch('door', 'roll-up', base)).toEqual({ doorEntry: 'roll-up' });
+describe('roofSurface', () => {
+  it('measures both slopes with the overhang, one slope for a lean-to', () => {
+    const gable = roofSurface(base);
+    expect(gable).toBeCloseTo(2 * Math.hypot(3.5 + 1.07, 1.4) * 14, 6);
+    expect(roofSurface({ ...base, roofType: 'lean-to' })).toBeCloseTo(Math.hypot(7 + 2.14, 1.4) * 14, 6);
+    expect(roofSurface({ ...base, roofType: 'monitor' })).toBeGreaterThan(gable);
   });
 });

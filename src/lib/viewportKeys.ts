@@ -12,10 +12,10 @@ export type ViewName =
   | 'other-side'
   | 'top'
   | 'inside'
-  | 'focus-door'
-  | 'focus-vents'
-  | 'focus-irrigation'
-  | 'focus-climate';
+  | 'focus-entry'
+  | 'focus-walls'
+  | 'focus-feeding'
+  | 'focus-fans';
 
 export type ViewportAction =
   | { type: 'view'; view: ViewName }
@@ -53,10 +53,10 @@ const DIGIT_VIEWS: Record<string, ViewName> = {
   '3': 'side',
   '4': 'top',
   '5': 'inside',
-  '6': 'focus-door',
-  '7': 'focus-vents',
-  '8': 'focus-irrigation',
-  '9': 'focus-climate',
+  '6': 'focus-entry',
+  '7': 'focus-walls',
+  '8': 'focus-feeding',
+  '9': 'focus-fans',
 };
 
 /** Orbit step for numpad 2/4/6/8, as in Blender (15 degrees). */

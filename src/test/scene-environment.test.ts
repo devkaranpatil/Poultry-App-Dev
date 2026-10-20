@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ENVIRONMENTS, SKIES, sceneReach } from '@/lib/sceneEnvironment';
-import type { RenderQuality } from '@/components/farm/scene/cropLayout';
+import type { RenderQuality } from '@/components/farm/scene/shedLayout';
 import {
   buildBackdropPlan,
   CAMERA_FAR,

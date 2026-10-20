@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PropertiesPanel } from '@/components/farm/PropertiesPanel';
 import { I18nProvider } from '@/context/I18nContext';
-import { DEFAULT_CONFIG } from '@/components/farm/scene/legacyConfig';
+import { DEFAULT_CONFIG } from '@/types/farm';
 import type { EditablePart } from '@/lib/sceneEdit';
 
 /** The panel with its selection held as MiddlePanel holds it; `pickOnModel` stands in for a tap on the 3D view. */
@@ -22,11 +22,11 @@ function Harness({ compact, pickOnModel }: { compact: boolean; pickOnModel?: Edi
 describe('PropertiesPanel on a phone', () => {
   it('shows a part picked on the model as a slim bar that opens on request', () => {
     window.localStorage.setItem('farm.locale', 'en');
-    render(<Harness compact pickOnModel="door" />);
+    render(<Harness compact pickOnModel="entry" />);
     fireEvent.click(screen.getByText('tap model'));
 
     const editor = screen.getByTestId('part-editor');
-    expect(editor).toHaveAttribute('data-part', 'door');
+    expect(editor).toHaveAttribute('data-part', 'entry');
     expect(editor).toHaveAttribute('data-collapsed', 'true');
     expect(screen.queryByRole('radiogroup')).toBeNull();
     expect(screen.queryByTestId('parts-row')).toBeNull();

@@ -2,45 +2,36 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html, Line } from '@react-three/drei';
 import * as THREE from 'three';
-import { FarmConfig } from '@/components/farm/scene/legacyConfig';
-import { CropField } from './scene/CropField';
-import { IrrigationSystemModel } from './scene/IrrigationSystem';
-import { buildCropLayout } from './scene/cropLayout';
-import { FrameModel } from './scene/FrameModel';
-import { CoverModel } from './scene/CoverModel';
-import { VentsModel } from './scene/VentsModel';
-import { DoorModel } from './scene/DoorModel';
-import { ClimateEquipment } from './scene/ClimateEquipment';
-import { DOOR_OPENING, antechamber, buildStructureLayout } from './scene/structureLayout';
-import type { Rect } from './scene/structureGeometry';
-import { Swap, useSizeEase } from './scene/transitions';
+import type { FarmConfig } from '@/types/farm';
+import type { FocusTarget } from '@/lib/sceneEdit';
+import { flockSize } from '@/lib/flock';
+import { buildInteriorLayout, buildShedLayout, entryDepth, type RenderQuality } from './scene/shedLayout';
+import { ShedEntryModel, ShedFloor, ShedFrame, ShedRoof, ShedWalls, TunnelEquipment } from './scene/ShedStructure';
+import { BirdFlock, CageRows, FeedingModel, LitterFloor, SiteExtras } from './scene/ShedInterior';
+import { Swap, usePrefersReducedMotion, useSizeEase } from './scene/transitions';
 
 /**
- * The whole polyhouse, built up in stages: 1 site, 2 frame, 3 cover, 4 vents and door,
- * 5 irrigation and climate equipment, 6 crop. Each stage animates in; changing an option cross-fades
- * the part it affects; resizing eases the model to its new size. The building itself lives in
- * scene/ (FrameModel, CoverModel, VentsModel, DoorModel, ClimateEquipment), all laid out from one
- * structure layout so every member, sheet and fitting lines up. See docs/3d-scene.md.
+ * The whole poultry shed, built up in stages: 1 plinth and floor, 2 frame, 3 roof, 4 walls and entry, 5 cages,
+ * feeding and tunnel equipment, 6 birds. Each stage animates in; changing an option cross-fades the part it
+ * affects; resizing eases the model to its new size. Everything is laid out once by scene/shedLayout.ts, so every
+ * post, sheet and fitting lines up. See docs/3d-scene.md and docs/3d-model-references.md.
  */
 
 type BuildStage = 1 | 2 | 3 | 4 | 5 | 6;
-type RenderQuality = 'high' | 'balanced' | 'lite';
-type FocusTarget = 'door' | 'vents' | 'irrigation' | 'climate';
 
 interface FarmModelProps {
   config: FarmConfig;
   buildStage?: BuildStage;
   quality?: RenderQuality;
   focusHighlight?: FocusTarget | null;
-  onFocusRequest?: (target: FocusTarget) => void;
   /**
-   * Which measurements to draw beside the house. Only those of the selected part are passed, so the
-   * guides never clutter the view when nothing is being edited.
+   * Which measurements to draw beside the shed. Only those of the selected part are passed, so the guides never
+   * clutter the view when nothing is being edited.
    */
   guides?: readonly GuideKey[];
 }
 
-type GuideKey = 'length' | 'width' | 'gutterHeight' | 'ridgeHeight';
+type GuideKey = 'length' | 'width' | 'eavesHeight' | 'ridgeHeight';
 const NO_GUIDES: readonly GuideKey[] = [];
 const noRaycast = () => null;
 
@@ -111,151 +102,101 @@ function DimensionLine({
   );
 }
 
-/** Soil floor inside the house, with pale weed-mat walkways along both side walls and the end walls. */
-function SiteFloor({ width, length }: { width: number; length: number }) {
-  return (
-    <group name="site-floor">
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.004, 0]} receiveShadow>
-        <planeGeometry args={[width, length]} />
-        <meshStandardMaterial color="#7b5d43" roughness={0.97} />
-      </mesh>
-      {[-1, 1].map((side) => (
-        <mesh key={side} rotation={[-Math.PI / 2, 0, 0]} position={[side * (width / 2 - 0.3), 0.007, 0]} receiveShadow>
-          <planeGeometry args={[0.55, length - 0.1]} />
-          <meshStandardMaterial color="#d9d6cc" roughness={0.9} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-export function FarmModel({ config, buildStage = 6, quality = 'high', focusHighlight = null, onFocusRequest, guides = NO_GUIDES }: FarmModelProps) {
+export function FarmModel({ config, buildStage = 6, quality = 'high', focusHighlight = null, guides = NO_GUIDES }: FarmModelProps) {
   const {
-    length, width, gutterHeight, ridgeHeight, roofType, coverMaterial,
-    structureMaterial, greenhouseType, sideVentilation, doorEntry,
-    selectedCrop, irrigationSystem,
+    length, width, eavesHeight, ridgeHeight, roofType, housingSystem, frameMaterial, roofSheet, sideWalls, entry,
+    birdType, cageTiers, feedingSystem, stockingDensity,
   } = config;
   const rootRef = useRef<THREE.Group>(null);
-  useSizeEase(rootRef, { width, length, height: Math.max(gutterHeight, ridgeHeight) });
+  const reducedMotion = usePrefersReducedMotion();
+  useSizeEase(rootRef, { width, length, height: Math.max(eavesHeight, ridgeHeight) });
 
   const layout = useMemo(
-    () => buildStructureLayout({ length, width, gutterHeight, ridgeHeight, roofType, greenhouseType }),
-    [length, width, gutterHeight, ridgeHeight, roofType, greenhouseType]
+    () => buildShedLayout({ length, width, eavesHeight, ridgeHeight, roofType }),
+    [length, width, eavesHeight, ridgeHeight, roofType]
+  );
+  const birds = useMemo(
+    () => flockSize({ length, width, birdType, housing: housingSystem, stockingDensity }) ?? 0,
+    [length, width, birdType, housingSystem, stockingDensity]
+  );
+  const interior = useMemo(
+    () => buildInteriorLayout({ length, width, birdType, feedingSystem, cageTiers, birds, quality }),
+    [length, width, birdType, feedingSystem, cageTiers, birds, quality]
   );
   const { halfWidth, halfLength } = layout;
-  const netHouse = greenhouseType === 'shade-net';
-  const climate = greenhouseType === 'climate-controlled';
+  const closed = sideWalls === 'closed-tunnel';
 
-  const room = useMemo(() => antechamber(greenhouseType, doorEntry, gutterHeight), [greenhouseType, doorEntry, gutterHeight]);
-  const entry = useMemo(() => {
-    const opening = DOOR_OPENING[doorEntry];
-    return room
-      ? { halfWidth: room.width / 2 - 0.04, height: room.height - 0.04 }
-      : { halfWidth: opening.width / 2 + 0.06, height: opening.height + 0.06 };
-  }, [room, doorEntry]);
-  const padOpening = useMemo<Rect | null>(
-    () =>
-      climate
-        ? { x0: -halfWidth + 0.45, y0: 0.45, x1: halfWidth - 0.45, y1: Math.max(1.2, Math.min(gutterHeight - 0.5, 2.45)) }
-        : null,
-    [climate, halfWidth, gutterHeight]
-  );
-
-  // One layout feeds both the crop field and the irrigation system, so they always line up.
-  const cropLayout = useMemo(
-    () => buildCropLayout({ width, length, gutterHeight, crop: selectedCrop, irrigation: irrigationSystem, quality }),
-    [width, length, gutterHeight, selectedCrop, irrigationSystem, quality]
-  );
-
-  const showFoundation = buildStage >= 1;
+  const showFloor = buildStage >= 1;
   const showFrame = buildStage >= 2;
-  const showCover = buildStage >= 3;
-  const showAccess = buildStage >= 4;
+  const showRoof = buildStage >= 3;
+  const showWalls = buildStage >= 4;
   const showSystems = buildStage >= 5;
-  const showCrops = buildStage >= 6;
-  const doorZ = halfLength + (room ? room.depth : 0);
+  const showBirds = buildStage >= 6;
+  const entryZ = halfLength + entryDepth(entry);
 
   return (
     <group
       ref={rootRef}
       name="farm-model"
       userData={{
-        crop: selectedCrop,
-        irrigation: irrigationSystem,
-        structureType: greenhouseType,
+        housing: housingSystem,
         roof: roofType,
-        structure: structureMaterial,
-        cover: coverMaterial,
-        sideVentilation,
-        door: doorEntry,
+        frame: frameMaterial,
+        roofSheet,
+        sideWalls,
+        entry,
+        bird: birdType,
+        feeding: feedingSystem,
+        cageTiers,
         quality,
         buildStage,
-        spans: layout.spans,
         bays: layout.bays,
+        birdsTotal: interior.birdsTotal,
+        birdsShown: showBirds ? interior.birdsShown : 0,
       }}
     >
-      <Swap id={showFoundation ? 'site' : null} kind="fade">
-        <SiteFloor width={width} length={length} />
+      <Swap id={showFloor ? `floor|${interior.mode}` : null} kind="fade">
+        <group>
+          <ShedFloor layout={layout} />
+          <LitterFloor layout={layout} interior={interior} quality={quality} />
+        </group>
       </Swap>
 
-      <Swap id={showFrame ? `${structureMaterial}|${roofType}|${greenhouseType}` : null} kind="grow" duration={0.4}>
-        <FrameModel layout={layout} structure={structureMaterial} quality={quality} entryHalf={entry.halfWidth} />
+      <Swap id={showFrame ? `${frameMaterial}|${roofType}` : null} kind="grow" duration={0.4}>
+        <ShedFrame layout={layout} frame={frameMaterial} />
       </Swap>
 
-      <Swap id={showCover ? `${greenhouseType}|${coverMaterial}|${roofType}` : null} kind="fade" duration={0.42}>
-        <CoverModel
-          layout={layout}
-          cover={coverMaterial}
-          greenhouseType={greenhouseType}
-          sideVentilation={sideVentilation}
-          quality={quality}
-          entry={entry}
-          padOpening={padOpening}
-        />
+      <Swap id={showRoof ? `${roofType}|${roofSheet}` : null} kind="fade" duration={0.42}>
+        <ShedRoof layout={layout} sheet={roofSheet} quality={quality} />
       </Swap>
 
-      <Swap id={showAccess && sideVentilation !== 'none' ? sideVentilation : null} kind="rise">
-        {sideVentilation !== 'none' ? (
-          <VentsModel layout={layout} type={sideVentilation} quality={quality} onSelect={() => onFocusRequest?.('vents')} />
-        ) : null}
+      <Swap id={showWalls ? `${sideWalls}|${housingSystem}` : null} kind="rise">
+        <ShedWalls layout={layout} sideWalls={sideWalls} housing={housingSystem} quality={quality} />
       </Swap>
 
-      <Swap id={showAccess ? `${doorEntry}|${room ? 'room' : 'wall'}` : null} kind="rise">
-        <DoorModel
-          type={doorEntry}
-          wallZ={halfLength}
-          antechamber={room}
-          structure={structureMaterial}
-          cover={coverMaterial}
-          netHouse={netHouse}
-          quality={quality}
-          onSelect={() => onFocusRequest?.('door')}
-        />
+      <Swap id={showWalls ? `${entry}|${closed}` : null} kind="rise">
+        <ShedEntryModel layout={layout} entry={entry} closed={closed} quality={quality} />
       </Swap>
 
-      <Swap id={showSystems && climate && padOpening ? 'climate' : null} kind="rise" delay={0.1}>
-        {padOpening ? (
-          <ClimateEquipment layout={layout} padOpening={padOpening} entry={entry} quality={quality} onSelect={() => onFocusRequest?.('climate')} />
-        ) : null}
+      <Swap id={showSystems && closed ? 'tunnel' : null} kind="rise" delay={0.1}>
+        <TunnelEquipment layout={layout} quality={quality} animate={!reducedMotion} />
       </Swap>
 
-      {/* Interior: the irrigation system appears with the systems stage, the crop field with the crops stage */}
-      <group name="interior">
-        <Swap id={showSystems ? irrigationSystem : null} kind="rise">
-          <IrrigationSystemModel
-            system={irrigationSystem}
-            layout={cropLayout}
-            halfWidth={halfWidth}
-            halfLength={halfLength}
-            gutterHeight={gutterHeight}
-            quality={quality}
-            onSelect={() => onFocusRequest?.('irrigation')}
-          />
-        </Swap>
-        <Swap id={showCrops ? `${selectedCrop}-${cropLayout.mode}` : null} kind="grow" duration={0.5}>
-          <CropField layout={cropLayout} quality={quality} />
-        </Swap>
-      </group>
+      <Swap id={showSystems && interior.mode === 'cage' ? `cages|${cageTiers}` : null} kind="grow" duration={0.45}>
+        <CageRows interior={interior} quality={quality} />
+      </Swap>
+
+      <Swap id={showSystems ? `${feedingSystem}|${interior.mode}|${cageTiers}` : null} kind="rise">
+        <FeedingModel layout={layout} interior={interior} automatic={feedingSystem === 'automatic'} />
+      </Swap>
+
+      <Swap id={showSystems ? `extras|${birdType}` : null} kind="rise" delay={0.1}>
+        <SiteExtras layout={layout} interior={interior} />
+      </Swap>
+
+      <Swap id={showBirds ? `${birdType}|${interior.mode}` : null} kind="grow" duration={0.5}>
+        <BirdFlock interior={interior} />
+      </Swap>
 
       {showFrame && guides.length > 0 && (
         <group name="dimension-guides">
@@ -263,10 +204,10 @@ export function FarmModel({ config, buildStage = 6, quality = 'high', focusHighl
             <DimensionLine start={[-halfWidth - 3, 0.5, -halfLength]} end={[-halfWidth - 3, 0.5, halfLength]} value={length} color="#22c55e" />
           ) : null}
           {guides.includes('width') ? (
-            <DimensionLine start={[-halfWidth, 0.5, doorZ + 3]} end={[halfWidth, 0.5, doorZ + 3]} value={width} color="#3b82f6" />
+            <DimensionLine start={[-halfWidth, 0.5, entryZ + 3]} end={[halfWidth, 0.5, entryZ + 3]} value={width} color="#3b82f6" />
           ) : null}
-          {guides.includes('gutterHeight') ? (
-            <DimensionLine start={[halfWidth + 2, 0, halfLength + 2]} end={[halfWidth + 2, gutterHeight, halfLength + 2]} value={gutterHeight} color="#f59e0b" />
+          {guides.includes('eavesHeight') ? (
+            <DimensionLine start={[halfWidth + 2, 0, halfLength + 2]} end={[halfWidth + 2, eavesHeight, halfLength + 2]} value={eavesHeight} color="#f59e0b" />
           ) : null}
           {guides.includes('ridgeHeight') ? (
             <DimensionLine start={[halfWidth + 4, 0, halfLength + 2]} end={[halfWidth + 4, ridgeHeight, halfLength + 2]} value={ridgeHeight} color="#ef4444" />
@@ -274,16 +215,12 @@ export function FarmModel({ config, buildStage = 6, quality = 'high', focusHighl
         </group>
       )}
 
-      {showAccess && focusHighlight === 'door' && (
-        <FocusMarker position={[0, Math.max(0.4, gutterHeight * 0.18), doorZ + 0.7]} color="#3b82f6" />
+      {showWalls && focusHighlight === 'entry' && <FocusMarker position={[0, Math.max(0.4, eavesHeight * 0.18), entryZ + 0.7]} color="#3b82f6" />}
+      {showWalls && focusHighlight === 'walls' && !closed && (
+        <FocusMarker position={[halfWidth + 0.65, Math.max(0.5, eavesHeight * 0.45), 0]} color="#f59e0b" />
       )}
-      {showAccess && focusHighlight === 'vents' && sideVentilation !== 'none' && (
-        <FocusMarker position={[halfWidth + 0.65, Math.max(0.5, gutterHeight * 0.45), 0]} color="#f59e0b" />
-      )}
-      {showSystems && focusHighlight === 'irrigation' && <FocusMarker position={[-halfWidth * 0.5, 0.6, -halfLength * 0.5]} color="#14b8a6" />}
-      {showSystems && focusHighlight === 'climate' && climate && (
-        <FocusMarker position={[-halfWidth + 2.1, 1.2, -halfLength + 1.9]} color="#ef4444" />
-      )}
+      {showSystems && focusHighlight === 'feeding' && <FocusMarker position={[-halfWidth * 0.5, 0.6, -halfLength * 0.5]} color="#14b8a6" />}
+      {showSystems && focusHighlight === 'fans' && closed && <FocusMarker position={[0, 1.2, -halfLength - 1.4]} color="#ef4444" />}
     </group>
   );
 }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import type { EnvironmentId, SceneReach } from '@/lib/sceneEnvironment';
-import type { RenderQuality } from './cropLayout';
+import type { RenderQuality } from './shedLayout';
 import { InstanceSet, InstancedPart } from './instancing';
 import { buildBackdropPlan, LANDSCAPE_LOOKS, type FarKind, type Placement, type TreeKind } from './environmentLooks';
 import { farShape, fieldShape, groundShape, teaRowShape, terraceShape, treeShapes } from './environmentGeometry';

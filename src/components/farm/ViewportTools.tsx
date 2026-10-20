@@ -66,15 +66,16 @@ interface NavigationToolsProps {
   onFrame: () => void;
   onReset: () => void;
   onView: (view: ViewName) => void;
-  hasVents: boolean;
-  hasClimate: boolean;
+  /** The shed has open sides (the walls view) or tunnel fans (the fans view). */
+  hasWalls: boolean;
+  hasFans: boolean;
   helpOpen: boolean;
   onHelpOpenChange: (open: boolean) => void;
   frameLabel: string;
 }
 
 /** The column under the gizmo: zoom, frame selected, home, named views and the shortcut list. */
-export function NavigationTools({ onZoom, onFrame, onReset, onView, hasVents, hasClimate, helpOpen, onHelpOpenChange, frameLabel }: NavigationToolsProps) {
+export function NavigationTools({ onZoom, onFrame, onReset, onView, hasWalls, hasFans, helpOpen, onHelpOpenChange, frameLabel }: NavigationToolsProps) {
   const { t } = useI18n();
   const views: Array<{ view: ViewName; label: string; keys: string }> = [
     { view: 'auto', label: t('middle.overview'), keys: '1' },
@@ -84,10 +85,10 @@ export function NavigationTools({ onZoom, onFrame, onReset, onView, hasVents, ha
     { view: 'inside', label: t('middle.inside'), keys: '5' },
   ];
   const focus: Array<{ view: ViewName; label: string; keys: string; show: boolean }> = [
-    { view: 'focus-door', label: t('middle.door'), keys: '6', show: true },
-    { view: 'focus-vents', label: t('middle.vents'), keys: '7', show: hasVents },
-    { view: 'focus-irrigation', label: t('middle.irrigation'), keys: '8', show: true },
-    { view: 'focus-climate', label: t('middle.climate'), keys: '9', show: hasClimate },
+    { view: 'focus-entry', label: t('middle.view.entry'), keys: '6', show: true },
+    { view: 'focus-walls', label: t('middle.view.walls'), keys: '7', show: hasWalls },
+    { view: 'focus-feeding', label: t('middle.view.feeding'), keys: '8', show: true },
+    { view: 'focus-fans', label: t('middle.view.fans'), keys: '9', show: hasFans },
   ];
   return (
     <div className="pointer-events-auto flex flex-col items-center gap-1.5" role="toolbar" aria-orientation="vertical" aria-label={t('viewport.navigation')}>

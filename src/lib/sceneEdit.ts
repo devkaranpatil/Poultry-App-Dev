@@ -1,99 +1,79 @@
 import {
-  CROP_OPTIONS,
+  BIRD_OPTIONS,
   DIMENSION_LIMITS,
-  DOOR_ENTRY_OPTIONS,
-  IRRIGATION_SYSTEM_OPTIONS,
-  SIDE_VENTILATION_OPTIONS,
+  ENTRY_OPTIONS,
+  FEEDING_OPTIONS,
+  FRAME_OPTIONS,
+  HOUSING_FOR_BIRD,
+  HOUSING_OPTIONS,
+  ROOF_OPTIONS,
+  ROOF_SHEET_OPTIONS,
+  SIDE_WALL_OPTIONS,
+  feedingFor,
+  keepCompatible,
+  optionKey,
   type FarmConfig,
-} from '@/components/farm/scene/legacyConfig';
+} from '@/types/farm';
 
-/** The editable parts of the model, as named by the user. 'size' is the house as a whole. */
-export type EditablePart = 'size' | 'roof' | 'frame' | 'cover' | 'vents' | 'door' | 'irrigation' | 'crop' | 'type';
+/**
+ * The editable parts of the shed: the design sidebar's tabs without the location. 'size' is the shed as a whole.
+ * A part picked on the model opens the tab of the same name, and a tab selects its part.
+ */
+export type EditablePart = 'size' | 'housing' | 'roof' | 'frame' | 'roofSheet' | 'sideWalls' | 'entry' | 'birds' | 'feeding';
 
-export type ResizeKey = 'length' | 'width' | 'gutterHeight' | 'ridgeHeight';
+export type ResizeKey = 'length' | 'width' | 'eavesHeight' | 'ridgeHeight';
 
 /** A grip on the model. 'corner' changes length and width together. */
 export type HandleKey = ResizeKey | 'corner';
 
-/** Dragging snaps to whole metres for the footprint and half metres for heights. */
-export const SNAP_STEP: Record<ResizeKey, number> = { length: 1, width: 1, gutterHeight: 0.5, ridgeHeight: 0.5 };
+/** Dragging snaps as the sidebar's number boxes step: half metres for the footprint, 10 cm for heights. */
+export const SNAP_STEP: Record<ResizeKey, number> = { length: 0.5, width: 0.5, eavesHeight: 0.1, ridgeHeight: 0.1 };
 
-/** A gable or gothic roof must rise at least this much above the gutter. */
+/** The ridge stays at least this far above the eaves, so every roof has a slope to shed rain. */
 export const MIN_RISE = 0.5;
 
 const snap = (value: number, step: number) => Math.round(value / step) * step;
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+const round = (value: number) => Number(value.toFixed(2));
 
 /**
- * Turns a dragged value into a config patch that always stays valid: snapped, inside the supported
- * limits, and with the roof rising above the gutter (or level with it for a flat roof).
+ * Turns a dragged value into a setup patch that always stays valid: snapped, inside the supported limits, and with
+ * the ridge above the eaves.
  */
 export function resizePatch(config: FarmConfig, key: ResizeKey, rawValue: number): Partial<FarmConfig> {
   if (!Number.isFinite(rawValue)) return {};
   const { min, max } = DIMENSION_LIMITS[key];
-  const value = Number(clamp(snap(rawValue, SNAP_STEP[key]), min, max).toFixed(2));
+  const value = round(clamp(snap(rawValue, SNAP_STEP[key]), min, max));
 
   if (key === 'length' || key === 'width') return value === config[key] ? {} : { [key]: value };
 
-  const flat = config.roofType === 'flat';
   const ridgeLimits = DIMENSION_LIMITS.ridgeHeight;
-  const gutterLimits = DIMENSION_LIMITS.gutterHeight;
-
-  if (key === 'gutterHeight') {
-    if (flat) {
-      // A flat roof has no rise, so both heights move together.
-      const level = clamp(value, gutterLimits.min, Math.min(gutterLimits.max, ridgeLimits.max));
-      return level === config.gutterHeight && level === config.ridgeHeight ? {} : { gutterHeight: level, ridgeHeight: level };
-    }
-    const ridgeHeight = Math.min(Math.max(config.ridgeHeight, value + MIN_RISE), ridgeLimits.max);
-    const gutterHeight = Math.min(value, ridgeHeight - MIN_RISE);
-    return gutterHeight === config.gutterHeight && ridgeHeight === config.ridgeHeight ? {} : { gutterHeight, ridgeHeight };
+  if (key === 'eavesHeight') {
+    // Raising the eaves pushes the ridge up with it; the eaves stop where the ridge can go no higher.
+    const ridgeHeight = round(Math.min(Math.max(config.ridgeHeight, value + MIN_RISE), ridgeLimits.max));
+    const eavesHeight = round(Math.min(value, ridgeHeight - MIN_RISE));
+    return eavesHeight === config.eavesHeight && ridgeHeight === config.ridgeHeight ? {} : { eavesHeight, ridgeHeight };
   }
 
-  if (flat) return {}; // the ridge handle is not offered on a flat roof
-  const ridgeHeight = Math.max(value, config.gutterHeight + MIN_RISE);
-  return ridgeHeight === config.ridgeHeight ? {} : { ridgeHeight: Math.min(ridgeHeight, ridgeLimits.max) };
+  const ridgeHeight = round(Math.min(Math.max(value, config.eavesHeight + MIN_RISE), ridgeLimits.max));
+  return ridgeHeight === config.ridgeHeight ? {} : { ridgeHeight };
 }
 
-/** Switching to or from a shade-net house changes the cover, vents and door that go with it. */
-export function typeCompatibilityPatch(
-  nextType: FarmConfig['greenhouseType'],
-  config: FarmConfig
-): Partial<FarmConfig> {
-  if (nextType === 'shade-net') {
-    return { greenhouseType: 'shade-net', coverMaterial: 'shade-net', sideVentilation: 'none', doorEntry: 'curtain' };
-  }
-  return {
-    greenhouseType: nextType,
-    coverMaterial: config.coverMaterial === 'shade-net' ? 'uv-polyfilm' : config.coverMaterial,
-    sideVentilation: config.sideVentilation === 'none' ? 'manual-rollup' : config.sideVentilation,
-    doorEntry: config.doorEntry === 'curtain' ? 'single-sliding' : config.doorEntry,
-  };
-}
-
-/** Roof changes keep the heights consistent: flat levels the ridge, others restore a rise. */
-export function roofPatch(roofType: FarmConfig['roofType'], config: FarmConfig): Partial<FarmConfig> {
-  if (roofType === 'flat') return { roofType, ridgeHeight: config.gutterHeight };
-  const ridgeHeight =
-    config.ridgeHeight > config.gutterHeight
-      ? config.ridgeHeight
-      : Math.min(config.gutterHeight + 2, DIMENSION_LIMITS.ridgeHeight.max);
-  return { roofType, ridgeHeight };
-}
-
-/** The root group of the model; any hit inside it that names no other part selects the house. */
+/** The root group of the model; any hit inside it that names no other part selects the shed. */
 export const MODEL_ROOT_NAME = 'farm-model';
 
-/** Which part of the model a named scene object belongs to; null for anything not editable. */
+/**
+ * Which part of the model a named scene object belongs to; null for anything not editable. The roof sheet is the
+ * roof's surface, so a click on it selects the roof (its shape and heights); the sheet has its own tab.
+ */
 export function partForObjectName(name: string): EditablePart | null {
-  if (name === 'roof-cover') return 'roof';
-  if (name === 'side-wall-cover' || name === 'end-wall-cover' || name === 'shade-net-structure') return 'cover';
-  if (name === 'climate-equipment') return 'type';
+  if (name.startsWith('roof-')) return 'roof';
   if (name.startsWith('frame-')) return 'frame';
-  if (name.startsWith('vents-')) return 'vents';
-  if (name.startsWith('door-')) return 'door';
-  if (name.startsWith('irrigation-') || name.startsWith('pump-house-')) return 'irrigation';
-  if (name.startsWith('crop-') || name === 'growing-beds') return 'crop';
+  if (name.startsWith('walls-')) return 'sideWalls';
+  if (name.startsWith('tunnel-')) return 'housing';
+  if (name.startsWith('entry-')) return 'entry';
+  if (name.startsWith('birds-') || name.startsWith('cages-') || name === 'litter') return 'birds';
+  if (name.startsWith('feeding-')) return 'feeding';
   if (name === MODEL_ROOT_NAME) return 'size';
   return null;
 }
@@ -109,63 +89,95 @@ export function partForObject(object: { name: string; parent: unknown } | null):
   return null;
 }
 
-/** True when a scene object is one of the named groups that make up a part (not the house root). */
+/** True when a scene object is one of the named groups that make up a part (not the shed root). */
 export function objectBelongsToPart(name: string, part: EditablePart): boolean {
   if (name === MODEL_ROOT_NAME) return false;
-  if (part === 'cover' && name === 'roof-cover') return true; // the cover is walls and roof
+  if (part === 'roofSheet') return name === 'roof-sheet';
+  // The shed type is its walls and, for a controlled shed, its pads and fans.
+  if (part === 'housing' && name.startsWith('walls-')) return true;
   return partForObjectName(name) === part;
 }
 
-export const PART_ORDER: EditablePart[] = ['size', 'roof', 'frame', 'cover', 'vents', 'door', 'irrigation', 'crop', 'type'];
-
-/** The values each option-based part offers. Sizes are edited by dragging, not by choosing. */
-export const PART_VALUES = {
-  roof: ['flat', 'gable', 'gothic'],
-  frame: ['gi-steel', 'aluminium', 'bamboo'],
-  cover: ['uv-polyfilm', 'shade-net', 'insect-net', 'glass'],
-  vents: SIDE_VENTILATION_OPTIONS.map((option) => option.value),
-  door: DOOR_ENTRY_OPTIONS.map((option) => option.value),
-  irrigation: IRRIGATION_SYSTEM_OPTIONS.map((option) => option.value),
-  crop: CROP_OPTIONS.map((option) => option.value),
-  type: ['naturally-ventilated', 'climate-controlled', 'shade-net'],
-} as const;
+export const PART_ORDER: EditablePart[] = ['size', 'housing', 'roof', 'frame', 'roofSheet', 'sideWalls', 'entry', 'birds', 'feeding'];
 
 export type OptionPart = Exclude<EditablePart, 'size'>;
 
-/** The config field each option part sets. */
-export const CONFIG_FIELD: Record<OptionPart, keyof FarmConfig> = {
-  roof: 'roofType',
-  frame: 'structureMaterial',
-  cover: 'coverMaterial',
-  vents: 'sideVentilation',
-  door: 'doorEntry',
-  irrigation: 'irrigationSystem',
-  crop: 'selectedCrop',
-  type: 'greenhouseType',
+/** The values each option part offers, in the sidebar's order. Sizes are edited by dragging, not by choosing. */
+export const PART_VALUES: Record<OptionPart, readonly string[]> = {
+  housing: HOUSING_OPTIONS.map((option) => option.value),
+  roof: ROOF_OPTIONS.map((option) => option.value),
+  frame: FRAME_OPTIONS.map((option) => option.value),
+  roofSheet: ROOF_SHEET_OPTIONS.map((option) => option.value),
+  sideWalls: SIDE_WALL_OPTIONS.map((option) => option.value),
+  entry: ENTRY_OPTIONS.map((option) => option.value),
+  birds: BIRD_OPTIONS.map((option) => option.value),
+  feeding: FEEDING_OPTIONS.map((option) => option.value),
 };
 
-/** A shade-net house has one fixed cover, no side vents and a curtain door. */
-export const SHADE_LOCKED: Partial<Record<OptionPart, string>> = { cover: 'shade-net', vents: 'none', door: 'curtain' };
+/** The setup field each option part sets. */
+export const CONFIG_FIELD: Record<OptionPart, keyof FarmConfig> = {
+  housing: 'housingSystem',
+  roof: 'roofType',
+  frame: 'frameMaterial',
+  roofSheet: 'roofSheet',
+  sideWalls: 'sideWalls',
+  entry: 'entry',
+  birds: 'birdType',
+  feeding: 'feedingSystem',
+};
 
-/** True when a value cannot be chosen for this house (the shade-net locks). */
+/** The i18n group of each part's option labels (`options.<group>.<value>`). */
+export const OPTION_GROUP: Record<OptionPart, string> = {
+  housing: 'housing',
+  roof: 'roof',
+  frame: 'frame',
+  roofSheet: 'roofSheet',
+  sideWalls: 'sideWalls',
+  entry: 'entry',
+  birds: 'bird',
+  feeding: 'feeding',
+};
+
+/**
+ * True when a value cannot be chosen for this shed: a shed type the bird is not kept in, feeding that does not fit
+ * the bird, closed walls without a controlled shed (and open walls with one), bamboo and thatch outside a backyard
+ * shed. The same rules as keepCompatible in src/types/farm.ts.
+ */
 export function isOptionLocked(part: OptionPart, value: string, config: FarmConfig): boolean {
-  const locked = SHADE_LOCKED[part];
-  return config.greenhouseType === 'shade-net' && locked !== undefined && locked !== value;
+  const housing = config.housingSystem;
+  switch (part) {
+    case 'housing':
+      return !HOUSING_FOR_BIRD[config.birdType].includes(value as FarmConfig['housingSystem']);
+    case 'frame':
+      return (value === 'bamboo-wood') !== (housing === 'backyard');
+    case 'roofSheet':
+      return value === 'thatch' && housing !== 'backyard';
+    case 'sideWalls':
+      return (value === 'closed-tunnel') !== (housing === 'environment-controlled');
+    case 'feeding':
+      return !feedingFor(config.birdType).includes(value as FarmConfig['feedingSystem']);
+    default:
+      return false;
+  }
 }
 
-/** The patch for choosing an option, including the knock-on changes some choices need. */
+/** The patch for choosing an option, including the knock-on changes some choices need (keepCompatible). */
 export function optionPatch(part: OptionPart, value: string, config: FarmConfig): Partial<FarmConfig> {
-  if (part === 'roof') return roofPatch(value as FarmConfig['roofType'], config);
-  if (part === 'type') return typeCompatibilityPatch(value as FarmConfig['greenhouseType'], config);
-  return { [CONFIG_FIELD[part]]: value } as Partial<FarmConfig>;
+  const field = CONFIG_FIELD[part];
+  const next = keepCompatible({ ...config, [field]: value } as FarmConfig);
+  const patch: Partial<FarmConfig> = {};
+  for (const key of Object.keys(next) as Array<keyof FarmConfig>) {
+    if (next[key] !== config[key]) (patch as Record<string, unknown>)[key] = next[key];
+  }
+  return patch;
 }
 
 /**
- * The patch that steps a part to its next (or previous) available option, skipping locked ones and
- * wrapping around; empty when there is nothing else to choose.
+ * The patch that steps a part to its next (or previous) available option, skipping locked ones and wrapping
+ * around; empty when there is nothing else to choose.
  */
 export function cycleOptionPatch(part: OptionPart, config: FarmConfig, direction: 1 | -1): Partial<FarmConfig> {
-  const values = PART_VALUES[part] as readonly string[];
+  const values = PART_VALUES[part];
   const current = values.indexOf(String(config[CONFIG_FIELD[part]]));
   for (let step = 1; step < values.length; step += 1) {
     const index = (((current + direction * step) % values.length) + values.length) % values.length;
@@ -175,20 +187,20 @@ export function cycleOptionPatch(part: OptionPart, config: FarmConfig, direction
   return {};
 }
 
+export type FocusTarget = 'entry' | 'walls' | 'feeding' | 'fans';
+
 /** The camera view that shows a part best, when there is one. */
-export const PART_FOCUS: Partial<Record<EditablePart, 'door' | 'vents' | 'irrigation' | 'climate'>> = {
-  door: 'door',
-  vents: 'vents',
-  irrigation: 'irrigation',
-  type: 'climate',
+export const PART_FOCUS: Partial<Record<EditablePart, FocusTarget>> = {
+  entry: 'entry',
+  sideWalls: 'walls',
+  feeding: 'feeding',
 };
 
-/** The grips a selected part offers. Parts chosen from a list (door, crop, ...) offer none. */
-export function handlesForPart(part: EditablePart | null, config: Pick<FarmConfig, 'roofType'>): HandleKey[] {
-  const ridge: HandleKey[] = config.roofType === 'flat' ? [] : ['ridgeHeight'];
-  if (part === 'size' || part === 'frame') return ['length', 'width', 'corner', 'gutterHeight', ...ridge];
-  if (part === 'cover') return ['length', 'width', 'corner', 'gutterHeight'];
-  if (part === 'roof') return ['gutterHeight', ...ridge];
+/** The grips a selected part offers. Parts chosen from a list (entry, birds, ...) offer none. */
+export function handlesForPart(part: EditablePart | null): HandleKey[] {
+  if (part === 'size' || part === 'frame') return ['length', 'width', 'corner', 'eavesHeight', 'ridgeHeight'];
+  if (part === 'sideWalls') return ['length', 'width', 'corner', 'eavesHeight'];
+  if (part === 'roof' || part === 'roofSheet') return ['eavesHeight', 'ridgeHeight'];
   return [];
 }
 
@@ -198,8 +210,8 @@ export const HANDLE_GAP = 1.4;
 export const RIDGE_GAP = 0.7;
 
 /**
- * Converts where the pointer is along a grip's axis (world metres, from the house centre) into the
- * dimension it controls. The house is centred, so moving one wall moves the opposite one too.
+ * Converts where the pointer is along a grip's axis (world metres, from the shed centre) into the dimension it
+ * controls. The shed is centred, so moving one wall moves the opposite one too.
  */
 export function handleValue(key: ResizeKey, coordinate: number): number {
   if (key === 'length' || key === 'width') return 2 * (coordinate - HANDLE_GAP);
@@ -224,55 +236,26 @@ export function dragReadout(label: string, value: number, start: number): string
   return `${label} ${formatMetres(value)} m (${sign}${formatMetres(Math.abs(delta))})`;
 }
 
-/** The i18n key naming each option value. */
-export const OPTION_LABEL_KEYS: Record<string, string> = {
-  flat: 'options.roof.flat',
-  gable: 'options.roof.gable',
-  gothic: 'options.roof.gothic',
-  'gi-steel': 'options.structure.giSteel',
-  aluminium: 'options.structure.aluminium',
-  bamboo: 'options.structure.bamboo',
-  'uv-polyfilm': 'options.cover.uvPolyfilm',
-  'shade-net': 'options.cover.shadeNet',
-  'insect-net': 'options.cover.insectNet',
-  glass: 'options.cover.glass',
-  none: 'options.sideVent.none',
-  'manual-rollup': 'options.sideVent.manualRollup',
-  'motorized-rollup': 'options.sideVent.motorizedRollup',
-  louver: 'options.sideVent.louver',
-  'single-sliding': 'options.door.singleSliding',
-  'double-sliding': 'options.door.doubleSliding',
-  'roll-up': 'options.door.rollUp',
-  curtain: 'options.door.curtain',
-  drip: 'options.irrigation.drip',
-  sprinkler: 'options.irrigation.sprinkler',
-  fogger: 'options.irrigation.fogger',
-  'hydroponic-nft': 'options.irrigation.hydroponicNft',
-  tomato: 'options.crop.tomato',
-  capsicum: 'options.crop.capsicum',
-  cucumber: 'options.crop.cucumber',
-  lettuce: 'options.crop.lettuce',
-  strawberry: 'options.crop.strawberry',
-  gerbera: 'options.crop.gerbera',
-  'naturally-ventilated': 'options.greenhouse.naturallyVentilated',
-  'climate-controlled': 'options.greenhouse.climateControlled',
-};
-
-/** The i18n key for an option of a part (shade-net is a cover and a house type). */
+/** The i18n key for an option of a part. */
 export function optionLabelKey(part: OptionPart, value: string): string {
-  if (part === 'type' && value === 'shade-net') return 'options.greenhouse.shadeNet';
-  return OPTION_LABEL_KEYS[value] ?? value;
+  return optionKey(OPTION_GROUP[part], value);
 }
 
+/** The i18n key naming a part: the sidebar tab of the same name. */
+export const partLabelKey = (part: EditablePart) => `design.tab.${part}`;
+
 /**
- * Approximate area of cover film or net: both side walls, both end walls up to the gutter, the
- * gable triangles and the roof slopes (a gothic arch is about 6% longer than a straight slope).
+ * Approximate roof sheet area: both slopes (or the one slope of a lean-to) over the length, with the overhang the
+ * shed is drawn with. A monitor roof adds its raised cap.
  */
-export function coverSurface(config: Pick<FarmConfig, 'length' | 'width' | 'gutterHeight' | 'ridgeHeight' | 'roofType'>): number {
-  const { length, width, gutterHeight, ridgeHeight, roofType } = config;
-  const rise = Math.max(ridgeHeight - gutterHeight, 0);
-  const walls = 2 * (length + width) * gutterHeight;
-  if (roofType === 'flat') return walls + length * width;
-  const slope = Math.hypot(width / 2, rise) * (roofType === 'gothic' ? 1.06 : 1);
-  return walls + width * rise + 2 * slope * length;
+export function roofSurface(
+  config: Pick<FarmConfig, 'length' | 'width' | 'eavesHeight' | 'ridgeHeight' | 'roofType'>,
+  overhang = 1.07
+): number {
+  const { length, width, eavesHeight, ridgeHeight, roofType } = config;
+  const rise = Math.max(ridgeHeight - eavesHeight, 0);
+  if (roofType === 'lean-to') return Math.hypot(width + 2 * overhang, rise) * length;
+  const slope = Math.hypot(width / 2 + overhang, rise);
+  const cap = roofType === 'monitor' ? Math.hypot(width * 0.12, 0.2) * 2 : 0;
+  return (2 * slope + cap) * length;
 }
