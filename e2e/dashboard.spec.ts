@@ -9,7 +9,7 @@ test.describe("dashboard", () => {
 
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Welcome back");
     await expect(page.getByTestId("dashboard-empty")).toBeVisible();
-    await page.getByRole("button", { name: "New greenhouse" }).first().click();
+    await page.getByRole("button", { name: "New shed" }).first().click();
     await expect(page).toHaveURL(/visualizer/);
     await expect(page.getByTestId("scene-canvas")).toHaveCount(0); // an empty setup has nothing to render yet
     expect(errors).toEqual([]);

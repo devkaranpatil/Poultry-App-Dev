@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { configureSetup, goToStep, logIn, openResults, signUp, trackPageErrors } from "./helpers";
 
 test.describe("workspace", () => {
-  test("configure a greenhouse and get climate-aware results", async ({ page }) => {
+  test("configure a poultry shed and get its figures", async ({ page }) => {
     const errors = trackPageErrors(page);
     await signUp(page);
     await configureSetup(page);
@@ -16,34 +16,37 @@ test.describe("workspace", () => {
 
     // The Cost step: headline figures in Indian rupee formatting and a plain summary.
     await openResults(page);
-    await expect(page.getByText("Project cost")).toBeVisible();
+    await expect(page.getByText("Build cost")).toBeVisible();
     await expect(page.getByText(/₹\d+(\.\d+)? L/).first()).toBeVisible();
-    await expect(page.getByTestId("in-short")).toContainText("Building this 300 m² greenhouse costs about");
+    await expect(page.getByTestId("in-short")).toContainText(/Building the shed for [\d,]+ birds costs about/);
+    await expect(page.getByTestId("nabard-card")).toBeVisible();
+    await expect(page.getByTestId("schemes-card").getByText("Not eligible").first()).toBeVisible();
 
-    // Earnings: changing the subsidy changes the plain summary of what you pay back.
+    // Earnings: counting a subsidy changes the plain summary of what you pay back.
     await goToStep(page, "Earnings");
-    const subsidy = page.getByLabel("Subsidy (%)", { exact: true });
-    await expect(subsidy).toHaveValue("50");
+    const price = page.getByLabel("Live-bird price (₹/kg)", { exact: true });
+    await price.fill("115");
+    await expect(page.getByTestId("in-short")).toContainText("In a normal year you run");
     const summaryBefore = await page.getByTestId("in-short").textContent();
-    await subsidy.fill("0");
+    await page.getByLabel("Subsidy counted (₹)", { exact: true }).fill("100000");
     await expect(page.getByTestId("in-short")).not.toHaveText(summaryBefore ?? "");
+    await expect(page.getByTestId("batch-calendar")).toContainText("Batch 1");
 
-    // Bank loan: a schedule for the whole tenure that follows the terms, and how to claim the subsidy.
-    await goToStep(page, "Loan & subsidy");
+    // Bank loan: a schedule for the whole tenure that follows the terms.
+    await goToStep(page, "Loan");
     const loan = page.getByTestId("loan-panel");
     await expect(loan.getByText("Bank loan")).toBeVisible();
     await loan.getByText("Show details").click();
     await expect(loan.getByTestId("loan-years").getByRole("row")).toHaveCount(8);
     await loan.getByLabel("Repayment (years, with moratorium)").fill("5");
     await expect(loan.getByTestId("loan-years").getByRole("row")).toHaveCount(6);
-    const checklist = page.getByTestId("subsidy-checklist");
-    await expect(checklist.getByText("How to claim the subsidy")).toBeVisible();
-    await checklist.getByRole("checkbox").first().click();
-    await expect(checklist.getByText(/^1 of \d+ done$/)).toBeVisible();
 
-    // Site: climate for the chosen state.
-    await goToStep(page, "Site");
-    await expect(page.getByText("Crops for this climate")).toBeVisible();
+    // Site and rules: heat stress and the siting checklist for the chosen district.
+    await goToStep(page, "Site & rules");
+    await expect(page.getByTestId("heat-stress")).toBeVisible();
+    const siting = page.getByTestId("siting-checklist");
+    await siting.getByRole("checkbox").first().click();
+    await expect(siting.getByText(/item\(s\) not confirmed yet|All confirmed/)).toBeVisible();
 
     // The advisor opens from the corner on any step and explains it needs the model (the e2e backend runs without one).
     const launcher = page.getByTestId("advisor-launcher");
@@ -92,7 +95,7 @@ test.describe("workspace", () => {
     await page.reload();
     await expect(page.getByText("Ernakulam, Kerala")).toBeVisible();
     await expect(page.getByText("Up to date")).toBeVisible();
-    await expect(page.getByText("7 of 7 done")).toBeVisible();
+    await expect(page.getByText("4 of 4 done")).toBeVisible();
   });
 
   test("save two setups and compare them", async ({ page }) => {
@@ -101,28 +104,28 @@ test.describe("workspace", () => {
 
     await page.getByRole("button", { name: "Saved setups" }).click();
     const name = page.getByRole("textbox", { name: "Configuration name" });
-    await name.fill("Pune 30x10");
+    await name.fill("Pune 14x7");
     await page.getByRole("button", { name: "Save to my account" }).click();
-    await expect(page.getByText("Pune 30x10").first()).toBeVisible();
+    await expect(page.getByText("Pune 14x7").first()).toBeVisible();
     await page.keyboard.press("Escape");
 
     // Change the footprint, then save a second variant.
     await page.getByTestId("properties-panel").getByRole("button", { name: "Size", exact: true }).click();
     const length = page.getByRole("spinbutton", { name: "Length (m)" });
-    await length.fill("48");
+    await length.fill("28");
     await length.blur();
     await expect(page.getByText("Up to date")).toBeVisible();
     await page.getByRole("button", { name: "Saved setups" }).click();
-    await name.fill("Pune 48x10");
+    await name.fill("Pune 28x7");
     await page.getByRole("button", { name: "Save to my account" }).click();
-    await expect(page.getByText("Pune 48x10").first()).toBeVisible();
+    await expect(page.getByText("Pune 28x7").first()).toBeVisible();
 
-    await page.getByRole("checkbox", { name: /Pune 30x10/ }).click();
-    await page.getByRole("checkbox", { name: /Pune 48x10/ }).click();
+    await page.getByRole("checkbox", { name: /Pune 14x7/ }).click();
+    await page.getByRole("checkbox", { name: /Pune 28x7/ }).click();
     await page.getByRole("button", { name: /Compare \(2\)/ }).click();
     await expect(page.getByRole("heading", { name: "Compare setups" })).toBeVisible();
     // Different sizes have different costs, so exactly one is marked best.
-    await expect(page.getByRole("row", { name: /Total cost/ }).getByText("Best")).toHaveCount(1);
+    await expect(page.getByRole("row", { name: /Capital cost/ }).getByText("Best")).toHaveCount(1);
   });
 
   test("a share link opens the same setup for another user", async ({ page, browser }) => {

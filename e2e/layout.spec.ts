@@ -25,7 +25,7 @@ test.describe("layout", () => {
     await page.waitForTimeout(400);
     await page.screenshot({ path: `${SHOTS}/design-editing.png` });
 
-    for (const step of ["Site", "Cost", "Earnings", "Loan & subsidy", "Risk", "AI summary", "Report"]) {
+    for (const step of ["Site & rules", "Cost", "Earnings", "Loan", "Risk", "AI summary", "Report"]) {
       await page.getByRole("tab", { name: step, exact: true }).click();
       await noHorizontalOverflow(page);
       await page.screenshot({ path: `${SHOTS}/step-${step.replace(/\W+/g, "-").toLowerCase()}.png` });
@@ -43,9 +43,9 @@ test.describe("layout", () => {
 
     await page.getByRole("tab", { name: "Design", exact: true }).click();
     await page.getByRole("button", { name: "Saved setups" }).click();
-    await page.getByRole("textbox", { name: "Configuration name" }).fill("Pune tomato house");
+    await page.getByRole("textbox", { name: "Configuration name" }).fill("Pune broiler shed");
     await page.getByRole("button", { name: "Save to my account" }).click();
-    await expect(page.getByText("Pune tomato house").first()).toBeVisible();
+    await expect(page.getByText("Pune broiler shed").first()).toBeVisible();
     await page.keyboard.press("Escape");
 
     await page.goto("/dashboard");

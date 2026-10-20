@@ -105,7 +105,7 @@ test.describe("landing page", () => {
   test("renders every section without errors", async ({ page }) => {
     const errors = trackPageErrors(page);
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Know what a greenhouse will cost");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Know what a poultry shed will cost");
     for (const id of ["problem", "solution", "features", "ai", "workflow", "faq"]) {
       await expect(page.locator(`#${id}`)).toBeAttached();
     }
