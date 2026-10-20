@@ -5,7 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/components/ui/sonner';
 import { useI18n } from '@/context/I18nContext';
 import type { AiAssistant } from '@/hooks/useAiAssistant';
-import type { FinanceAssumptions } from '@/lib/finance';
+import type { PoultryAssumptions } from '@/lib/poultryFinance';
 import type { LoanTerms } from '@/lib/loan';
 import { captureModelSnapshot } from '@/lib/modelSnapshot';
 import { buildReportData } from '@/lib/export/reportData';
@@ -14,8 +14,10 @@ import type { CalculationResult, FarmConfig } from '@/types/farm';
 interface ExportPanelProps {
   config: FarmConfig;
   result: CalculationResult | null;
-  assumptions: FinanceAssumptions;
+  assumptions: PoultryAssumptions;
   loanTerms?: LoanTerms;
+  /** Siting rules the farmer confirmed; the report warns about the rest. */
+  sitingTicks?: Record<string, boolean>;
   ai?: AiAssistant;
   /** Whether the AI summary goes in. Pass both to share the setting with the summary step; otherwise the panel keeps its own. */
   includeAdvisor?: boolean;
@@ -24,17 +26,15 @@ interface ExportPanelProps {
 
 type Format = 'pdf' | 'xlsx';
 
-export function ExportPanel({ config, result, assumptions, loanTerms, ai, includeAdvisor: includeAdvisorProp, onIncludeAdvisorChange }: ExportPanelProps) {
+export function ExportPanel({ config, result, assumptions, loanTerms, sitingTicks, ai, includeAdvisor: includeAdvisorProp, onIncludeAdvisorChange }: ExportPanelProps) {
   const { t } = useI18n();
   const [busy, setBusy] = useState<Format | null>(null);
   const [includeSnapshot, setIncludeSnapshot] = useState(true);
   const [ownIncludeAdvisor, setOwnIncludeAdvisor] = useState(true);
   const includeAdvisor = includeAdvisorProp ?? ownIncludeAdvisor;
   const setIncludeAdvisor = onIncludeAdvisorChange ?? setOwnIncludeAdvisor;
-  const [includeAiCrops, setIncludeAiCrops] = useState(true);
 
   const hasAdvisor = Boolean(ai?.advisor && !ai.advisorStale);
-  const hasAiCrops = Boolean(ai?.crops && !ai.cropsStale);
 
   const run = async (format: Format) => {
     if (!result) return;
@@ -45,8 +45,8 @@ export function ExportPanel({ config, result, assumptions, loanTerms, ai, includ
         result,
         assumptions,
         loanTerms,
+        sitingTicks,
         advisor: includeAdvisor && hasAdvisor ? ai?.advisor : null,
-        aiCrops: includeAiCrops && hasAiCrops ? ai?.crops : null,
         snapshot: format === 'pdf' && includeSnapshot ? captureModelSnapshot() : null,
       });
       if (format === 'pdf') {
@@ -134,14 +134,6 @@ export function ExportPanel({ config, result, assumptions, loanTerms, ai, includ
           t('export.optAdvisor'),
           hasAdvisor ? undefined : t('export.optAdvisorHint'),
           !hasAdvisor
-        )}
-        {option(
-          'export-crops',
-          includeAiCrops,
-          setIncludeAiCrops,
-          t('export.optCrops'),
-          hasAiCrops ? undefined : t('export.optCropsHint'),
-          !hasAiCrops
         )}
       </div>
       <p className="text-[11px] leading-snug text-muted-foreground">{t('export.languageNote')}</p>

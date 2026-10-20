@@ -11,7 +11,7 @@ import {
   FileText,
   IndianRupee,
   Layers3,
-  Leaf,
+  Bird,
   MapPin,
   MessageSquare,
   ShieldCheck,
@@ -28,8 +28,8 @@ import { HeroMedia } from "@/components/motion/HeroMedia";
 import { CountUp } from "@/components/motion/CountUp";
 import { Reveal } from "@/components/motion/Reveal";
 
-const HERO_IMAGE_SRC = "/images/landing-greenhouse-interior.jpg";
-const SOLUTION_IMAGE_SRC = "/images/landing-climate-iot.jpg";
+const HERO_IMAGE_SRC = "/images/landing-poultry-shed.svg";
+const SOLUTION_IMAGE_SRC = "/images/landing-shed-climate.svg";
 
 const heroContainer = { hidden: {}, show: { transition: { staggerChildren: 0.11, delayChildren: 0.05 } } };
 const heroItem = {
@@ -215,7 +215,7 @@ export default function Landing() {
               <FeatureCard icon={<Layers3 />} title={t("landing.feature1Title")} description={t("landing.feature1Desc")} />
               <FeatureCard icon={<CloudSun />} title={t("landing.feature2Title")} description={t("landing.feature2Desc")} />
               <FeatureCard icon={<Calculator />} title={t("landing.feature3Title")} description={t("landing.feature3Desc")} />
-              <FeatureCard icon={<Leaf />} title={t("landing.feature4Title")} description={t("landing.feature4Desc")} />
+              <FeatureCard icon={<Bird />} title={t("landing.feature4Title")} description={t("landing.feature4Desc")} />
               <FeatureCard icon={<IndianRupee />} title={t("landing.feature5Title")} description={t("landing.feature5Desc")} />
               <FeatureCard icon={<ShieldCheck />} title={t("landing.feature6Title")} description={t("landing.feature6Desc")} />
             </div>
@@ -229,7 +229,7 @@ export default function Landing() {
             <div className="mt-10 grid gap-4 md:grid-cols-3">
               <FeatureCard icon={<Bot />} title={t("landing.aiPoint1Title")} description={t("landing.aiPoint1Desc")} />
               <FeatureCard icon={<MessageSquare />} title={t("landing.aiPoint2Title")} description={t("landing.aiPoint2Desc")} />
-              <FeatureCard icon={<Leaf />} title={t("landing.aiPoint3Title")} description={t("landing.aiPoint3Desc")} />
+              <FeatureCard icon={<Bird />} title={t("landing.aiPoint3Title")} description={t("landing.aiPoint3Desc")} />
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <FeatureCard icon={<FileText />} title={t("landing.exportPdfTitle")} description={t("landing.exportPdfDesc")} />

@@ -1,5 +1,5 @@
 import { Html } from '@react-three/drei';
-import type { FarmConfig } from '@/types/farm';
+import type { FarmConfig } from '@/components/farm/scene/legacyConfig';
 import { PART_VALUES, roofPatch } from '@/lib/sceneEdit';
 import { cn } from '@/lib/utils';
 import { OptionThumb } from '../OptionThumb';

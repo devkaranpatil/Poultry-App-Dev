@@ -1,4 +1,4 @@
-import type { CropType, IrrigationSystem } from '@/types/farm';
+import type { CropType, IrrigationSystem } from '@/components/farm/scene/legacyConfig';
 
 /**
  * Where the beds, rows and plants of the 3D scene go. One pure function feeds the crop models and

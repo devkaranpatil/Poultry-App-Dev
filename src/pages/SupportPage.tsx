@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Mail, MessageCircleQuestion, Phone, Sprout } from "lucide-react";
+import { Mail, MessageCircleQuestion, Phone, Bird } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { TopRightMenu } from "@/components/TopRightMenu";
 import { useI18n } from "@/context/I18nContext";
@@ -13,7 +13,7 @@ export default function SupportPage() {
       <header className="sticky top-0 z-40 px-4 pt-4">
         <div className="glass mx-auto flex max-w-5xl items-center justify-between rounded-2xl px-4 py-3">
           <Link to="/" className="inline-flex items-center gap-2 font-semibold">
-            <Sprout className="h-5 w-5 text-primary" />
+            <Bird className="h-5 w-5 text-primary" />
             {t("app.productName")}
           </Link>
           <TopRightMenu />

@@ -1,14 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { formatINR, formatINRCompact, formatINRPlain } from '@/lib/format';
-import {
-  CROP_ECONOMICS,
-  CULTIVABLE_AREA_SHARE,
-  computeFinancials,
-  defaultFinanceAssumptions,
-  subsidyBase,
-} from '@/lib/finance';
 import { decodeShareParam, encodeShareParam, loadDraft, saveDraft } from '@/lib/configPersistence';
-import { DEFAULT_CONFIG } from '@/types/farm';
+import { DEFAULT_CONFIG, keepCompatible, normalizeFarmConfig, optionKey } from '@/types/farm';
 
 describe('format', () => {
   it('uses Indian digit grouping', () => {
@@ -24,64 +17,29 @@ describe('format', () => {
   });
 });
 
-describe('computeFinancials', () => {
-  const assumptions = { subsidyPct: 50, yieldPerSqm: 10, pricePerUnit: 40, operatingCostPct: 40 };
-
-  it('applies subsidy, revenue and operating cost', () => {
-    const summary = computeFinancials(500000, 300, assumptions);
-
-    expect(summary.subsidyAmount).toBe(250000);
-    expect(summary.netInvestment).toBe(250000);
-    expect(summary.annualProduction).toBeCloseTo(300 * CULTIVABLE_AREA_SHARE * 10);
-    expect(summary.annualRevenue).toBeCloseTo(102000);
-    expect(summary.annualProfit).toBeCloseTo(61200);
-    expect(summary.paybackYears).toBeCloseTo(250000 / 61200);
-    expect(summary.cumulativeCashflow[0]).toBe(-250000);
-    expect(summary.cumulativeCashflow).toHaveLength(6);
+describe('the shed setup', () => {
+  it('keeps known fields and replaces bad values with defaults', () => {
+    const config = normalizeFarmConfig({ length: 'twelve' as unknown as number, birdType: 'ostrich' as never, injected: 1 } as never);
+    expect(config.length).toBe(DEFAULT_CONFIG.length);
+    expect(config.birdType).toBe('broiler');
+    expect(config).not.toHaveProperty('injected');
+    expect(normalizeFarmConfig({ stockingDensity: 1.2 }).stockingDensity).toBe(1.2);
+    expect(normalizeFarmConfig({ stockingDensity: -1 }).stockingDensity).toBeNull();
+    expect(normalizeFarmConfig({ cageTiers: 7 as never }).cageTiers).toBe(3);
   });
 
-  it('only subsidises the first 4,000 m²', () => {
-    const summary = computeFinancials(1_000_000, 8000, assumptions);
-    expect(summary.subsidyAmount).toBe(250000);
+  it('makes the choices a bird or shed type forces, as the backend validator expects', () => {
+    expect(keepCompatible({ ...DEFAULT_CONFIG, birdType: 'layer-cage' })).toMatchObject({ feedingSystem: 'trough', farmingModel: 'independent' });
+    expect(keepCompatible({ ...DEFAULT_CONFIG, birdType: 'layer-floor', housingSystem: 'environment-controlled' }).housingSystem).toBe('open-sided');
+    expect(keepCompatible({ ...DEFAULT_CONFIG, housingSystem: 'environment-controlled' }).sideWalls).toBe('closed-tunnel');
+    expect(keepCompatible({ ...DEFAULT_CONFIG, birdType: 'desi', housingSystem: 'backyard' })).toMatchObject({ frameMaterial: 'bamboo-wood' });
+    expect(keepCompatible({ ...DEFAULT_CONFIG, roofSheet: 'thatch' }).roofSheet).toBe('gi-sheet');
+    expect(keepCompatible({ ...DEFAULT_CONFIG, sideWalls: 'closed-tunnel' }).sideWalls).toBe('mesh-curtain');
   });
 
-  it('applies the subsidy percentage to the cost the scheme recognises, not the whole build cost', () => {
-    // Goa benchmark: Rs 4,95,338 build, but the MIDH 2025 norm recognises only Rs 3,60,000.
-    const summary = computeFinancials(495338, 300, assumptions, { eligibleCostInr: 360_000, capInr: null });
-    expect(summary.subsidyAmount).toBe(180_000);
-    expect(summary.netInvestment).toBe(495338 - 180_000);
-    expect(subsidyBase(495338, 300, { eligibleCostInr: 360_000, capInr: null })).toBe(360_000);
-  });
-
-  it("holds the scheme's per-project limit (NHB: Rs 56 lakh) whatever the percentage", () => {
-    const summary = computeFinancials(30_000_000, 20000, { ...assumptions, subsidyPct: 75 }, { eligibleCostInr: 16_880_000, capInr: 5_600_000 });
-    expect(summary.subsidyAmount).toBe(5_600_000);
-  });
-
-  it('reports no payback when the project loses money', () => {
-    const summary = computeFinancials(500000, 300, { ...assumptions, operatingCostPct: 100 });
-    expect(summary.paybackYears).toBeNull();
-  });
-
-  it('clamps out-of-range percentages', () => {
-    const summary = computeFinancials(100000, 100, { ...assumptions, subsidyPct: 250 });
-    expect(summary.netInvestment).toBe(0);
-    expect(summary.roi).toBeNull();
-  });
-
-  it('provides crop-specific defaults', () => {
-    expect(defaultFinanceAssumptions('gerbera').yieldPerSqm).toBe(226); // mean of 11 cultivars, Ahlawat et al. 2012
-    expect(defaultFinanceAssumptions('tomato')).toMatchObject({ yieldPerSqm: 8.75, pricePerUnit: 30, subsidyPct: 50 });
-    expect(defaultFinanceAssumptions('cucumber').yieldPerSqm).toBe(12); // was 25, above any published figure
-  });
-
-  it('says where every default comes from, and marks the assumptions', () => {
-    for (const economics of Object.values(CROP_ECONOMICS)) {
-      expect(economics.yieldSource.text.length).toBeGreaterThan(10);
-      expect(economics.priceSource.text.length).toBeGreaterThan(10);
-    }
-    expect(CROP_ECONOMICS.lettuce.yieldSource.verified).toBe(false);
-    expect(CROP_ECONOMICS.tomato.priceSource.text).toMatch(/Agmarknet/);
+  it('names each option by its i18n key', () => {
+    expect(optionKey('housing', 'environment-controlled')).toBe('options.housing.environmentControlled');
+    expect(optionKey('bird', 'broiler')).toBe('options.bird.broiler');
   });
 });
 

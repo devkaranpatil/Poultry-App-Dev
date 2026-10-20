@@ -13,14 +13,10 @@ import {
   type SavedConfiguration,
 } from '@/services/configuration.service';
 import { calculateFarm } from '@/services/calculation.service';
-import {
-  computeFinancials,
-  defaultFinanceAssumptions,
-  type FinanceAssumptions,
-  type FinancialSummary,
-} from '@/lib/finance';
+import type { PoultryAssumptions } from '@/lib/poultryFinance';
 import { formatINR, formatINRCompact, formatNumber } from '@/lib/format';
-import { normalizeFarmConfig, type CalculationResult, type FarmConfig } from '@/types/farm';
+import { flockSize } from '@/lib/flock';
+import { normalizeFarmConfig, optionKey, type CalculationResult, type FarmConfig } from '@/types/farm';
 
 const MAX_COMPARE = 3;
 
@@ -30,18 +26,15 @@ interface SavedSetupsDialogProps {
   token: string | null;
   currentConfig: FarmConfig;
   onLoad: (config: FarmConfig) => void;
-  /** Subsidy and operating-cost settings applied to every compared setup. */
-  financeAssumptions: FinanceAssumptions;
+  /** The current assumptions; only the subsidy counted carries over to compared setups (each keeps its own bird's defaults). */
+  financeAssumptions: PoultryAssumptions;
 }
 
 interface CompareRow {
   item: SavedConfiguration;
   config: FarmConfig;
   result: CalculationResult | null;
-  financials: FinancialSummary | null;
 }
-
-const optionKey = (value: string) => value.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
 
 export function SavedSetupsDialog({
   open,
@@ -87,11 +80,11 @@ export function SavedSetupsDialog({
     if (!token) return;
     const name =
       saveName.trim() ||
-      `${currentConfig.greenhouseType.replace(/-/g, ' ')} ${currentConfig.length}x${currentConfig.width}`;
+      `${t(optionKey('bird', currentConfig.birdType))} ${currentConfig.length}x${currentConfig.width}`;
     setIsSaving(true);
     setError(null);
     try {
-      await createConfiguration(token, { name, configType: 'greenhouse', config: currentConfig });
+      await createConfiguration(token, { name, configType: 'poultry', config: currentConfig });
       setSaveName('');
       toast.success(t('app.saveSuccess', { name }));
       await refresh();
@@ -123,26 +116,15 @@ export function SavedSetupsDialog({
   const runCompare = async () => {
     const chosen = items.filter((item) => selectedIds.includes(item.id));
     setIsComparing(true);
+    // Each setup keeps its own bird's production figures and prices; the subsidy counted follows the current settings.
     const settled = await Promise.allSettled(
-      chosen.map((item) => calculateFarm(normalizeFarmConfig(item.config as FarmConfig)))
+      chosen.map((item) => calculateFarm(normalizeFarmConfig(item.config as FarmConfig), { subsidyInr: financeAssumptions.subsidyInr }))
     );
     setCompareRows(
       chosen.map((item, index) => {
         const config = normalizeFarmConfig(item.config as FarmConfig);
         const outcome = settled[index];
-        if (outcome.status !== 'fulfilled') return { item, config, result: null, financials: null };
-        // Each setup keeps its own crop yields/prices; subsidy and opex follow the current settings.
-        const assumptions = {
-          ...defaultFinanceAssumptions(config.selectedCrop),
-          subsidyPct: financeAssumptions.subsidyPct,
-          operatingCostPct: financeAssumptions.operatingCostPct,
-        };
-        return {
-          item,
-          config,
-          result: outcome.value,
-          financials: computeFinancials(outcome.value.cost.totalCost, outcome.value.area, assumptions, outcome.value.subsidy),
-        };
+        return { item, config, result: outcome.status === 'fulfilled' ? outcome.value : null };
       })
     );
     setIsComparing(false);
@@ -150,8 +132,8 @@ export function SavedSetupsDialog({
 
   const renderCompare = (rows: CompareRow[]) => {
     const calculated = rows.filter((row) => row.result);
-    const costs = calculated.map((row) => row.result?.cost.totalCost ?? Infinity);
-    const paybacks = calculated.map((row) => row.financials?.paybackYears ?? Infinity);
+    const costs = calculated.map((row) => row.result?.cost.capitalCost ?? Infinity);
+    const paybacks = calculated.map((row) => row.result?.returns.paybackYears ?? Infinity);
     const lowestCost = Math.min(...costs);
     const fastestPayback = Math.min(...paybacks);
     // Only crown a winner when the setups actually differ on that metric.
@@ -159,34 +141,38 @@ export function SavedSetupsDialog({
     const paybacksDiffer = new Set(paybacks).size > 1;
 
     const metrics: Array<{ label: string; render: (row: CompareRow) => ReactNode; isBest?: (row: CompareRow) => boolean }> = [
+      { label: t('compare.birds'), render: (row) => `${t(optionKey('bird', row.config.birdType))}: ${formatNumber(row.result?.flock.birds ?? 0)}` },
       { label: t('compare.area'), render: (row) => `${formatNumber(row.config.length * row.config.width)} m²` },
-      { label: t('compare.type'), render: (row) => t(`options.greenhouse.${optionKey(row.config.greenhouseType)}`) },
-      { label: t('compare.roof'), render: (row) => t(`options.roof.${row.config.roofType}`) },
-      { label: t('compare.crop'), render: (row) => t(`options.crop.${row.config.selectedCrop}`) },
+      { label: t('compare.housing'), render: (row) => t(optionKey('housing', row.config.housingSystem)) },
+      { label: t('compare.farming'), render: (row) => t(optionKey('farming', row.config.farmingModel)) },
       {
         label: t('compare.location'),
         render: (row) => [row.config.district, row.config.state].filter(Boolean).join(', ') || '—',
       },
       {
         label: t('compare.totalCost'),
-        render: (row) => (row.result ? formatINR(row.result.cost.totalCost) : t('compare.failed')),
-        isBest: (row) => costsDiffer && row.result?.cost.totalCost === lowestCost,
+        render: (row) => (row.result ? formatINR(row.result.cost.capitalCost) : t('compare.failed')),
+        isBest: (row) => costsDiffer && row.result?.cost.capitalCost === lowestCost,
       },
-      { label: t('compare.costPerSqm'), render: (row) => (row.result ? formatINR(row.result.cost.costPerSqm) : '—') },
+      { label: t('compare.costPerBird'), render: (row) => (row.result ? formatINR(row.result.cost.costPerBird) : '—') },
       {
         label: t('compare.netInvestment'),
-        render: (row) => (row.financials ? formatINRCompact(row.financials.netInvestment) : '—'),
+        render: (row) => (row.result ? formatINRCompact(row.result.returns.netInvestment) : '—'),
+      },
+      {
+        label: t('compare.profit'),
+        render: (row) => (row.result ? formatINRCompact(row.result.returns.annualProfit) : '—'),
       },
       {
         label: t('compare.payback'),
         render: (row) =>
-          !row.financials
+          !row.result
             ? '—'
-            : row.financials.paybackYears === null
+            : row.result.returns.paybackYears === null
               ? t('returns.noPayback')
-              : t('returns.paybackYears', { years: formatNumber(row.financials.paybackYears) }),
+              : t('returns.paybackYears', { years: formatNumber(row.result.returns.paybackYears) }),
         isBest: (row) =>
-          paybacksDiffer && Number.isFinite(fastestPayback) && row.financials?.paybackYears === fastestPayback,
+          paybacksDiffer && Number.isFinite(fastestPayback) && row.result?.returns.paybackYears === fastestPayback,
       },
     ];
 
@@ -238,7 +224,7 @@ export function SavedSetupsDialog({
           </table>
         </div>
         <p className="text-[11px] text-muted-foreground">
-          {t('compare.note', { subsidy: financeAssumptions.subsidyPct, opex: financeAssumptions.operatingCostPct })}
+          {t('compare.note', { subsidy: formatINRCompact(financeAssumptions.subsidyInr) })}
         </p>
       </div>
     );
@@ -327,7 +313,8 @@ export function SavedSetupsDialog({
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-foreground">{item.name}</p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {itemConfig.length}×{itemConfig.width} m · {t(`options.crop.${itemConfig.selectedCrop}`)}
+                        {itemConfig.length}×{itemConfig.width} m · {t(optionKey('bird', itemConfig.birdType))}{' '}
+                        {formatNumber(flockSize({ ...itemConfig, housing: itemConfig.housingSystem }) ?? 0)}
                         {itemConfig.district ? ` · ${itemConfig.district}` : ''} ·{' '}
                         {new Date(item.updatedAt).toLocaleDateString()}
                       </p>

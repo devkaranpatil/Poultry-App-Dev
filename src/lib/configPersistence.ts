@@ -1,7 +1,8 @@
 import { normalizeFarmConfig, type FarmConfig } from '@/types/farm';
 
 export const SHARE_PARAM = 'setup';
-const DRAFT_STORAGE_KEY = 'farm.draft.v1';
+// v2: the poultry setup; a v1 draft held the polyhouse fields and is not read.
+const DRAFT_STORAGE_KEY = 'farm.draft.v2';
 
 function toBase64Url(text: string): string {
   const bytes = new TextEncoder().encode(text);

@@ -1,4 +1,4 @@
-import { DIMENSION_LIMITS, type FarmConfig } from '@/types/farm';
+import { DIMENSION_LIMITS, type FarmConfig } from '@/components/farm/scene/legacyConfig';
 import { MIN_RISE, SNAP_STEP, dragReadout, handlesForPart, resizePatch, type EditablePart, type ResizeKey } from '@/lib/sceneEdit';
 
 /**

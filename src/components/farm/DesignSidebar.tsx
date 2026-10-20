@@ -1,49 +1,80 @@
 import { useCallback, useEffect, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react';
-import { Bookmark, Check, MapPin, Wand2, X } from 'lucide-react';
+import { Bookmark, Check, MapPin, RotateCcw, Wand2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
+  BIRD_OPTIONS,
+  CAGE_TIER_OPTIONS,
+  CATEGORY_OPTIONS,
   DEFAULT_CONFIG,
   DIMENSION_LIMITS,
+  ENTRY_OPTIONS,
+  FARMING_MODEL_OPTIONS,
+  FEEDING_OPTIONS,
+  FRAME_OPTIONS,
+  HOUSING_FOR_BIRD,
+  HOUSING_OPTIONS,
   INDIAN_DISTRICTS,
   INDIAN_STATES,
+  OPEN_SHED_MAX_WIDTH,
+  ROOF_OPTIONS,
+  ROOF_SHEET_OPTIONS,
+  SIDE_WALL_OPTIONS,
+  STOCKING_DENSITY_LIMITS,
+  feedingFor,
+  isLayerBird,
   isWithinDimensionLimits,
   normalizeFarmConfig,
+  optionKey,
   type DimensionKey,
   type FarmConfig,
   type SetupSectionProgress,
 } from '@/types/farm';
-import { CONFIG_FIELD, coverSurface, type EditablePart, type OptionPart } from '@/lib/sceneEdit';
+import { flockSize, floorAreaFor, sqftPerBird, SQFT_PER_SQM } from '@/lib/flock';
 import { useI18n } from '@/context/I18nContext';
+import { formatNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { OptionGrid, SizeRow, Stat } from './PropertiesPanel';
-import { PartIcon } from './OptionThumb';
+import { OptionGrid, ShedTabIcon, SizeRow, Stat, type ShedTab } from './ShedControls';
 
-/** A tab of the sidebar: one part of the model, or where it will be built. */
-export type DesignTab = EditablePart | 'location';
+/** A tab of the sidebar: one part of the shed, or where it will be built. */
+export type DesignTab = ShedTab;
 
-/** Tab order follows how a polyhouse is planned: its size and kind, then what it is made of, then what grows in it. */
-const DESIGN_TABS: DesignTab[] = ['size', 'type', 'roof', 'frame', 'cover', 'vents', 'door', 'crop', 'irrigation', 'location'];
+/** Tab order follows how a shed is planned: its size and kind, what it is built of, then the birds and their feeding. */
+export const DESIGN_TABS: DesignTab[] = ['size', 'housing', 'roof', 'frame', 'roofSheet', 'sideWalls', 'entry', 'birds', 'feeding', 'location'];
+
+/** The setup field each option tab sets. */
+const TAB_FIELD: Partial<Record<DesignTab, keyof FarmConfig>> = {
+  housing: 'housingSystem',
+  roof: 'roofType',
+  frame: 'frameMaterial',
+  roofSheet: 'roofSheet',
+  sideWalls: 'sideWalls',
+  entry: 'entry',
+  birds: 'birdType',
+  feeding: 'feedingSystem',
+};
 
 const ALL_TOUCHED: Record<string, boolean> = {
   length: true,
   width: true,
-  gutterHeight: true,
+  eavesHeight: true,
   ridgeHeight: true,
-  greenhouseType: true,
+  housingSystem: true,
   roofType: true,
-  structureMaterial: true,
-  coverMaterial: true,
-  sideVentilation: true,
-  doorEntry: true,
-  selectedCrop: true,
-  irrigationSystem: true,
+  frameMaterial: true,
+  roofSheet: true,
+  sideWalls: true,
+  entry: true,
+  birdType: true,
+  feedingSystem: true,
   state: true,
   district: true,
 };
 
-const SECTIONS: Array<keyof SetupSectionProgress> = ['baseDimensions', 'heights', 'typeAndRoof', 'materials', 'access', 'cultivation', 'location'];
+const SECTIONS: Array<keyof SetupSectionProgress> = ['size', 'shed', 'birds', 'location'];
+const SIZE_STEP: Record<DimensionKey, number> = { length: 0.5, width: 0.5, eavesHeight: 0.1, ridgeHeight: 0.1 };
+const SIZE_LABEL: Record<DimensionKey, string> = { length: 'left.length', width: 'left.width', eavesHeight: 'left.eaves', ridgeHeight: 'left.ridge' };
 
 interface RecentSetup {
   id: string;
@@ -52,9 +83,8 @@ interface RecentSetup {
   config: FarmConfig;
 }
 
-const RECENT_SETUPS_KEY = 'farm.recent-setups.v1';
+const RECENT_SETUPS_KEY = 'farm.recent-setups.v2';
 const MAX_RECENT_SETUPS = 3;
-const EPSILON = 0.001;
 
 function readRecentSetups(): RecentSetup[] {
   try {
@@ -78,7 +108,7 @@ interface DesignSidebarProps {
    * draft, share link, saved setup) so its filled-in parts count as done.
    */
   restoredConfigVersion?: number;
-  /** Which fields the grower has set. Held by the page so leaving the Design step keeps them. */
+  /** Which fields the farmer has set. Held by the page so leaving the Design step keeps them. */
   touched: Record<string, boolean>;
   onTouchedChange: Dispatch<SetStateAction<Record<string, boolean>>>;
   tab: DesignTab;
@@ -88,9 +118,9 @@ interface DesignSidebarProps {
 }
 
 /**
- * The one panel for designing the greenhouse, docked beside the model like Blender's properties
- * editor. A row of tabs lists the parts; the open tab holds that part's sizes or options. Picking a
- * part on the model opens its tab, and opening a tab selects that part on the model.
+ * The one panel for designing the shed, docked beside the model like Blender's properties editor. A row of tabs
+ * lists the parts; the open tab holds that part's sizes or options. Picking a part on the model opens its tab, and
+ * opening a tab selects that part on the model.
  */
 export function DesignSidebar({
   config,
@@ -117,18 +147,14 @@ export function DesignSidebar({
 
   const errors = useMemo(() => {
     const found: Record<string, string> = {};
-    for (const key of ['length', 'width', 'gutterHeight', 'ridgeHeight'] as DimensionKey[]) {
+    for (const key of ['length', 'width', 'eavesHeight', 'ridgeHeight'] as DimensionKey[]) {
       if (!(config[key] > 0)) found[key] = t('setup.notSet');
+      // Same bounds the backend enforces (shared/poultry-limits.json).
+      else if (!isWithinDimensionLimits(key, config[key])) found[key] = t('validation.range', DIMENSION_LIMITS[key]);
     }
-    if (config.roofType === 'flat') {
-      if (Math.abs(config.ridgeHeight - config.gutterHeight) > EPSILON) found.ridgeHeight = t('validation.flatRidge');
-    } else if (!found.ridgeHeight && config.ridgeHeight <= config.gutterHeight) {
-      found.ridgeHeight = t('validation.ridgeAbove');
-    }
-    // Same bounds the backend enforces (shared/farm-limits.json); a flat roof's ridge follows the gutter.
-    const ranged: DimensionKey[] = config.roofType === 'flat' ? ['length', 'width', 'gutterHeight'] : ['length', 'width', 'gutterHeight', 'ridgeHeight'];
-    for (const key of ranged) {
-      if (!found[key] && !isWithinDimensionLimits(key, config[key])) found[key] = t('validation.range', DIMENSION_LIMITS[key]);
+    if (!found.ridgeHeight && !found.eavesHeight && config.ridgeHeight <= config.eavesHeight) found.ridgeHeight = t('validation.ridgeAbove');
+    if (config.stockingDensity !== null && (config.stockingDensity < STOCKING_DENSITY_LIMITS.min || config.stockingDensity > STOCKING_DENSITY_LIMITS.max)) {
+      found.stockingDensity = t('validation.range', STOCKING_DENSITY_LIMITS);
     }
     if (!config.state.trim()) found.state = t('validation.stateReq');
     if (!config.district.trim()) found.district = t('validation.districtReq');
@@ -139,23 +165,20 @@ export function DesignSidebar({
     onValidationChange(Object.keys(errors).length === 0);
   }, [errors, onValidationChange]);
 
-  const progress = useMemo<SetupSectionProgress>(() => {
-    const heightsFit = config.roofType === 'flat' ? Math.abs(config.ridgeHeight - config.gutterHeight) < EPSILON : config.ridgeHeight > config.gutterHeight;
-    return {
-      baseDimensions: Boolean(touched.length && touched.width) && config.length > 0 && config.width > 0,
-      heights:
-        Boolean(touched.gutterHeight) &&
-        (config.roofType === 'flat' || Boolean(touched.ridgeHeight)) &&
-        config.gutterHeight > 0 &&
-        config.ridgeHeight > 0 &&
-        heightsFit,
-      typeAndRoof: Boolean(touched.greenhouseType && touched.roofType),
-      materials: Boolean(touched.structureMaterial && touched.coverMaterial),
-      access: Boolean(touched.sideVentilation && touched.doorEntry),
-      cultivation: Boolean(config.selectedCrop && config.irrigationSystem),
+  const progress = useMemo<SetupSectionProgress>(
+    () => ({
+      size:
+        Boolean(touched.length && touched.width && touched.eavesHeight && touched.ridgeHeight) &&
+        !errors.length &&
+        !errors.width &&
+        !errors.eavesHeight &&
+        !errors.ridgeHeight,
+      shed: Boolean(touched.housingSystem && touched.roofType && touched.frameMaterial && touched.roofSheet && touched.sideWalls && touched.entry),
+      birds: Boolean(touched.birdType && touched.feedingSystem),
       location: Boolean(touched.state && touched.district) && config.state.trim() !== '' && config.district.trim() !== '',
-    };
-  }, [config, touched]);
+    }),
+    [config, touched, errors]
+  );
 
   useEffect(() => {
     onProgressChange?.(progress);
@@ -168,7 +191,7 @@ export function DesignSidebar({
       ...ALL_TOUCHED,
       length: config.length > 0,
       width: config.width > 0,
-      gutterHeight: config.gutterHeight > 0,
+      eavesHeight: config.eavesHeight > 0,
       ridgeHeight: config.ridgeHeight > 0,
       state: config.state.trim() !== '',
       district: config.district.trim() !== '',
@@ -177,7 +200,7 @@ export function DesignSidebar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restoredConfigVersion]);
 
-  /** Applies a change and counts every field it sets as chosen by the grower. */
+  /** Applies a change and counts every field it sets as chosen by the farmer. */
   const apply = useCallback(
     (patch: Partial<FarmConfig>, also: string[] = []) => {
       setTouched((previous) => {
@@ -198,15 +221,17 @@ export function DesignSidebar({
   };
 
   const clearAll = () => {
-    onConfigChange({ ...normalizeFarmConfig(DEFAULT_CONFIG), length: 0, width: 0, gutterHeight: 0, ridgeHeight: 0, state: '', district: '' });
+    onConfigChange({ ...normalizeFarmConfig(DEFAULT_CONFIG), length: 0, width: 0, eavesHeight: 0, ridgeHeight: 0, state: '', district: '' });
     setTouched({});
     onTabChange('size');
   };
 
+  const birds = flockSize({ ...config, housing: config.housingSystem }) ?? 0;
+
   const saveCurrentSetup = () => {
     const item: RecentSetup = {
       id: `${Date.now()}`,
-      label: `${config.greenhouseType.replace(/-/g, ' ')} - ${config.length}x${config.width}m`,
+      label: `${t(optionKey('bird', config.birdType))} · ${formatNumber(birds)} · ${config.length}x${config.width} m`,
       savedAt: new Date().toISOString(),
       config: normalizeFarmConfig(config),
     };
@@ -219,13 +244,14 @@ export function DesignSidebar({
   };
 
   const tabDone = (item: DesignTab): boolean => {
-    if (item === 'size') return progress.baseDimensions && progress.heights;
+    if (item === 'size') return progress.size;
     if (item === 'location') return progress.location;
-    return Boolean(touched[CONFIG_FIELD[item as OptionPart]]);
+    const field = TAB_FIELD[item];
+    return field ? Boolean(touched[field]) : false;
   };
-  const tabLabel = (item: DesignTab) => (item === 'location' ? t('setup.stepLocation') : t(`edit.part.${item}`));
+  const tabLabel = (item: DesignTab) => t(`design.tab.${item}`);
   const completed = SECTIONS.filter((section) => progress[section]).length;
-  const area = config.length * config.width;
+  const areaSqm = config.length * config.width;
 
   const fieldError = (key: string) =>
     touched[key] && errors[key] ? (
@@ -234,22 +260,78 @@ export function DesignSidebar({
       </p>
     ) : null;
 
+  const sizeRow = (key: DimensionKey) => (
+    <div key={key}>
+      <SizeRow
+        id={key}
+        label={t(SIZE_LABEL[key])}
+        value={config[key]}
+        min={DIMENSION_LIMITS[key].min}
+        max={DIMENSION_LIMITS[key].max}
+        step={SIZE_STEP[key]}
+        unit="m"
+        onCommit={(value) => apply({ [key]: value })}
+      />
+      {fieldError(key)}
+    </div>
+  );
+
   let body: ReactNode;
   if (tab === 'size') {
-    const volume = area * ((config.gutterHeight + config.ridgeHeight) / 2);
+    const norm = sqftPerBird(config.birdType, config.housingSystem);
     body = (
       <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-2">
-          <Stat label={t('viewport.area')} value={`${area.toFixed(0)} m²`} />
-          <Stat label={t('viewport.volume')} value={`${volume.toFixed(0)} m³`} />
+        <div className="grid grid-cols-3 gap-2">
+          <Stat label={t('viewport.area')} value={`${formatNumber(areaSqm)} m²`} />
+          <Stat label={t('viewport.areaSqft')} value={`${formatNumber(Math.round(areaSqm * SQFT_PER_SQM))} ft²`} />
+          <Stat label={t('design.birds')} value={formatNumber(birds)} />
         </div>
-        <div className="space-y-1.5">
-          <SizeRow config={config} rowKey="length" label={t('left.length')} onChange={apply} />
-          <SizeRow config={config} rowKey="width" label={t('left.width')} onChange={apply} />
-          <SizeRow config={config} rowKey="gutterHeight" label={t('left.gutter')} onChange={apply} />
-          <SizeRow config={config} rowKey="ridgeHeight" label={t('left.ridge')} onChange={(patch) => apply(patch, ['ridgeHeight'])} />
+        <div className="space-y-1.5">{(['length', 'width', 'eavesHeight', 'ridgeHeight'] as DimensionKey[]).map(sizeRow)}</div>
+        <div className="space-y-1.5 rounded-lg border border-border p-2.5">
+          <SizeRow
+            id="flock"
+            label={t('design.flockSize')}
+            value={birds}
+            min={0}
+            max={1_000_000}
+            step={50}
+            unit={t('design.birdsUnit')}
+            onCommit={(wanted) => {
+              // "I want 5,000 birds": keep the width and lengthen the shed to hold them.
+              const area = floorAreaFor({ birds: wanted, birdType: config.birdType, housing: config.housingSystem, stockingDensity: config.stockingDensity });
+              if (area && config.width > 0) {
+                const length = Math.min(DIMENSION_LIMITS.length.max, Math.max(DIMENSION_LIMITS.length.min, Math.ceil((area / config.width) * 2) / 2));
+                apply({ length });
+              }
+            }}
+          />
+          <SizeRow
+            id="density"
+            label={t('design.stockingDensity')}
+            value={config.stockingDensity ?? norm ?? 1}
+            min={STOCKING_DENSITY_LIMITS.min}
+            max={STOCKING_DENSITY_LIMITS.max}
+            step={0.05}
+            unit="ft²"
+            onCommit={(value) => apply({ stockingDensity: value === norm ? null : value })}
+          />
+          {fieldError('stockingDensity')}
+          <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+            <span>{norm !== null ? t('design.densityNorm', { value: norm }) : null}</span>
+            {config.stockingDensity !== null ? (
+              <button type="button" className="inline-flex items-center gap-1 text-primary hover:underline" onClick={() => apply({ stockingDensity: null })}>
+                <RotateCcw className="h-3 w-3" />
+                {t('design.densityReset')}
+              </button>
+            ) : null}
+          </div>
         </div>
-        <p className="text-xs leading-relaxed text-muted-foreground">{config.roofType === 'flat' ? t('left.flatRoofHint') : t('viewport.dragHint')}</p>
+        {config.housingSystem !== 'environment-controlled' && config.width > OPEN_SHED_MAX_WIDTH ? (
+          <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-xs text-foreground" role="note">
+            {t('design.tooWide', { max: OPEN_SHED_MAX_WIDTH })}
+          </p>
+        ) : null}
+        <p className="text-xs leading-relaxed text-muted-foreground">{t('viewport.dragHint')}</p>
       </div>
     );
   } else if (tab === 'location') {
@@ -294,27 +376,92 @@ export function DesignSidebar({
           </Select>
           {fieldError('district')}
         </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-muted-foreground">{t('design.category')}</Label>
+          <OptionGrid
+            group="category"
+            label={t('design.category')}
+            options={CATEGORY_OPTIONS.map((option) => option.value)}
+            value={config.beneficiaryCategory}
+            onChange={(value) => apply({ beneficiaryCategory: value })}
+          />
+          <p className="text-[11px] leading-relaxed text-muted-foreground">{t('design.categoryHint')}</p>
+        </div>
+      </div>
+    );
+  } else if (tab === 'birds') {
+    const layer = isLayerBird(config.birdType);
+    body = (
+      <div className="space-y-4">
+        <OptionGrid
+          group="bird"
+          label={tabLabel('birds')}
+          options={BIRD_OPTIONS.map((option) => option.value)}
+          value={config.birdType}
+          onChange={(value) => apply({ birdType: value })}
+        />
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-muted-foreground">{t('design.farmingModel')}</Label>
+          <OptionGrid
+            group="farming"
+            label={t('design.farmingModel')}
+            options={FARMING_MODEL_OPTIONS.map((option) => option.value)}
+            value={config.farmingModel}
+            isDisabled={(value) => value === 'contract' && layer}
+            onChange={(value) => apply({ farmingModel: value })}
+          />
+          <p className="text-[11px] leading-relaxed text-muted-foreground">{t(layer ? 'design.contractLayers' : `design.farmingHint.${config.farmingModel}`)}</p>
+        </div>
+        {config.birdType === 'layer-cage' ? (
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">{t('design.cageTiers')}</Label>
+            <OptionGrid group="cageTiers" label={t('design.cageTiers')} options={CAGE_TIER_OPTIONS} value={config.cageTiers} onChange={(value) => apply({ cageTiers: value })} />
+          </div>
+        ) : null}
       </div>
     );
   } else {
-    const part = tab as OptionPart;
-    const shadeLocked = config.greenhouseType === 'shade-net' && (part === 'cover' || part === 'vents' || part === 'door');
+    // An option tab. Choices that do not fit the bird or the shed type are shown, but cannot be picked.
+    const housing = config.housingSystem;
+    const groups: Record<string, { group: string; values: readonly string[]; disabled?: (value: string) => boolean }> = {
+      housing: {
+        group: 'housing',
+        values: HOUSING_OPTIONS.map((o) => o.value),
+        disabled: (value) => !HOUSING_FOR_BIRD[config.birdType].includes(value as FarmConfig['housingSystem']),
+      },
+      roof: { group: 'roof', values: ROOF_OPTIONS.map((o) => o.value) },
+      frame: {
+        group: 'frame',
+        values: FRAME_OPTIONS.map((o) => o.value),
+        disabled: (value) => (value === 'bamboo-wood') !== (housing === 'backyard'),
+      },
+      roofSheet: { group: 'roofSheet', values: ROOF_SHEET_OPTIONS.map((o) => o.value), disabled: (value) => value === 'thatch' && housing !== 'backyard' },
+      sideWalls: {
+        group: 'sideWalls',
+        values: SIDE_WALL_OPTIONS.map((o) => o.value),
+        disabled: (value) => (value === 'closed-tunnel') !== (housing === 'environment-controlled'),
+      },
+      entry: { group: 'entry', values: ENTRY_OPTIONS.map((o) => o.value) },
+      feeding: {
+        group: 'feeding',
+        values: FEEDING_OPTIONS.map((o) => o.value),
+        disabled: (value) => !feedingFor(config.birdType).includes(value as FarmConfig['feedingSystem']),
+      },
+    };
+    const spec = groups[tab];
+    const field = TAB_FIELD[tab] as keyof FarmConfig;
     body = (
       <div className="space-y-3">
-        {part === 'cover' ? (
-          <div className="grid grid-cols-2 gap-2">
-            <Stat label={t('viewport.coverSurface')} value={`≈ ${coverSurface(config).toFixed(0)} m²`} />
-            <Stat label={t('viewport.area')} value={`${area.toFixed(0)} m²`} />
-          </div>
-        ) : null}
-        <OptionGrid part={part} config={config} onChange={(patch) => apply(patch, [CONFIG_FIELD[part]])} compact={false} />
-        {part === 'roof' ? (
-          <div className="space-y-1.5 pt-1">
-            <SizeRow config={config} rowKey="gutterHeight" label={t('left.gutter')} onChange={apply} />
-            <SizeRow config={config} rowKey="ridgeHeight" label={t('left.ridge')} onChange={apply} />
-          </div>
-        ) : null}
-        {shadeLocked ? <p className="text-xs leading-relaxed text-muted-foreground">{t('edit.shadeLocked')}</p> : null}
+        <OptionGrid
+          group={spec.group}
+          label={tabLabel(tab)}
+          options={spec.values}
+          value={String(config[field])}
+          isDisabled={spec.disabled}
+          onChange={(value) => apply({ [field]: value } as Partial<FarmConfig>)}
+        />
+        {tab === 'roof' ? <div className="space-y-1.5 pt-1">{(['eavesHeight', 'ridgeHeight'] as DimensionKey[]).map(sizeRow)}</div> : null}
+        <p className="text-xs leading-relaxed text-muted-foreground">{t(optionKey(`${spec.group}Hint`, String(config[field])))}</p>
       </div>
     );
   }
@@ -389,7 +536,7 @@ export function DesignSidebar({
                 active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
-              {item === 'location' ? <MapPin className="h-4 w-4 shrink-0" /> : <PartIcon part={item} className="h-4 w-4 shrink-0" />}
+              {item === 'location' ? <MapPin className="h-4 w-4 shrink-0" /> : <ShedTabIcon tab={item} className="h-4 w-4 shrink-0" />}
               <span className="max-w-full truncate">{tabLabel(item)}</span>
               {done ? (
                 <span

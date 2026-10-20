@@ -1,4 +1,4 @@
-import type { DoorEntry, GreenhouseType, RoofType } from '@/types/farm';
+import type { DoorEntry, GreenhouseType, RoofType } from '@/components/farm/scene/legacyConfig';
 
 /**
  * Where every structural member of the building goes. Pure and deterministic, so the frame, the

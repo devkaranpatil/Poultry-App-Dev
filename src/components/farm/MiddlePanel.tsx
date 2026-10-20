@@ -3,7 +3,7 @@ import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Html, AdaptiveDpr } from '@react-three/drei';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { FarmConfig, SetupSectionProgress } from '@/types/farm';
+import { FarmConfig, SetupSectionProgress } from '@/components/farm/scene/legacyConfig';
 import { useI18n } from '@/context/I18nContext';
 import { useTheme } from 'next-themes';
 import { useIsMobile } from '@/hooks/use-mobile';

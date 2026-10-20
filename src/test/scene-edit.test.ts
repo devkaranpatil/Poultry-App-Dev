@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_CONFIG, DIMENSION_LIMITS, type FarmConfig } from '@/types/farm';
+import { DEFAULT_CONFIG, DIMENSION_LIMITS, type FarmConfig } from '@/components/farm/scene/legacyConfig';
 import {
   HANDLE_GAP,
   MIN_RISE,

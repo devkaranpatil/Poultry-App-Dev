@@ -13,7 +13,7 @@ test("mobile workspace switches between setup, 3D and the planning steps", async
   // The steps scroll along the top on a phone.
   await page.getByRole("tab", { name: "Cost", exact: true }).click();
   await expect(page.getByText("Up to date")).toBeVisible();
-  await expect(page.getByText("Project cost")).toBeVisible();
+  await expect(page.getByText("Build cost")).toBeVisible();
 
   await page.getByRole("tab", { name: "Design", exact: true }).click();
   await page.getByRole("radio", { name: "Setup" }).click();
@@ -29,7 +29,7 @@ test("a newcomer on a phone follows the guide and the steps", async ({ page }) =
   test.setTimeout(150_000);
   const errors = trackPageErrors(page);
   await signUp(page, undefined, { showGuide: true });
-  await page.getByTestId("welcome-guide").getByRole("button", { name: "Start with a recommended greenhouse" }).click();
+  await page.getByTestId("welcome-guide").getByRole("button", { name: "Start with a recommended shed" }).click();
   await page.getByRole("combobox", { name: "State" }).click();
   await page.getByRole("option", { name: "Maharashtra", exact: true }).click();
   await page.getByRole("combobox", { name: "District" }).click();
@@ -37,7 +37,7 @@ test("a newcomer on a phone follows the guide and the steps", async ({ page }) =
 
   const done = page.getByTestId("design-complete");
   await done.getByRole("button", { name: "Next: Site" }).click();
-  for (const next of ["Cost", "Earnings", "Loan & subsidy"]) {
+  for (const next of ["Cost", "Earnings", "Loan"]) {
     await expect(page.getByTestId("in-short")).toBeVisible({ timeout: 30_000 });
     // click() scrolls the button into view itself, and retries if a results refresh re-renders it.
     await page.getByRole("button", { name: `Next: ${next}` }).click();

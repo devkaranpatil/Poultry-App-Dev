@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { BarChart3, Box, Copy, FolderOpen, MapPin, Plus, Ruler, Sprout, Trash2 } from 'lucide-react';
+import { BarChart3, Bird, Box, Copy, FolderOpen, MapPin, Plus, Ruler, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -28,8 +28,9 @@ import {
   type SavedConfiguration,
 } from '@/services/configuration.service';
 import { clearDraft, loadDraft, saveDraft } from '@/lib/configPersistence';
-import { formatINRCompact } from '@/lib/format';
-import { DEFAULT_CONFIG, normalizeFarmConfig, type FarmConfig } from '@/types/farm';
+import { formatINRCompact, formatNumber } from '@/lib/format';
+import { flockSize } from '@/lib/flock';
+import { DEFAULT_CONFIG, normalizeFarmConfig, optionKey, type FarmConfig } from '@/types/farm';
 
 const SAVED_QUERY_KEY = ['saved-configurations'];
 
@@ -41,7 +42,7 @@ function SetupCost({ config }: { config: FarmConfig }) {
   const located = hasLocation(config);
   const cost = useQuery({
     queryKey: ['setup-cost', JSON.stringify(config)],
-    queryFn: () => calculateFarm(config),
+    queryFn: () => calculateFarm(config, {}),
     enabled: located,
     staleTime: 5 * 60_000,
     retry: false,
@@ -52,7 +53,7 @@ function SetupCost({ config }: { config: FarmConfig }) {
   if (cost.isError || !cost.data) return <p className="text-xs text-muted-foreground">{t('dashboard.costFailed')}</p>;
   return (
     <p className="text-lg font-semibold text-foreground" data-testid="setup-cost">
-      {formatINRCompact(cost.data.cost.totalCost)}
+      {formatINRCompact(cost.data.cost.capitalCost)}
     </p>
   );
 }
@@ -99,12 +100,14 @@ function SetupCard({
           </dd>
         </div>
         <div className="flex items-center gap-1.5 text-muted-foreground">
-          <Sprout className="h-3.5 w-3.5" />
-          <dd className="text-foreground capitalize">{t(`options.crop.${config.selectedCrop}`)}</dd>
+          <Bird className="h-3.5 w-3.5" />
+          <dd className="text-foreground">
+            {t(optionKey('bird', config.birdType))} · {formatNumber(flockSize({ ...config, housing: config.housingSystem }) ?? 0)}
+          </dd>
         </div>
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <Box className="h-3.5 w-3.5" />
-          <dd className="text-foreground">{t(`options.roof.${config.roofType}`)}</dd>
+          <dd className="text-foreground">{t(optionKey('housing', config.housingSystem))}</dd>
         </div>
         <div className="text-muted-foreground">{t('dashboard.updated', { date: updated })}</div>
       </dl>
@@ -311,7 +314,7 @@ export default function Dashboard() {
             </Card>
           ) : items.length === 0 ? (
             <Card className="flex flex-col items-center gap-3 rounded-2xl p-10 text-center" data-testid="dashboard-empty">
-              <Sprout className="h-8 w-8 text-primary" />
+              <Bird className="h-8 w-8 text-primary" />
               <h3 className="text-base font-semibold">{t('dashboard.emptyTitle')}</h3>
               <p className="max-w-md text-sm text-muted-foreground">{t('dashboard.emptyDesc')}</p>
               <Button onClick={startNew} className="gap-2">

@@ -5,7 +5,6 @@ import { RiskPanel } from '@/components/farm/RiskPanel';
 import { useRiskSimulation, verdictFor } from '@/hooks/useRiskSimulation';
 import { I18nProvider } from '@/context/I18nContext';
 import { DEFAULT_CONFIG, type FarmConfig } from '@/types/farm';
-import type { FinanceAssumptions } from '@/lib/finance';
 import type { RiskResult } from '@/services/risk.service';
 
 const result: RiskResult = {
@@ -15,7 +14,7 @@ const result: RiskResult = {
     npv: { p10: -120000, p50: 40000, p90: 210000 },
     paybackYears: { p10: 3.1, p50: 4.4, p90: null },
     annualProfit: { p10: 60000, p50: 90000, p90: 120000 },
-    probabilities: { loss: 0.32, paybackWithin: { 3: 0.12, 5: 0.58 } },
+    probabilities: { loss: 0.32, paybackWithin: { 3: 0.12, 5: 0.58 }, outbreakYear: 0.02 },
     histogram: [
       { from: -200000, to: -100000, count: 900 },
       { from: -100000, to: 0, count: 700 },
@@ -23,30 +22,39 @@ const result: RiskResult = {
       { from: 100000, to: 300000, count: 1400 },
     ],
     drivers: [
-      { driver: 'price', npvAtP10: -80000, npvAtP90: 160000, range: 240000 },
-      { driver: 'yield', npvAtP10: -20000, npvAtP90: 100000, range: 120000 },
-      { driver: 'buildCost', npvAtP10: 70000, npvAtP90: 10000, range: 60000 },
-      { driver: 'operatingCost', npvAtP10: 60000, npvAtP90: 20000, range: 40000 },
+      { driver: 'salePrice', npvAtP10: -80000, npvAtP90: 160000, range: 240000 },
+      { driver: 'mortality', npvAtP10: 100000, npvAtP90: -20000, range: 120000 },
+      { driver: 'outbreak', npvAtP10: 40000, npvAtP90: -20000, range: 60000 },
+      { driver: 'buildCost', npvAtP10: 60000, npvAtP90: 20000, range: 40000 },
     ],
-    assumptions: { priceSigmaLog: 0.286, costBand: 0.1, operatingCostPoints: 10, discountRatePct: 10 },
+    assumptions: {
+      mortalityRangePct: [3, 5, 12],
+      conversionRange: [1.65, 1.8, 2],
+      salePriceSigmaLog: 0.2,
+      feedPriceBandPct: 10,
+      outbreakChancePct: 2,
+      costBand: 0.1,
+      discountRatePct: 10,
+    },
   },
   sources: {
-    yield: { range: '45-84 t/ha', published: true, source: 'Verma et al. (2018)' },
-    price: { sigmaLog: 0.286, basis: 'markets', days: 1, markets: 160, from: '2026-10-13', to: '2026-10-13' },
+    price: { sigmaLog: 0.2, basis: 'assumption' },
     buildCost: { low: 445804, high: 544872 },
   },
 };
 
 const run = vi.fn(async () => result);
-vi.mock('@/services/risk.service', () => ({ runRiskSimulation: (...args: unknown[]) => run(...(args as [])) }));
-
-const assumptions = { subsidyPct: 50, yieldPerSqm: 12, pricePerUnit: 25, operatingCostPct: 40 };
+vi.mock('@/services/risk.service', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/risk.service')>()),
+  runRiskSimulation: (...args: unknown[]) => run(...(args as [])),
+}));
 
 /** The risk step as the app wires it: the hook runs the simulation, the panel shows it. */
-function RiskHarness({ config = DEFAULT_CONFIG, inputs = assumptions }: { config?: FarmConfig; inputs?: FinanceAssumptions }) {
+function RiskHarness({ config = DEFAULT_CONFIG }: { config?: FarmConfig }) {
   const [years, setYears] = useState(5);
-  const risk = useRiskSimulation(config, inputs, years);
-  return <RiskPanel risk={risk} years={years} onYearsChange={setYears} />;
+  const [outbreak, setOutbreak] = useState(2);
+  const risk = useRiskSimulation(config, {}, years, outbreak);
+  return <RiskPanel risk={risk} years={years} onYearsChange={setYears} outbreakChancePct={outbreak} onOutbreakChange={setOutbreak} />;
 }
 
 const renderRisk = (props: Parameters<typeof RiskHarness>[0] = {}) =>
@@ -67,29 +75,34 @@ describe('RiskPanel', () => {
     expect(screen.getByText('If things go badly')).toBeInTheDocument();
     expect(screen.getByText('Typical result')).toBeInTheDocument();
     expect(screen.getByText('If things go well')).toBeInTheDocument();
-    // Price swings the result most here, so the tip is about selling.
+    // The sale price swings the result most here, so the tip is about selling.
     expect(screen.getByText(/The selling price matters most here/)).toBeInTheDocument();
+    expect(screen.getByText('An outbreak')).toBeInTheDocument();
     expect(run).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps the statistics and sources under the details', async () => {
+  it('keeps the statistics and the assumed ranges under the details', async () => {
     renderRisk();
     await screen.findByTestId('risk-chance');
     fireEvent.click(screen.getByText('Show details'));
     expect(screen.getByText('32%')).toBeInTheDocument(); // chance of a loss
     expect(screen.getAllByText('58%').length).toBeGreaterThan(1); // also listed: pays back within 5 years
     expect(screen.getByText('4.4 yrs')).toBeInTheDocument();
-    expect(screen.getByText(/across 160 mandis on 2026-10-13/)).toBeInTheDocument();
-    expect(screen.getByText(/published trial range \(45-84 t\/ha\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Sale price varies by about ±20% a year/)).toBeInTheDocument();
+    expect(screen.getByText(/Mortality 3 \/ 5 \/ 12%/)).toBeInTheDocument();
+    expect(screen.getByText(/A 2% yearly chance of an outbreak/)).toBeInTheDocument();
   });
 
-  it('runs again when the horizon changes', async () => {
+  it('runs again when the horizon or the outbreak chance changes', async () => {
     run.mockClear();
     renderRisk();
     await screen.findByTestId('risk-chance');
     fireEvent.click(screen.getByRole('radio', { name: '10 yrs' }));
     await waitFor(() => expect(run).toHaveBeenCalledTimes(2));
     expect(run.mock.calls[1]).toEqual(expect.arrayContaining([expect.objectContaining({ years: 10 })]));
+    fireEvent.click(screen.getByRole('radio', { name: '5%' }));
+    await waitFor(() => expect(run).toHaveBeenCalledTimes(3));
+    expect(run.mock.calls[2]).toEqual(expect.arrayContaining([expect.objectContaining({ outbreakChancePct: 5 })]));
   });
 
   it('offers to try again when the simulation fails', async () => {

@@ -11,18 +11,7 @@ const { z } = require("zod");
 const MAX_NAME_LENGTH = 120;
 const MAX_CHAT_TURNS = 20; // accepted from the client
 const MAX_MESSAGE_CHARS = 2000;
-const CONFIG_TYPES = ["greenhouse", "polyhouse"];
-const FINANCIAL_FIELDS = [
-  "subsidyPct",
-  "operatingCostPct",
-  "yieldPerSqm",
-  "pricePerUnit",
-  "netInvestment",
-  "annualRevenue",
-  "annualProfit",
-  "paybackYears",
-  "roi",
-];
+const CONFIG_TYPES = ["poultry"];
 
 /** The first problem, as a sentence for the client. */
 const firstIssue = (error) => error.issues[0]?.message || "Invalid request";
@@ -41,18 +30,20 @@ const savedConfig = z
     {
       length: dimension,
       width: dimension,
-      gutterHeight: dimension,
+      eavesHeight: dimension,
       ridgeHeight: dimension,
-      greenhouseType: shortText,
-      polyhouseType: shortText,
+      housingSystem: shortText,
       roofType: shortText,
-      structureMaterial: shortText,
-      coverMaterial: shortText,
-      sideVentilation: shortText,
-      doorEntry: shortText,
-      doorType: shortText,
-      selectedCrop: shortText,
-      irrigationSystem: shortText,
+      frameMaterial: shortText,
+      roofSheet: shortText,
+      sideWalls: shortText,
+      entry: shortText,
+      birdType: shortText,
+      stockingDensity: dimension.nullable(),
+      cageTiers: z.number().int().min(2).max(4),
+      feedingSystem: shortText,
+      farmingModel: shortText,
+      beneficiaryCategory: shortText,
       state: shortText,
       stateName: shortText,
       district: shortText,
@@ -67,7 +58,7 @@ const saveConfigurationBody = z.object({
     .transform((value) => value.trim().replace(/\s+/g, " ").slice(0, MAX_NAME_LENGTH))
     .pipe(z.string().min(1, "Configuration name is required")),
   config: savedConfig,
-  configType: z.enum(CONFIG_TYPES, { error: "Configuration type is invalid" }).default("greenhouse"),
+  configType: z.enum(CONFIG_TYPES, { error: "Configuration type is invalid" }).default("poultry"),
 });
 
 /** Ids are UUIDs; anything else cannot exist, so the route answers 404 without a database query. */
@@ -95,49 +86,9 @@ const chatMessages = z
 /** The interface language; anything unknown falls back to English. */
 const locale = z.enum(["en", "hi", "mr"]).catch("en");
 
-const saneNumber = z.number().finite().refine((value) => Math.abs(value) < 1e12);
-
-/**
- * The client's planning estimates. They only add context to the prompt, so a bad field is dropped instead of
- * failing the request; nothing usable at all gives null.
- */
-const financials = z
-  .object(Object.fromEntries(FINANCIAL_FIELDS.map((field) => [field, saneNumber.nullable().optional().catch(undefined)])))
-  .transform((value) => {
-    const kept = Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined));
-    return Object.keys(kept).length > 0 ? kept : null;
-  })
-  .nullable()
-  .catch(null);
-
 /* ------------------------------- risk (Monte Carlo) ------------------------------- */
 
 const finite = z.number({ error: "Must be a number" }).finite();
-
-/**
- * One simulation request: the setup (checked by the planner's own validator afterwards), the user's planning
- * assumptions, and optional run settings. Trials and years are bounded so one request stays under a second.
- */
-const riskRequest = z.object({
-  config: z.record(z.string(), z.unknown(), { error: "A project configuration is required" }),
-  assumptions: z.object(
-    {
-      subsidyPct: finite.min(0).max(100),
-      yieldPerSqm: finite.positive().max(10_000),
-      pricePerUnit: finite.positive().max(1_000_000),
-      operatingCostPct: finite.min(0).max(100),
-    },
-    { error: "Planning assumptions are required" }
-  ),
-  options: z
-    .object({
-      years: z.number().int().min(1).max(15).default(5),
-      discountRatePct: finite.min(0).max(30).default(10),
-      trials: z.number().int().min(500).max(20_000).default(5000),
-      seed: z.number().int().min(0).max(2 ** 31 - 1).default(1),
-    })
-    .prefault({}),
-});
 
 /* ------------------------------------ poultry ------------------------------------ */
 
@@ -191,18 +142,15 @@ const poultryRiskRequest = z.object({
 module.exports = {
   CONFIG_TYPES,
   POULTRY_ASSUMPTION_FIELDS,
-  FINANCIAL_FIELDS,
   MAX_CHAT_TURNS,
   MAX_MESSAGE_CHARS,
   MAX_NAME_LENGTH,
   chatMessages,
   configurationId,
-  financials,
   firstIssue,
   locale,
   poultryAssumptions,
   poultryCalculateRequest,
   poultryRiskRequest,
-  riskRequest,
   saveConfigurationBody,
 };

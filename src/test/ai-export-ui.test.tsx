@@ -7,8 +7,9 @@ import { AdvisorChat } from '@/components/advisor/AdvisorChat';
 import { SummaryStep } from '@/components/workspace/SummaryStep';
 import { ExportPanel } from '@/components/farm/ExportPanel';
 import { useAiAssistant } from '@/hooks/useAiAssistant';
-import { defaultFinanceAssumptions } from '@/lib/finance';
-import { DEFAULT_CONFIG, type CalculationResult, type FarmConfig } from '@/types/farm';
+import { defaultPoultryAssumptions } from '@/lib/poultryFinance';
+import type { FarmConfig } from '@/types/farm';
+import { SAMPLE_CONFIG, sampleResult } from './helpers/poultryResult';
 import * as aiService from '@/services/ai.service';
 
 vi.mock('@/services/ai.service', async (importOriginal) => {
@@ -17,7 +18,6 @@ vi.mock('@/services/ai.service', async (importOriginal) => {
     ...actual,
     getAiStatus: vi.fn(),
     requestAdvisorReport: vi.fn(),
-    requestAiCrops: vi.fn(),
     streamChat: vi.fn(),
   };
 });
@@ -29,28 +29,18 @@ vi.mock('@/lib/export/excelReport', () => ({ exportExcelReport: (...args: unknow
 vi.mock('@/lib/modelSnapshot', () => ({ captureModelSnapshot: () => 'data:image/jpeg;base64,AAAA' }));
 
 const mocked = vi.mocked(aiService);
-const config: FarmConfig = { ...DEFAULT_CONFIG, state: 'Goa', district: 'North Goa' };
+const config: FarmConfig = SAMPLE_CONFIG;
 
 const report: aiService.AdvisorReport = {
-  summary: 'A viable project with humidity risk.',
+  summary: 'A viable project with summer heat risk.',
   verdict: 'viable',
   strengths: ['Good market access'],
-  risks: [{ title: 'Fungal disease', detail: 'Monsoon humidity', severity: 'high' }],
-  recommendations: [{ title: 'Add insect net', detail: 'On vents', category: 'structure', impact: 'Saves ₹20k' }],
+  risks: [{ title: 'Heat stress', detail: 'Three hot months', severity: 'high' }],
+  recommendations: [{ title: 'Add foggers', detail: 'On the roof', category: 'structure', impact: 'Saves ₹20k' }],
 };
 
-const exportResult = {
-  area: 300,
-  volume: 1500,
-  climate: { climateZone: 'Tropical Coastal', avgTemperature: 27, humidity: 78, rainfall: 2900, climateFactor: 1.05, advisories: [] },
-  cost: {
-    structureCost: 1, coverCost: 1, ventilationCost: 1, foundationCost: 1, irrigationCost: 1,
-    electricalCost: 0, laborCost: 1, miscCost: 1, totalCost: 495338, costPerSqm: 1651, climateAdjustment: 0.05,
-  },
-  crops: [],
-  selectedCrop: null,
-  irrigation: { system: 'drip', ratePerSqm: 55, notes: [] },
-} as CalculationResult;
+// The real calculation for the sample shed, as the server would send it.
+const exportResult = sampleResult();
 
 const onNavigate = vi.fn();
 
@@ -63,8 +53,7 @@ function AdvisorHarness({ signedIn = true }: { signedIn?: boolean }) {
   const ai = useAiAssistant({
     token: signedIn ? 'tok' : null,
     config: current,
-    assumptions: defaultFinanceAssumptions(current.selectedCrop),
-    financials: null,
+    assumptions: defaultPoultryAssumptions(current.birdType),
     locale: 'en',
   });
   const shared = signedIn ? ai : undefined;
@@ -80,7 +69,7 @@ function AdvisorHarness({ signedIn = true }: { signedIn?: boolean }) {
       <ExportPanel
         config={current}
         result={exportResult}
-        assumptions={defaultFinanceAssumptions(current.selectedCrop)}
+        assumptions={defaultPoultryAssumptions(current.birdType)}
         ai={shared}
         includeAdvisor={include}
         onIncludeAdvisorChange={setInclude}
@@ -133,8 +122,8 @@ describe('AI summary step', () => {
     expect(screen.getByTestId('summary-skip')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Generate AI summary' }));
-    expect(await screen.findByText('A viable project with humidity risk.')).toBeInTheDocument();
-    expect(screen.getByText('Fungal disease')).toBeInTheDocument();
+    expect(await screen.findByText('A viable project with summer heat risk.')).toBeInTheDocument();
+    expect(screen.getByText('Heat stress')).toBeInTheDocument();
     expect(screen.getByText('Saves ₹20k')).toBeInTheDocument();
     expect(within(screen.getByTestId('summary-review')).getByText('AI-generated')).toBeInTheDocument();
     expect(mocked.requestAdvisorReport).toHaveBeenCalledWith('tok', expect.objectContaining({ locale: 'en' }));
@@ -155,7 +144,7 @@ describe('AI summary step', () => {
     mocked.requestAdvisorReport.mockResolvedValue(report);
     renderWithI18n(<AdvisorHarness />);
     fireEvent.click(screen.getByRole('button', { name: 'Generate AI summary' }));
-    await screen.findByText('A viable project with humidity risk.');
+    await screen.findByText('A viable project with summer heat risk.');
 
     fireEvent.click(includeSwitch());
     expect(includeSwitch()).not.toBeChecked();
@@ -183,7 +172,7 @@ describe('AI summary step', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Generate AI summary' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(/reached the AI limit/);
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
-    expect(await screen.findByText('A viable project with humidity risk.')).toBeInTheDocument();
+    expect(await screen.findByText('A viable project with summer heat risk.')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });
@@ -197,7 +186,7 @@ describe('Advisor chat', () => {
     });
     renderWithI18n(<AdvisorHarness />);
 
-    const box = await screen.findByLabelText(/Ask about your setup/);
+    const box = await screen.findByLabelText(/Ask about your shed/);
     fireEvent.change(box, { target: { value: 'Which roof?' } });
     fireEvent.keyDown(box, { key: 'Enter' });
 
@@ -224,12 +213,12 @@ describe('Export panel', () => {
   const result = exportResult;
 
   it('asks for a complete setup before exporting', () => {
-    renderWithI18n(<ExportPanel config={config} result={null} assumptions={defaultFinanceAssumptions('tomato')} />);
+    renderWithI18n(<ExportPanel config={config} result={null} assumptions={defaultPoultryAssumptions('broiler')} />);
     expect(screen.getByText('Complete the setup to export a report.')).toBeInTheDocument();
   });
 
   it('builds the PDF with the 3D snapshot and the Excel without it', async () => {
-    renderWithI18n(<ExportPanel config={config} result={result} assumptions={defaultFinanceAssumptions('tomato')} />);
+    renderWithI18n(<ExportPanel config={config} result={result} assumptions={defaultPoultryAssumptions('broiler')} />);
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Download PDF' }));
@@ -245,7 +234,7 @@ describe('Export panel', () => {
   });
 
   it('disables AI sections until they have been generated', () => {
-    renderWithI18n(<ExportPanel config={config} result={result} assumptions={defaultFinanceAssumptions('tomato')} />);
+    renderWithI18n(<ExportPanel config={config} result={result} assumptions={defaultPoultryAssumptions('broiler')} />);
     expect(exportCheckbox()).toBeDisabled();
     expect(screen.getByRole('checkbox', { name: /3D model snapshot/ })).toBeEnabled();
   });

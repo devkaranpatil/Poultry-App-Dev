@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_CONFIG, type FarmConfig } from '@/types/farm';
+import { DEFAULT_CONFIG, type FarmConfig } from '@/components/farm/scene/legacyConfig';
 import {
   formatModalLabel,
   liftPatch,

@@ -50,7 +50,7 @@ function renderWidget(options: { ai?: AiAssistant; step?: StepId } = {}) {
 }
 
 const launcher = () => screen.getByTestId('advisor-launcher');
-const questionBox = () => screen.getByLabelText(/Ask about your setup/);
+const questionBox = () => screen.getByLabelText(/Ask about your shed/);
 
 describe('Advisor widget', () => {
   it('opens a small chat window from the launcher and puts the cursor in the question box', async () => {
@@ -85,7 +85,7 @@ describe('Advisor widget', () => {
     const full = await screen.findByTestId('advisor-fullscreen');
     expect(full).toHaveAttribute('role', 'dialog');
     expect(within(full).getByRole('button', { name: 'Exit full screen' })).toBeInTheDocument();
-    await waitFor(() => expect(within(full).getByLabelText(/Ask about your setup/)).toHaveFocus());
+    await waitFor(() => expect(within(full).getByLabelText(/Ask about your shed/)).toHaveFocus());
 
     fireEvent.keyDown(full, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByTestId('advisor-fullscreen')).not.toBeInTheDocument());
@@ -98,7 +98,7 @@ describe('Advisor widget', () => {
     fireEvent.change(questionBox(), { target: { value: 'Half-typed question' } });
     fireEvent.click(screen.getByRole('button', { name: 'Open full screen' }));
     const full = await screen.findByTestId('advisor-fullscreen');
-    expect(within(full).getByLabelText(/Ask about your setup/)).toHaveValue('Half-typed question');
+    expect(within(full).getByLabelText(/Ask about your shed/)).toHaveValue('Half-typed question');
 
     fireEvent.click(within(full).getByRole('button', { name: 'Minimize' }));
     await waitFor(() => expect(screen.queryByTestId('advisor-fullscreen')).not.toBeInTheDocument());

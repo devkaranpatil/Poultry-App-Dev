@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_LOAN_TERMS, computeLoanPlan, installmentFor, normalizeLoanTerms, type LoanTerms } from '@/lib/loan';
+import { computeLoanPlan, installmentFor, normalizeLoanTerms, type LoanTerms } from '@/lib/loan';
+
+// Fixed terms for the arithmetic below (an 80% loan over 7 years with a 12-month moratorium).
+const BASE_TERMS: LoanTerms = { loanSharePct: 80, interestPct: 11.05, tenureYears: 7, moratoriumMonths: 12, frequency: 'monthly' };
 
 const noIncome = { annualRevenue: 0, annualOperatingCost: 0 };
-const terms = (patch: Partial<LoanTerms> = {}): LoanTerms => ({ ...DEFAULT_LOAN_TERMS, ...patch });
+const terms = (patch: Partial<LoanTerms> = {}): LoanTerms => ({ ...BASE_TERMS, ...patch });
 
 describe('installmentFor', () => {
   it('matches the textbook EMI', () => {

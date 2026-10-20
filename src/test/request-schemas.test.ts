@@ -6,11 +6,11 @@ const require = createRequire(import.meta.url);
 const schemas = require('../../backend/validators/requestSchemas');
 
 describe('AI request schemas', () => {
-  it('keeps only sane planning numbers and drops the rest', () => {
-    expect(schemas.financials.parse({ subsidyPct: 50, paybackYears: 'soon', roi: Number.NaN, annualProfit: 1e13 })).toEqual({ subsidyPct: 50 });
-    expect(schemas.financials.parse({ paybackYears: null })).toEqual({ paybackYears: null });
-    expect(schemas.financials.parse('not an object')).toBeNull();
-    expect(schemas.financials.parse(undefined)).toBeNull();
+  it('accepts planning assumptions within range and drops unknown keys', () => {
+    expect(schemas.poultryAssumptions.parse({ saleInrPerKg: 110, mortalityPct: 6, injected: 1 })).toEqual({ saleInrPerKg: 110, mortalityPct: 6 });
+    expect(schemas.poultryAssumptions.parse(undefined)).toEqual({});
+    expect(schemas.poultryAssumptions.safeParse({ mortalityPct: 140 }).success).toBe(false);
+    expect(schemas.poultryAssumptions.safeParse({ eggInr: 'six' }).success).toBe(false);
   });
 
   it('falls back to English for an unknown interface language', () => {
@@ -47,7 +47,8 @@ describe('AI request schemas', () => {
 
 describe('saved configuration schema', () => {
   it('tidies the name and defaults the type', () => {
-    expect(schemas.saveConfigurationBody.parse({ name: '  North   block ', config: {} })).toEqual({ name: 'North block', config: {}, configType: 'greenhouse' });
+    expect(schemas.saveConfigurationBody.parse({ name: '  North   shed ', config: {} })).toEqual({ name: 'North shed', config: {}, configType: 'poultry' });
+    expect(schemas.saveConfigurationBody.safeParse({ name: 'x', config: {}, configType: 'greenhouse' }).success).toBe(false);
   });
 
   it('rejects out-of-range numbers and over-long text', () => {

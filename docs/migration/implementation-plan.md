@@ -186,6 +186,43 @@ What differs from the table below:
 
 ## Phase 4: screens and words (4 to 5 days)
 
+**Status: done 2026-10-20 on branch `phase-4-screens`.**
+
+The backend:
+- `/api/farm/calculate` takes `{ config, assumptions }` and returns the poultry result. `/api/risk/simulate` runs the poultry risk model.
+- The polyhouse calculator, validator, MIDH table, crop advisor, mandi services and the mandi ingest job are removed. The ingest job would have doubled the polyhouse repository's writes to the shared table.
+- The AI route reads poultry facts from the server's calculation, and the crop-ranking endpoint is gone.
+- `whatIf.js` uses the poultry levers: flock size, bird, shed, farming model, roof, sheet, feeding, state and prices.
+- Saved setups are poultry-only. In the shared database the app never lists, overwrites (409) or deletes the polyhouse planner's rows.
+
+The screens:
+- New sidebar tabs: Size (with flock size and stocking density), Shed, Roof, Frame, Roof sheet, Side walls, Entry, Birds (farming model, cage tiers), Feeding, and Location (with the beneficiary category).
+- Choices that do not fit the bird or shed are shown but disabled.
+- The step pages:
+  - Site & rules: climate, heat stress and the siting checklist.
+  - Cost: the shed lines, the first batch, the NABARD comparison and every scheme's verdict.
+  - Earnings: production, the batch calendar, and the assumptions with their sources.
+  - Loan: NABARD terms per bird.
+  - Risk: adds the outbreak chance.
+
+The report:
+- The PDF follows the DPR order (technical, financial, managerial, compliance) and includes the biosecurity list.
+- The Excel workbook's production formulas reproduce the app's figures; a test evaluates them.
+
+Wording and branding:
+- English, Hindi and Marathi are rewritten for poultry. Unused polyhouse keys are deleted, and a test checks that every key the screens build exists.
+- The logo uses `APP_NAME`. The landing page has new SVG illustrations in place of the greenhouse photos.
+
+Checks:
+- 448 unit tests pass.
+- The e2e specs are updated, with three poultry personas: a contract broiler farm of 5,000 birds, a cage layer farm of 5,000, and a rural parent farm of desi birds.
+
+What differs from the plan:
+- The 3D scene still draws the polyhouse until Phase 5. It gets the nearest shapes through `scene/legacyConfig.ts` (toSceneConfig/fromScenePatch). Size, eaves and ridge drags reach the shed.
+- The editor e2e tests that checked polyhouse-only options were removed; Phase 5 adds the shed equivalents.
+- The plan's separate `SitingChecklist.tsx` lives in `ReferenceCards.tsx`, next to the heat, NABARD and scheme cards.
+
+
 1. **`DesignSidebar.tsx`:**
    - Tabs: Size, Housing, Roof, Frame, Roof sheet, Side walls, Entry, Birds, Feeding, Location.
    - New controls: stocking density, cage tiers, farming model.

@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PropertiesPanel } from '@/components/farm/PropertiesPanel';
 import { I18nProvider } from '@/context/I18nContext';
-import { DEFAULT_CONFIG } from '@/types/farm';
+import { DEFAULT_CONFIG } from '@/components/farm/scene/legacyConfig';
 import type { EditablePart } from '@/lib/sceneEdit';
 
 /** The panel with its selection held as MiddlePanel holds it; `pickOnModel` stands in for a tap on the 3D view. */

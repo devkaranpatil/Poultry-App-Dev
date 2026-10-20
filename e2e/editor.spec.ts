@@ -42,8 +42,8 @@ const dimensions = async (page: Page) => {
   return { length, width, ridge };
 };
 
-test("the recommended greenhouse shows its crop before a location is chosen", async ({ page }) => {
-  // The location only feeds the money steps; the model, crop and irrigation must not wait for it.
+test("the recommended shed builds its model before a location is chosen", async ({ page }) => {
+  // The location only feeds the money steps; the model must not wait for it.
   await signUp(page);
   await page.getByRole("button", { name: /Use recommended/i }).click();
   await expect(page.getByTestId("scene-canvas")).toHaveAttribute("data-build-stage", "6", { timeout: 30_000 });
@@ -51,7 +51,7 @@ test("the recommended greenhouse shows its crop before a location is chosen", as
     .poll(() =>
       page.evaluate(() => {
         const scene = (window as unknown as { __farmScene?: { getObjectByName: (name: string) => unknown } }).__farmScene;
-        return Boolean(scene?.getObjectByName("crop-tomato"));
+        return Boolean(scene?.getObjectByName("farm-model"));
       })
     )
     .toBe(true);
@@ -67,7 +67,7 @@ test.describe("editing the model in 3D", () => {
   test("dragging the end handle changes the length everywhere", async ({ page }) => {
     const errors = trackPageErrors(page);
     const before = await dimensions(page);
-    expect(before.length).toBe(30);
+    expect(before.length).toBe(14);
 
     await selectPart(page, "Size");
     await expect.poll(() => hasHandle(page, "handle-length")).toBe(true);
@@ -82,7 +82,7 @@ test.describe("editing the model in 3D", () => {
     await page.mouse.move(handle.x + (dx / norm) * 60, handle.y + (dy / norm) * 60, { steps: 12 });
     await page.mouse.up();
 
-    await expect.poll(async () => (await dimensions(page)).length).toBeGreaterThan(30);
+    await expect.poll(async () => (await dimensions(page)).length).toBeGreaterThan(14);
     const after = await dimensions(page);
     expect(Number.isInteger(after.length)).toBe(true); // snaps to whole metres
     expect(after.width).toBe(before.width);
@@ -113,39 +113,17 @@ test.describe("editing the model in 3D", () => {
     await expect(editor).toHaveAttribute("data-part", "size");
 
     await editor.getByRole("button", { name: /Length.*\+/ }).click();
-    await expect.poll(async () => (await dimensions(page)).length).toBe(31);
+    await expect.poll(async () => (await dimensions(page)).length).toBe(14.5);
 
     const width = editor.getByRole("spinbutton", { name: /Width/ });
     await width.fill("500");
     await width.blur();
-    await expect.poll(async () => (await dimensions(page)).width).toBe(100); // the supported maximum
+    await expect.poll(async () => (await dimensions(page)).width).toBe(18); // the supported maximum
 
-    const gutter = editor.getByRole("spinbutton", { name: /Gutter/ });
-    await gutter.fill("7.5");
-    await gutter.blur();
-    await expect.poll(async () => (await dimensions(page)).ridge).toBeGreaterThanOrEqual(8); // the roof stays above the gutter
-  });
-
-  test("each part offers its options and changes the model", async ({ page }) => {
-    await page.getByRole("button", { name: "Roof", exact: true }).click();
-    await page.getByTestId("part-editor").getByRole("radio", { name: "Gothic" }).click();
-    await expect.poll(() => sceneOption(page, "roof")).toBe("gothic");
-
-    await page.getByRole("button", { name: "Crop", exact: true }).click();
-    await page.getByTestId("part-editor").getByRole("radio", { name: "Strawberry" }).click();
-    await expect.poll(() => sceneOption(page, "crop")).toBe("strawberry");
-
-    await page.getByRole("button", { name: "Irrigation", exact: true }).click();
-    await page.getByTestId("part-editor").getByRole("radio", { name: /Fogger/ }).click();
-    await expect.poll(() => sceneOption(page, "irrigation")).toBe("fogger");
-
-    await page.getByRole("button", { name: "Vents", exact: true }).click();
-    await page.getByTestId("part-editor").getByRole("radio", { name: /Louver/ }).click();
-    await expect.poll(() => sceneOption(page, "sideVentilation")).toBe("louver");
-
-    await page.getByRole("button", { name: "Door", exact: true }).click();
-    await page.getByTestId("part-editor").getByRole("radio", { name: /Roll-up/ }).click();
-    await expect.poll(() => sceneOption(page, "door")).toBe("roll-up");
+    const eaves = editor.getByRole("spinbutton", { name: /Eaves/ });
+    await eaves.fill("9");
+    await eaves.blur();
+    await expect(eaves).toHaveValue("3.5"); // the tallest eaves the planner supports
   });
 
   test("G and S change sizes from the keyboard, like Blender", async ({ page }) => {
@@ -156,20 +134,20 @@ test.describe("editing the model in 3D", () => {
     await page.keyboard.type("2");
     await expect(page.getByTestId("drag-readout")).toContainText("Scale");
     await page.keyboard.press("Enter");
-    await expect.poll(async () => (await dimensions(page)).width).toBe(20);
+    await expect.poll(async () => (await dimensions(page)).width).toBe(14);
     await expect(page.getByTestId("drag-readout")).toHaveCount(0);
 
     // Grab along Y (the length) by a typed amount, then cancel: nothing changes.
     await page.keyboard.press("g");
     await page.keyboard.press("y");
     await page.keyboard.type("6");
-    await expect.poll(async () => (await dimensions(page)).length).toBe(36);
+    await expect.poll(async () => (await dimensions(page)).length).toBe(20);
     await page.keyboard.press("Escape");
-    await expect.poll(async () => (await dimensions(page)).length).toBe(30);
+    await expect.poll(async () => (await dimensions(page)).length).toBe(14);
 
     // The confirmed scale is one undo step.
     await page.keyboard.press("Control+z");
-    await expect.poll(async () => (await dimensions(page)).width).toBe(10);
+    await expect.poll(async () => (await dimensions(page)).width).toBe(7);
   });
 
   test("the surroundings follow the location, and a picked landscape and sky stay after a reload", async ({ page }) => {
@@ -197,26 +175,10 @@ test.describe("editing the model in 3D", () => {
     await expect(picker).toHaveAttribute("data-environment", "deccan");
   });
 
-  test("a flat roof removes the ridge handle and a gable brings it back", async ({ page }) => {
+  test("the ridge handle shows once the roof is selected", async ({ page }) => {
     await expect.poll(() => hasHandle(page, "handle-ridgeHeight")).toBe(false); // nothing selected yet
     await selectPart(page, "Roof");
     await expect.poll(() => hasHandle(page, "handle-ridgeHeight")).toBe(true);
-    await page.getByTestId("part-editor").getByRole("radio", { name: "Flat" }).click();
-    await expect.poll(() => hasHandle(page, "handle-ridgeHeight")).toBe(false);
-    await page.getByTestId("part-editor").getByRole("radio", { name: "Gable" }).click();
-    await expect.poll(() => hasHandle(page, "handle-ridgeHeight")).toBe(true);
-  });
-
-  test("a shade-net house locks the cover, vents and door", async ({ page }) => {
-    await page.getByRole("button", { name: "House type" }).click();
-    await page.getByTestId("part-editor").getByRole("radio", { name: /Shade net/i }).click();
-    await expect.poll(() => sceneOption(page, "cover")).toBe("shade-net");
-
-    await page.getByRole("button", { name: "Cover", exact: true }).click();
-    await expect(page.getByTestId("part-editor").getByRole("radio", { name: /UV/i })).toBeDisabled();
-    await page.getByRole("button", { name: "Vents", exact: true }).click();
-    await expect(page.getByTestId("part-editor").getByRole("radio", { name: /Louver/ })).toBeDisabled();
-    await expect(page.getByTestId("part-editor")).toContainText("shade-net house");
   });
 
   test("clicking a part in the 3D view opens its editor", async ({ page }) => {
@@ -225,7 +187,7 @@ test.describe("editing the model in 3D", () => {
     await page.waitForTimeout(1200);
     const door = await screenPosition(page, "door-panels", true);
     await page.mouse.click(door.x, door.y);
-    await expect(page.getByTestId("part-editor")).toHaveAttribute("data-part", "door");
+    await expect(page.getByTestId("part-editor")).toHaveAttribute("data-part", "entry");
   });
 
   test("view mode hides the handles, and edit mode brings them back", async ({ page }) => {
@@ -245,31 +207,31 @@ test.describe("editing the model in 3D", () => {
     expect(side.x).toBeGreaterThanOrEqual(view.x + view.width - 1); // beside the model, not over it
     // Choosing a part on the model (here through the editor hook) opens its tab.
     await page.evaluate(() => (window as unknown as { __farmEditor: { select: (part: string) => void } }).__farmEditor.select("door"));
-    await expect(page.getByTestId("part-editor")).toHaveAttribute("data-part", "door");
-    await expect(sidebar.getByRole("button", { name: "Door", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByTestId("part-editor")).toHaveAttribute("data-part", "entry");
+    await expect(sidebar.getByRole("button", { name: "Entry", exact: true })).toHaveAttribute("aria-pressed", "true");
   });
-  test("choosing an aluminium frame or glass cover warns that no official price exists", async ({ page }) => {
-    await page.getByRole("button", { name: "Frame", exact: true }).click();
-    await page.getByTestId("part-editor").getByRole("radio", { name: /Aluminium/i }).click();
-    await page.getByRole("button", { name: "Cover", exact: true }).click();
-    await page.getByTestId("part-editor").getByRole("radio", { name: /Glass/i }).click();
+  test("choosing a PUF roof and automatic curtains warns that no published price exists", async ({ page }) => {
+    await page.getByRole("button", { name: "Roof sheet", exact: true }).click();
+    await page.getByTestId("part-editor").getByRole("radio", { name: "PUF panel" }).click();
+    await page.getByRole("button", { name: "Side walls", exact: true }).click();
+    await page.getByTestId("part-editor").getByRole("radio", { name: "Mesh, automatic curtains" }).click();
     await expect(page.getByText("Up to date")).toBeVisible();
 
     await page.getByRole("tab", { name: "Cost", exact: true }).click();
     const note = page.getByTestId("unsourced-rates");
-    await expect(note).toContainText("No official price exists");
-    await expect(note).toContainText(/Aluminium/i);
-    await expect(note).toContainText(/Glass/i);
+    await expect(note).toContainText("No published price exists");
+    await expect(note).toContainText("puf-panel");
+    await expect(note).toContainText("automatic curtains");
 
-    // Back to the standard materials: the warning goes away. Returning keeps the model fully built.
+    // Back to the standard choices: only the footbath's assumed price is left. Returning keeps the model fully built.
     await page.getByRole("tab", { name: "Design", exact: true }).click();
     await waitForScene(page);
-    await page.getByRole("button", { name: "Frame", exact: true }).click();
-    await page.getByTestId("part-editor").getByRole("radio", { name: /GI Steel/i }).click();
-    await page.getByRole("button", { name: "Cover", exact: true }).click();
-    await page.getByTestId("part-editor").getByRole("radio", { name: /UV/i }).click();
+    await page.getByRole("button", { name: "Roof sheet", exact: true }).click();
+    await page.getByTestId("part-editor").getByRole("radio", { name: "GI sheet" }).click();
+    await page.getByRole("button", { name: "Side walls", exact: true }).click();
+    await page.getByTestId("part-editor").getByRole("radio", { name: "Mesh and curtains" }).click();
     await expect(page.getByText("Up to date")).toBeVisible();
     await page.getByRole("tab", { name: "Cost", exact: true }).click();
-    await expect(page.getByTestId("unsourced-rates")).toHaveCount(0);
+    await expect(page.getByTestId("unsourced-rates")).not.toContainText("puf-panel");
   });
 });

@@ -14,7 +14,7 @@ const { APP_NAME } = require("../../config/app");
 const { parseCsv } = require("../../scripts/loadReferenceData");
 const pricing = require("../../data/pricing");
 const { CROP_LIBRARY, CROPS_BY_CLIMATE_GROUP, IRRIGATION_PROFILES, PUBLISHED_YIELDS } = require("../../data/cultivation");
-const { getClimateData } = require("../costModel");
+const { getClimateData } = require("../climate");
 const { chunkText, fixDegreeSigns } = require("./text");
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");

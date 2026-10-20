@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { IrrigationSystem } from '@/types/farm';
+import type { IrrigationSystem } from '@/components/farm/scene/legacyConfig';
 import { InstanceSet } from './instancing';
 import { CHANNEL_HEIGHT, CHANNEL_WIDTH, TABLE_HEIGHT, visibleRadius, type CropLayout, type RenderQuality } from './cropLayout';
 import { geo } from './sceneGeometry';

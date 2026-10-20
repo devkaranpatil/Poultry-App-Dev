@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Box, CheckCircle2, FolderOpen, HelpCircle, LayoutDashboard, Share2, SlidersHorizontal } from 'lucide-react';
 import { DesignSidebar, type DesignTab } from '@/components/farm/DesignSidebar';
 import type { EditablePart } from '@/lib/sceneEdit';
+import { fromScenePatch, partForTab, tabForPart, toSceneConfig, type FarmConfig as SceneConfig } from '@/components/farm/scene/legacyConfig';
 import { SavedSetupsDialog } from '@/components/farm/SavedSetupsDialog';
 import { StepBar } from '@/components/workspace/StepBar';
 import { StepViews } from '@/components/workspace/StepViews';
@@ -18,7 +19,7 @@ import {
   clampDimension,
 } from '@/types/farm';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { useFarmCalculations } from '@/hooks/useFarmCalculations';
+import { calculationKey, useFarmCalculations } from '@/hooks/useFarmCalculations';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/context/AuthContext';
@@ -28,9 +29,9 @@ import { Logo } from '@/components/brand/Logo';
 import { useAiAssistant } from '@/hooks/useAiAssistant';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SHARE_PARAM, buildShareUrl, decodeShareParam, loadDraft, saveDraft } from '@/lib/configPersistence';
-import { computeFinancials, defaultFinanceAssumptions, type FinanceAssumptions } from '@/lib/finance';
-import { DEFAULT_LOAN_TERMS, type LoanTerms } from '@/lib/loan';
-import { formatINRCompact } from '@/lib/format';
+import { defaultPoultryAssumptions, type PoultryAssumptions } from '@/lib/poultryFinance';
+import { poultryLoanTerms, type LoanTerms } from '@/lib/loan';
+import { formatINRCompact, formatNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 const MiddlePanel = lazy(async () => {
@@ -42,7 +43,7 @@ const EMPTY_CONFIG: FarmConfig = normalizeFarmConfig({
   ...DEFAULT_CONFIG,
   length: 0,
   width: 0,
-  gutterHeight: 0,
+  eavesHeight: 0,
   ridgeHeight: 0,
   state: '',
   district: '',
@@ -79,36 +80,31 @@ const Index = () => {
   const [designTab, setDesignTab] = useState<DesignTab>('size');
   const selectOnModel = useCallback((part: EditablePart | null) => {
     setSelectedPart(part);
-    if (part) setDesignTab(part);
+    if (part) setDesignTab(tabForPart(part));
   }, []);
   const openDesignTab = useCallback((tab: DesignTab) => {
     setDesignTab(tab);
-    setSelectedPart(tab === 'location' ? null : tab);
+    setSelectedPart(partForTab(tab) as EditablePart | null);
   }, []);
   const [mobileDesignView, setMobileDesignView] = useState<MobileDesignView>('setup');
   // One switch for the AI summary in the report, shown on the summary step and in the export options.
   const [includeAiSummary, setIncludeAiSummary] = useState(true);
   const [guideOpen, setGuideOpen] = useState(() => initial.source === 'empty' && !hasSeenGuide());
-  const [loanTerms, setLoanTerms] = useState<LoanTerms>(DEFAULT_LOAN_TERMS);
+  const [loanTerms, setLoanTerms] = useState<LoanTerms>(() => poultryLoanTerms(initial.config.birdType));
   // The setup form's filled-in fields live here so they survive leaving the Design step.
   const [setupTouched, setSetupTouched] = useState<Record<string, boolean>>({});
-  const [sectionProgress, setSectionProgress] = useState<SetupSectionProgress>({
-    baseDimensions: false,
-    heights: false,
-    typeAndRoof: false,
-    materials: false,
-    access: false,
-    cultivation: false,
-    location: false,
-  });
+  const [, setSectionProgress] = useState<SetupSectionProgress>({ size: false, shed: false, birds: false, location: false });
   const [isConfigValid, setIsConfigValid] = useState(true);
   const [isSavedDialogOpen, setIsSavedDialogOpen] = useState(false);
-  const [financeAssumptions, setFinanceAssumptions] = useState<FinanceAssumptions>(() =>
-    defaultFinanceAssumptions(initial.config.selectedCrop)
+  // The siting rules the farmer has confirmed on the Site step; the report warns about the rest.
+  const [sitingTicks, setSitingTicks] = useState<Record<string, boolean>>({});
+  const [financeAssumptions, setFinanceAssumptions] = useState<PoultryAssumptions>(() =>
+    defaultPoultryAssumptions(initial.config.birdType, initial.config.farmingModel)
   );
 
   const { calculate, isLoading, result, error: calculationError, lastCalculatedKey } = useFarmCalculations();
-  const currentConfigKey = JSON.stringify(config);
+  // A result belongs to a setup and the assumptions it was worked out with: editing a price recalculates too.
+  const currentConfigKey = calculationKey(config, financeAssumptions);
   const hasFreshResult = lastCalculatedKey === currentConfigKey;
   const activeResult = hasFreshResult ? result : null;
   const activeCalculationError = hasFreshResult ? calculationError : null;
@@ -131,37 +127,38 @@ const Index = () => {
     return () => window.clearTimeout(timer);
   }, [config]);
 
-  // Each crop has its own yield and price defaults; subsidy and opex settings carry over.
-  const lastCropRef = useRef(config.selectedCrop);
+  // Each bird and farming model has its own production figures, prices and loan terms; the counted subsidy carries over.
+  const lastFamilyRef = useRef(`${config.birdType}|${config.farmingModel}`);
   useEffect(() => {
-    if (lastCropRef.current === config.selectedCrop) return;
-    lastCropRef.current = config.selectedCrop;
-    const defaults = defaultFinanceAssumptions(config.selectedCrop);
-    setFinanceAssumptions((prev) => ({ ...prev, yieldPerSqm: defaults.yieldPerSqm, pricePerUnit: defaults.pricePerUnit }));
-  }, [config.selectedCrop]);
+    const family = `${config.birdType}|${config.farmingModel}`;
+    if (lastFamilyRef.current === family) return;
+    const birdChanged = lastFamilyRef.current.split('|')[0] !== config.birdType;
+    lastFamilyRef.current = family;
+    setFinanceAssumptions((prev) => ({ ...defaultPoultryAssumptions(config.birdType, config.farmingModel), subsidyInr: prev.subsidyInr }));
+    if (birdChanged) setLoanTerms(poultryLoanTerms(config.birdType));
+  }, [config.birdType, config.farmingModel]);
 
   const area = config.length * config.width;
   // The 3D scene's geometry scales with the dimensions, so never hand it values
   // beyond the supported limits even while the user is mid-way through typing.
-  const modelConfig = useMemo<FarmConfig>(
-    () => ({
-      ...config,
-      length: clampDimension('length', config.length),
-      width: clampDimension('width', config.width),
-      gutterHeight: clampDimension('gutterHeight', config.gutterHeight),
-      ridgeHeight: clampDimension('ridgeHeight', config.ridgeHeight),
-    }),
+  // The 3D scene still draws the polyhouse it was built for (Phase 5 rebuilds it): it gets the nearest shapes.
+  const modelConfig = useMemo<SceneConfig>(
+    () =>
+      toSceneConfig({
+        ...config,
+        length: clampDimension('length', config.length),
+        width: clampDimension('width', config.width),
+        eavesHeight: clampDimension('eavesHeight', config.eavesHeight),
+        ridgeHeight: clampDimension('ridgeHeight', config.ridgeHeight),
+      }),
     [config]
   );
-  const hasValidHeightRelation =
-    config.roofType === 'flat'
-      ? Math.abs(config.ridgeHeight - config.gutterHeight) < 0.001
-      : config.ridgeHeight > config.gutterHeight;
+  const hasValidHeightRelation = config.ridgeHeight > config.eavesHeight;
   const isModelRenderable = config.length > 0 && config.width > 0;
   const isVisualizerReady =
     config.length > 0 &&
     config.width > 0 &&
-    config.gutterHeight > 0 &&
+    config.eavesHeight > 0 &&
     hasValidHeightRelation &&
     config.state.trim() !== '' &&
     config.district.trim() !== '' &&
@@ -170,7 +167,7 @@ const Index = () => {
   const missingItems = [
     config.length > 0 ? null : t('left.length'),
     config.width > 0 ? null : t('left.width'),
-    config.gutterHeight > 0 ? null : t('left.gutter'),
+    config.eavesHeight > 0 ? null : t('left.eaves'),
     hasValidHeightRelation ? null : t('left.ridge'),
     config.state.trim() !== '' ? null : t('left.state'),
     config.district.trim() !== '' ? null : t('left.district'),
@@ -187,15 +184,15 @@ const Index = () => {
   const displayedResult = activeResult ?? (isRefreshing && !calculationError ? result : null);
 
   const handleCalculate = useCallback(() => {
-    void calculate(config);
-  }, [config, calculate]);
+    void calculate(config, financeAssumptions);
+  }, [config, financeAssumptions, calculate]);
 
   // Keep insights in step with the configuration once it is complete and valid.
   useEffect(() => {
     if (!isVisualizerReady || hasFreshResult) return;
-    const timer = window.setTimeout(() => void calculate(config), AUTO_CALCULATE_DELAY_MS);
+    const timer = window.setTimeout(() => void calculate(config, financeAssumptions), AUTO_CALCULATE_DELAY_MS);
     return () => window.clearTimeout(timer);
-    // currentConfigKey captures every config change.
+    // currentConfigKey captures every change of the setup and the assumptions.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentConfigKey, isVisualizerReady, hasFreshResult, calculate]);
 
@@ -213,6 +210,8 @@ const Index = () => {
     (patch: Partial<FarmConfig>) => setConfig((prev) => normalizeFarmConfig({ ...prev, ...patch })),
     []
   );
+  // A drag in the scene changes the shed's size and heights.
+  const handleScenePatch = useCallback((patch: Partial<SceneConfig>) => handleConfigPatch(fromScenePatch(patch)), [handleConfigPatch]);
 
   const middlePanel = (
     <ErrorBoundary
@@ -241,8 +240,7 @@ const Index = () => {
           config={modelConfig}
           isReady={isModelRenderable}
           missingItems={modelMissingItems}
-          sectionProgress={sectionProgress}
-          onConfigChange={handleConfigPatch}
+          onConfigChange={handleScenePatch}
           selectedPart={selectedPart}
           onSelectedPartChange={selectOnModel}
         />
@@ -250,19 +248,10 @@ const Index = () => {
     </ErrorBoundary>
   );
 
-  const aiFinancials = useMemo(
-    () => (activeResult ? computeFinancials(activeResult.cost.totalCost, activeResult.area, financeAssumptions, activeResult.subsidy) : null),
-    [activeResult, financeAssumptions]
-  );
-  const ai = useAiAssistant({ token, config, assumptions: financeAssumptions, financials: aiFinancials, locale: language });
+  const ai = useAiAssistant({ token, config, assumptions: financeAssumptions, locale: language });
 
-  const financials = useMemo(
-    () =>
-      displayedResult
-        ? computeFinancials(displayedResult.cost.totalCost, displayedResult.area, financeAssumptions, displayedResult.subsidy)
-        : null,
-    [displayedResult, financeAssumptions]
-  );
+  // Every figure comes from the server's calculation for this setup and these assumptions.
+  const financials = displayedResult?.returns ?? null;
 
   const goToStep = useCallback((next: StepId) => {
     setStep(next);
@@ -296,8 +285,10 @@ const Index = () => {
     <div className="flex shrink-0 items-center gap-2 rounded-full border border-border bg-muted/40 px-3 py-1 text-xs" aria-live="polite">
       {displayedResult ? (
         <>
-          <span className="hidden font-semibold text-foreground sm:inline">{formatINRCompact(displayedResult.cost.totalCost)}</span>
+          <span className="hidden font-semibold text-foreground sm:inline">{formatINRCompact(displayedResult.cost.capitalCost)}</span>
           <span className="hidden text-muted-foreground sm:inline">·</span>
+          <span className="hidden text-muted-foreground md:inline">{t('app.statusBirds', { birds: formatNumber(displayedResult.flock.birds) })}</span>
+          <span className="hidden text-muted-foreground md:inline">·</span>
         </>
       ) : null}
       <span className={cn('inline-flex items-center gap-1', isLoading || isRefreshing ? 'text-amber-600' : 'text-emerald-600')}>
@@ -446,6 +437,8 @@ const Index = () => {
             assumptions={financeAssumptions}
             onAssumptionsChange={setFinanceAssumptions}
             financials={financials}
+            sitingTicks={sitingTicks}
+            onSitingTicksChange={setSitingTicks}
             loanTerms={loanTerms}
             onLoanTermsChange={setLoanTerms}
             ai={token ? ai : undefined}

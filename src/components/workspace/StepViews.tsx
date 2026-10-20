@@ -1,21 +1,20 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, ArrowRight, CloudRain, Droplets, FolderOpen, Loader2, Share2, Sparkles, Thermometer } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CloudRain, Droplets, FolderOpen, Share2, Sparkles, Thermometer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/context/I18nContext';
 import type { AiAssistant } from '@/hooks/useAiAssistant';
 import type { CalculationResult, FarmConfig } from '@/types/farm';
-import { latestMandiPrice } from '@/lib/mandi';
-import type { FinanceAssumptions, FinancialSummary } from '@/lib/finance';
+import type { PoultryAssumptions, PoultryReturns } from '@/lib/poultryFinance';
 import { computeLoanPlan, type LoanTerms } from '@/lib/loan';
 import { formatINR, formatINRCompact, formatNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { optionKey } from '@/types/farm';
 import { ReturnsPanel } from '@/components/farm/ReturnsPanel';
 import { LoanPanel } from '@/components/farm/LoanPanel';
-import { SubsidyChecklist } from '@/components/farm/SubsidyChecklist';
 import { RiskPanel } from '@/components/farm/RiskPanel';
 import { paybackChance, useRiskSimulation } from '@/hooks/useRiskSimulation';
 import { ExportPanel } from '@/components/farm/ExportPanel';
-import { DistrictClimateCard, GovernmentNormCard, MarketPricesCard } from '@/components/farm/ReferenceCards';
+import { DistrictClimateCard, HeatStressCard, NabardCard, SchemesCard, SitingChecklist } from '@/components/farm/ReferenceCards';
 import { Block, Figures, FinishDesignFirst, StepError, StepPage } from './StepPage';
 import { Labelled } from './Explain';
 import { MoreDetails } from './MoreDetails';
@@ -36,9 +35,13 @@ export interface StepViewsProps {
   /** The design is complete enough to calculate. */
   ready: boolean;
   missingItems: string[];
-  assumptions: FinanceAssumptions;
-  onAssumptionsChange: (next: FinanceAssumptions) => void;
-  financials: FinancialSummary | null;
+  assumptions: PoultryAssumptions;
+  onAssumptionsChange: (next: PoultryAssumptions) => void;
+  /** The year's figures, from the server's calculation (result.returns). */
+  financials: PoultryReturns | null;
+  /** Which siting rules the farmer has confirmed; the rest become warnings in the report. */
+  sitingTicks: Record<string, boolean>;
+  onSitingTicksChange: (next: Record<string, boolean>) => void;
   loanTerms: LoanTerms;
   onLoanTermsChange: (next: LoanTerms) => void;
   ai?: AiAssistant;
@@ -48,20 +51,6 @@ export interface StepViewsProps {
   onShare: () => void;
   onOpenSaved?: () => void;
 }
-
-const SUITABILITY_STYLES: Record<string, string> = {
-  excellent: 'bg-primary text-primary-foreground',
-  good: 'bg-accent text-accent-foreground',
-  moderate: 'bg-muted text-muted-foreground',
-  poor: 'bg-destructive/10 text-destructive',
-};
-
-const IRRIGATION_KEYS: Record<FarmConfig['irrigationSystem'], string> = {
-  drip: 'options.irrigation.drip',
-  sprinkler: 'options.irrigation.sprinkler',
-  fogger: 'options.irrigation.fogger',
-  'hydroponic-nft': 'options.irrigation.hydroponicNft',
-};
 
 /** Picks the step's page; every money step waits for a complete design. */
 export function StepViews(props: StepViewsProps) {
@@ -82,10 +71,10 @@ export function StepViews(props: StepViewsProps) {
       </StepPage>
     );
   }
-  return <Page {...props} result={result as CalculationResult} financials={financials as FinancialSummary} />;
+  return <Page {...props} result={result as CalculationResult} financials={financials as PoultryReturns} />;
 }
 
-type ReadyProps = StepViewsProps & { result: CalculationResult; financials: FinancialSummary };
+type ReadyProps = StepViewsProps & { result: CalculationResult; financials: PoultryReturns };
 
 function Waiting() {
   const { t } = useI18n();
@@ -105,25 +94,23 @@ function LoadingBlocks() {
   );
 }
 
-function SitePage({ step, onNavigate, config, result, isLoading, ai }: ReadyProps) {
+function SitePage({ step, onNavigate, config, result, isLoading, sitingTicks, onSitingTicksChange }: ReadyProps) {
   const { t } = useI18n();
-  const selected = result.crops.find((crop) => crop.isSelected);
-  const shortVars = {
-    district: config.district,
-    zone: result.climate.climateZone,
-    temp: result.climate.avgTemperature,
-    humidity: result.climate.humidity,
-  };
-  const inShort = selected ? (
-    <p>
-      {t('ws.short.site', {
-        ...shortVars,
-        crop: t(`options.crop.${config.selectedCrop}`),
-        suitability: t(`ai.suitability.${selected.suitability}`),
-      })}
-    </p>
-  ) : (
-    <p>{t('ws.short.siteNoCrop', shortVars)}</p>
+  const heat = result.climate.heatStress;
+  const open = result.siting.filter((rule) => !sitingTicks[rule.id]).length;
+  const inShort = (
+    <>
+      <p>
+        {t('ws.short.site', {
+          district: config.district,
+          zone: result.climate.climateZone,
+          temp: result.climate.avgTemperature,
+          humidity: result.climate.humidity,
+        })}
+      </p>
+      <p>{heat && heat.severeMonths.length > 0 ? t('ws.short.siteHeat', { count: heat.severeMonths.length }) : t('ws.short.siteNoHeat')}</p>
+      <p>{t('ws.short.siteRules', { rules: result.siting.length, open, birds: formatNumber(result.flock.birds) })}</p>
+    </>
   );
 
   return (
@@ -142,6 +129,7 @@ function SitePage({ step, onNavigate, config, result, isLoading, ai }: ReadyProp
             </div>
           ))}
         </div>
+        {heat ? <HeatStressCard heatStress={heat} /> : null}
         {result.climate.advisories.length > 0 ? (
           <ul className="space-y-2">
             {result.climate.advisories.map((advisory) => (
@@ -155,118 +143,52 @@ function SitePage({ step, onNavigate, config, result, isLoading, ai }: ReadyProp
         {result.reference?.districtClimate ? <DistrictClimateCard reference={result.reference} /> : null}
       </Block>
 
-      <Block title={t('right.cropsReference')}>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {result.crops.map((crop) => (
-            <div key={crop.name} className={cn('rounded-xl border bg-card p-4', crop.isSelected ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border')}>
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-sm font-semibold text-foreground">
-                  {crop.name}
-                  {crop.isSelected ? <span className="ml-2 text-xs font-medium text-primary">{t('right.selectedCrop')}</span> : null}
-                </p>
-                <span className={cn('rounded-full px-2 py-0.5 text-[11px] font-medium capitalize', SUITABILITY_STYLES[crop.suitability])}>
-                  {t(`ai.suitability.${crop.suitability}`)}
-                </span>
-              </div>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{crop.notes}</p>
-              <p className="mt-2 text-[11px] text-muted-foreground">
-                {crop.expectedYield} · {crop.season} ·{' '}
-                {crop.yieldSource ? (
-                  <a
-                    href={crop.yieldSource.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    title={`${crop.yieldSource.basis}. ${crop.yieldSource.note}`}
-                    className="text-primary hover:underline"
-                  >
-                    {t('right.yieldMeasured')}
-                  </a>
-                ) : (
-                  <span>{t('right.yieldUnverified')}</span>
-                )}
-              </p>
-            </div>
-          ))}
-        </div>
+      <Block title={t('siting.title')} description={t('siting.hint', { birds: formatNumber(result.flock.birds) })}>
+        <SitingChecklist rules={result.siting} ticked={sitingTicks} onTickedChange={onSitingTicksChange} />
       </Block>
-
-      {ai && ai.status?.enabled !== false ? (
-        <section className="rounded-2xl border border-primary/20 bg-accent/40 p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                <Sparkles className="h-4 w-4 text-primary" />
-                {t('ai.cropsTitle')}
-              </p>
-              <p className="text-xs text-muted-foreground">{t('ai.cropsDesc')}</p>
-            </div>
-            <Button size="sm" variant="outline" onClick={() => void ai.generateCrops()} disabled={ai.cropsLoading} className="shrink-0 bg-card">
-              {ai.cropsLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : ai.crops ? t('ai.regenerate') : t('ai.generate')}
-            </Button>
-          </div>
-          {ai.cropsError ? <p className="mt-2 text-xs text-destructive">{t(ai.cropsError)}</p> : null}
-          {ai.cropsStale ? <p className="mt-2 text-xs text-muted-foreground">{t('ai.stale')}</p> : null}
-          {ai.crops ? (
-            <div className="mt-3 space-y-2">
-              {ai.crops.note ? <p className="text-xs text-muted-foreground">{ai.crops.note}</p> : null}
-              {ai.crops.crops.map((crop) => (
-                <div key={crop.name} className="rounded-xl border border-border bg-card p-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-semibold text-foreground">{crop.name}</p>
-                    <span className={cn('rounded-full px-2 py-0.5 text-[11px] font-medium capitalize', SUITABILITY_STYLES[crop.suitability])}>
-                      {t(`ai.suitability.${crop.suitability}`)}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{crop.reason}</p>
-                  {crop.marketNote ? <p className="mt-1 text-xs text-foreground">{crop.marketNote}</p> : null}
-                  <p className="mt-2 text-[11px] text-muted-foreground">
-                    {crop.expectedYield} · {crop.season}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </section>
-      ) : null}
-
-      {result.reference ? (
-        <MoreDetails>
-          <MarketPricesCard reference={result.reference} stateName={config.state} />
-        </MoreDetails>
-      ) : null}
     </StepPage>
   );
 }
 
-function CostPage({ step, onNavigate, config, result, financials, isLoading }: ReadyProps) {
+function CostPage({ step, onNavigate, result, financials, isLoading }: ReadyProps) {
   const { t } = useI18n();
+  const cost = result.cost;
   const breakdown = [
-    { label: t('right.structure'), value: result.cost.structureCost },
-    { label: t('right.coverMaterial'), value: result.cost.coverCost },
-    { label: t('right.ventilation'), value: result.cost.ventilationCost },
-    { label: t('right.foundation'), value: result.cost.foundationCost },
-    { label: `${t('right.irrigation')} (${t(IRRIGATION_KEYS[config.irrigationSystem])})`, value: result.cost.irrigationCost },
-    { label: t('right.electrical'), value: result.cost.electricalCost },
-    { label: t('right.labor'), value: result.cost.laborCost },
-    { label: t('right.misc'), value: result.cost.miscCost },
-  ].map((item) => ({ ...item, value: item.value ?? 0 }));
-  const total = breakdown.reduce((sum, item) => sum + item.value, 0) || 1;
+    { label: t('cost.civil'), value: cost.civilCost },
+    { label: t('cost.roofSheet'), value: cost.roofSheetCost },
+    { label: t('cost.sideWalls'), value: cost.sideWallCost },
+    { label: t('cost.entry'), value: cost.entryCost },
+    { label: t('cost.equipment'), value: cost.equipmentCost },
+    { label: t('cost.feedStore'), value: cost.feedStoreCost },
+    { label: t('cost.fencing'), value: cost.fencingCost },
+    { label: t('cost.water'), value: cost.waterSupplyCost },
+    { label: t('cost.electrical'), value: cost.electricalCost },
+  ].filter((item) => item.value !== 0);
+  const total = breakdown.reduce((sum, item) => sum + Math.max(0, item.value), 0) || 1;
   const biggest = breakdown.reduce((top, item) => (item.value > top.value ? item : top), breakdown[0]);
-  const climateAdjustment = result.cost.climateAdjustment ?? 0;
+  const wc = cost.workingCapital;
+  const workingLines = [
+    { label: t('cost.chicks', { chicks: formatNumber(wc.chicks) }), value: wc.chickCost },
+    { label: t('cost.feed'), value: wc.feedCost },
+    { label: t('cost.insurance'), value: wc.insuranceCost },
+    { label: t('cost.vaccines'), value: wc.vaccineCost },
+    { label: t('cost.labour'), value: wc.labourCost },
+  ].filter((item) => item.value > 0);
+  const contract = result.financedCost === cost.capitalCost && wc.total > 0;
 
   const inShort = (
     <>
       <p>
         {t('ws.short.cost', {
-          area: formatNumber(result.area),
-          total: formatINRCompact(result.cost.totalCost),
+          birds: formatNumber(result.flock.birds),
+          total: formatINRCompact(cost.capitalCost),
+          perBird: formatINR(cost.costPerBird),
           biggest: biggest.label.toLowerCase(),
           share: Math.round((biggest.value / total) * 100),
         })}
       </p>
-      {financials.subsidyAmount > 0 ? (
-        <p>{t('ws.short.costSubsidy', { subsidy: formatINRCompact(financials.subsidyAmount), net: formatINRCompact(financials.netInvestment) })}</p>
-      ) : null}
+      <p>{contract ? t('ws.short.costContract', { wc: formatINRCompact(wc.total) }) : t('ws.short.costWorking', { wc: formatINRCompact(wc.total), project: formatINRCompact(cost.projectCost) })}</p>
+      <p>{result.schemes.noneApplies ? t('ws.short.costNoScheme') : t('ws.short.costSchemes', { amount: formatINRCompact(result.schemes.bestAmountInr) })}</p>
     </>
   );
 
@@ -274,17 +196,14 @@ function CostPage({ step, onNavigate, config, result, financials, isLoading }: R
     <StepPage step={step} onNavigate={onNavigate} inShort={inShort} refreshing={isLoading}>
       <Figures
         items={[
-          { key: 'total', label: t('right.kpiTotal'), value: formatINRCompact(result.cost.totalCost), tone: 'primary' },
-          { key: 'subsidy', label: <Labelled term="subsidy" label={t('returns.subsidyAmount')} />, value: formatINRCompact(financials.subsidyAmount) },
+          { key: 'capital', label: t('cost.kpiCapital'), value: formatINRCompact(cost.capitalCost), tone: 'primary' },
+          { key: 'working', label: <Labelled term="workingCapital" label={t('cost.kpiWorking')} />, value: formatINRCompact(wc.total) },
           { key: 'net', label: <Labelled term="netInvestment" label={t('ws.youPay')} />, value: formatINRCompact(financials.netInvestment) },
-          { key: 'sqm', label: t('right.kpiPerSqm'), value: formatINR(result.cost.costPerSqm) },
+          { key: 'bird', label: t('cost.kpiPerBird'), value: formatINR(cost.costPerBird) },
         ]}
       />
 
-      <Block
-        title={t('right.costBreakdown')}
-        action={<span className="text-sm font-semibold tabular-nums text-foreground">{formatINR(result.cost.totalCost)}</span>}
-      >
+      <Block title={t('right.costBreakdown')} action={<span className="text-sm font-semibold tabular-nums text-foreground">{formatINR(cost.capitalCost)}</span>}>
         <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
           {breakdown.map((item) => (
             <div key={item.label} className="space-y-1">
@@ -293,44 +212,45 @@ function CostPage({ step, onNavigate, config, result, financials, isLoading }: R
                 <span className="font-medium tabular-nums text-foreground">{formatINR(item.value)}</span>
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                <div className="h-full rounded-full bg-primary" style={{ width: `${(item.value / total) * 100}%` }} />
+                <div className="h-full rounded-full bg-primary" style={{ width: `${(Math.max(0, item.value) / total) * 100}%` }} />
               </div>
             </div>
           ))}
-          {climateAdjustment !== 0 ? (
-            <div className="flex items-center justify-between rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm">
-              <span className="text-foreground">{t('right.climateAdjustment')}</span>
-              <span className="font-medium tabular-nums">
-                {climateAdjustment > 0 ? '+' : ''}
-                {(climateAdjustment * 100).toFixed(1)}%
-                {result.cost.climateAdjustmentAmount !== undefined
-                  ? ` (${result.cost.climateAdjustmentAmount > 0 ? '+' : ''}${formatINR(result.cost.climateAdjustmentAmount)})`
-                  : ''}
-              </span>
-            </div>
-          ) : null}
-          {result.diagnostics?.unsourcedRates?.length ? (
+          {result.diagnostics.unsourcedRates.length ? (
             <p role="note" className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-foreground" data-testid="unsourced-rates">
-              {t('right.unsourcedRates', {
-                items: result.diagnostics.unsourcedRates
-                  .map((item) => t(item === 'aluminium' ? 'options.structure.aluminium' : 'options.cover.glass'))
-                  .join(', '),
-              })}
+              {t('right.unsourcedRates', { items: result.diagnostics.unsourcedRates.join(', ') })}
             </p>
           ) : null}
         </div>
       </Block>
 
-      {result.reference ? <GovernmentNormCard reference={result.reference} /> : null}
+      <Block title={t('cost.workingTitle')} description={contract ? t('cost.workingContract') : t('cost.workingHint')}>
+        <div className="space-y-2 rounded-2xl border border-border bg-card p-4">
+          {workingLines.map((item) => (
+            <div key={item.label} className="flex items-baseline justify-between gap-2 text-sm">
+              <span className="text-muted-foreground">{item.label}</span>
+              <span className="font-medium tabular-nums text-foreground">{formatINR(item.value)}</span>
+            </div>
+          ))}
+          <div className="flex items-baseline justify-between gap-2 border-t border-border pt-2 text-sm font-semibold">
+            <span>{t('cost.projectTotal')}</span>
+            <span className="tabular-nums">{formatINR(cost.projectCost)}</span>
+          </div>
+        </div>
+      </Block>
+
+      {result.nabard ? <NabardCard nabard={result.nabard} /> : null}
+
+      <Block title={t('schemes.title')} description={t('schemes.hint')}>
+        <SchemesCard schemes={result.schemes} />
+      </Block>
 
       <MoreDetails>
-        {result.cost.costRange ? (
-          <p className="text-sm text-foreground">
-            {t('right.costRange')}: {formatINR(result.cost.costRange.low)} - {formatINR(result.cost.costRange.high)}
-          </p>
-        ) : null}
+        <p className="text-sm text-foreground">
+          {t('right.costRange')}: {formatINR(cost.costRange.low)} - {formatINR(cost.costRange.high)}
+        </p>
         <p className="text-xs text-muted-foreground">
-          {t('right.perSqm', { value: formatINR(result.cost.costPerSqm) })} · {formatNumber(result.area)} m²
+          {t('cost.perSqft', { value: formatINR(cost.costPerSqft) })} · {formatNumber(result.areaSqft)} ft² · {formatNumber(result.area)} m²
         </p>
         <p className="text-xs text-muted-foreground">{t('right.notPriced')}</p>
       </MoreDetails>
@@ -340,13 +260,14 @@ function CostPage({ step, onNavigate, config, result, financials, isLoading }: R
 
 function EarningsPage({ step, onNavigate, config, result, financials, assumptions, onAssumptionsChange, isLoading }: ReadyProps) {
   const { t } = useI18n();
-  const cropLabel = t(`options.crop.${config.selectedCrop}`);
+  const birdLabel = t(optionKey('bird', config.birdType));
   const profitable = financials.annualProfit > 0;
   const inShort = profitable ? (
     <>
       <p>
         {t('ws.short.earningsProfit', {
-          crop: cropLabel,
+          bird: birdLabel,
+          batches: formatNumber(financials.cyclesPerYear),
           revenue: formatINRCompact(financials.annualRevenue),
           profit: formatINRCompact(financials.annualProfit),
         })}
@@ -358,7 +279,11 @@ function EarningsPage({ step, onNavigate, config, result, financials, assumption
       </p>
     </>
   ) : (
-    <p>{t('ws.short.earningsLoss')}</p>
+    <p>
+      {financials.breakEvenPrice === null
+        ? t('ws.short.earningsLoss')
+        : t(financials.product === 'eggs' ? 'ws.short.earningsLossEgg' : 'ws.short.earningsLossKg', { price: formatNumber(financials.breakEvenPrice) })}
+    </p>
   );
 
   return (
@@ -377,18 +302,18 @@ function EarningsPage({ step, onNavigate, config, result, financials, assumption
         ]}
       />
       <ReturnsPanel
-        crop={config.selectedCrop}
-        cropLabel={cropLabel}
+        birdType={config.birdType}
+        farmingModel={config.farmingModel}
         assumptions={assumptions}
         onAssumptionsChange={onAssumptionsChange}
         summary={financials}
-        marketPrice={latestMandiPrice(result.reference?.marketPrices, config.selectedCrop)}
+        calendar={result.calendar}
       />
     </StepPage>
   );
 }
 
-function LoanPage({ step, onNavigate, config, result, financials, loanTerms, onLoanTermsChange, isLoading }: ReadyProps) {
+function LoanPage({ step, onNavigate, config, financials, loanTerms, onLoanTermsChange, isLoading }: ReadyProps) {
   const { t } = useI18n();
   const plan = useMemo(
     () => computeLoanPlan(financials.capitalCost, financials.subsidyAmount, financials, loanTerms),
@@ -413,8 +338,7 @@ function LoanPage({ step, onNavigate, config, result, financials, loanTerms, onL
 
   return (
     <StepPage step={step} onNavigate={onNavigate} inShort={inShort} refreshing={isLoading}>
-      <LoanPanel summary={financials} terms={loanTerms} onTermsChange={onLoanTermsChange} />
-      {result.subsidy ? <SubsidyChecklist scheme={result.subsidy.scheme} projectCost={result.cost.totalCost} state={config.state} /> : null}
+      <LoanPanel summary={financials} birdType={config.birdType} terms={loanTerms} onTermsChange={onLoanTermsChange} />
     </StepPage>
   );
 }
@@ -422,7 +346,8 @@ function LoanPage({ step, onNavigate, config, result, financials, loanTerms, onL
 function RiskPage({ step, onNavigate, config, assumptions }: ReadyProps) {
   const { t } = useI18n();
   const [years, setYears] = useState(10);
-  const risk = useRiskSimulation(config, assumptions, years);
+  const [outbreakChancePct, setOutbreakChancePct] = useState(2);
+  const risk = useRiskSimulation(config, assumptions, years, outbreakChancePct);
   const simulation = risk.result?.simulation;
   const inShort = simulation ? (
     <p>
@@ -438,7 +363,7 @@ function RiskPage({ step, onNavigate, config, assumptions }: ReadyProps) {
 
   return (
     <StepPage step={step} onNavigate={onNavigate} inShort={inShort} refreshing={risk.stale}>
-      <RiskPanel risk={risk} years={years} onYearsChange={setYears} />
+      <RiskPanel risk={risk} years={years} onYearsChange={setYears} outbreakChancePct={outbreakChancePct} onOutbreakChange={setOutbreakChancePct} />
     </StepPage>
   );
 }
@@ -463,7 +388,7 @@ const REPORT_SUMMARY_KEYS = {
 } as const;
 
 function ReportPage(props: StepViewsProps) {
-  const { step, onNavigate, config, result, assumptions, loanTerms, ai, isLoading, onShare, onOpenSaved, ready } = props;
+  const { step, onNavigate, config, result, assumptions, loanTerms, ai, isLoading, onShare, onOpenSaved, ready, sitingTicks } = props;
   const { t } = useI18n();
   const summaryState = aiSummaryState(ai, props.includeAiSummary);
   return (
@@ -485,6 +410,7 @@ function ReportPage(props: StepViewsProps) {
           result={isLoading ? null : result}
           assumptions={assumptions}
           loanTerms={loanTerms}
+          sitingTicks={sitingTicks}
           ai={ai}
           includeAdvisor={props.includeAiSummary}
           onIncludeAdvisorChange={props.onIncludeAiSummaryChange}

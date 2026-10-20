@@ -2,7 +2,7 @@
 // out (flock, build cost, NABARD comparison, schemes, siting rules, climate and heat stress, a year's returns and
 // the batch calendar). Pure functions over the modules beside it, so a route, a test or the AI get the same answer.
 
-const { getClimateData } = require("../costModel");
+const { getClimateData } = require("../climate");
 const { computeSchemes } = require("../../data/poultry/schemes");
 const { sitingRulesFor } = require("../../data/poultry/siting");
 const { NORMS, sqftPerBird } = require("../../data/poultry/norms");

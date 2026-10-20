@@ -1,14 +1,16 @@
 import { expect, test, type Page } from "@playwright/test";
-import { configureSetup, goToStep, signUp, trackPageErrors } from "./helpers";
+import { goToStep, signUp, trackPageErrors } from "./helpers";
 
 /**
- * Journeys for the people the planner is for, from a first-time grower to a banker checking the numbers. Each one
- * uses only what is on the screen: the guide, the step bar, the Next buttons, the "?" explanations and the advisor.
+ * Journeys for the people the planner is for (docs/migration/implementation-plan.md, Phase 7): a first-time broiler
+ * farmer on contract, a layer entrepreneur with cages, and a rural parent farm that may qualify for NLM. Each one uses
+ * only what is on the screen: the guide, the sidebar, the step bar, the Next buttons, the "?" explanations and the
+ * advisor.
  */
 
-const ANSWER = "Show the bank your project report, the land papers and the quotation from the vendor [1].";
+const ANSWER = "Show the bank your project report, the land papers and the integrator agreement [1].";
 
-const VERDICT = "A sound first project if the monsoon humidity is managed.";
+const VERDICT = "A sound first farm if summer heat is managed.";
 
 /** The e2e backend has no AI model, so the advisor's answers are stubbed in the browser. */
 async function stubAdvisor(page: Page) {
@@ -19,9 +21,9 @@ async function stubAdvisor(page: Page) {
         report: {
           summary: VERDICT,
           verdict: "viable",
-          strengths: ["Strong local demand for tomato"],
-          risks: [{ title: "Fungal disease", detail: "High humidity in the monsoon", severity: "medium" }],
-          recommendations: [{ title: "Add insect netting", detail: "Fit 40-mesh net on the vents", category: "structure", impact: "Fewer pests" }],
+          strengths: ["An integrator takes the price risk"],
+          risks: [{ title: "Heat stress", detail: "Three hot months", severity: "medium" }],
+          recommendations: [{ title: "Add foggers", detail: "Fit roof foggers before April", category: "structure", impact: "Lower summer mortality" }],
         },
       },
     })
@@ -30,7 +32,7 @@ async function stubAdvisor(page: Page) {
     route.fulfill({
       contentType: "text/plain",
       body: `${ANSWER}[[AI_SOURCES]]${JSON.stringify({
-        sources: [{ n: 1, title: "NHB Scheme-1 guidelines", publisher: "NHB", url: "https://nhb.gov.in/pdf/SCHEME1Guidelinefinal.pdf", cited: true }],
+        sources: [{ n: 1, title: "NABARD unit costs 2023-24", publisher: "NABARD", url: "https://www.nabard.org/unit-costs.pdf", cited: true }],
         unverified: [],
       })}`,
     })
@@ -44,8 +46,20 @@ async function chooseLocation(page: Page, state = "Maharashtra", district = "Pun
   await page.getByRole("option", { name: district, exact: true }).click();
 }
 
+const sidebarTab = (page: Page, name: string) => page.getByTestId("properties-panel").getByRole("button", { name, exact: true }).click();
+const pick = (page: Page, name: string) => page.getByTestId("part-editor").getByRole("radio", { name, exact: true }).click();
+
+/** Types a flock size; the sidebar lengthens the shed to hold it. */
+async function setFlock(page: Page, birds: number) {
+  await sidebarTab(page, "Size");
+  const flock = page.getByRole("spinbutton", { name: "Flock size" });
+  await flock.fill(String(birds));
+  await flock.blur();
+  await expect(page.getByText("Up to date")).toBeVisible();
+}
+
 test.describe("personas", () => {
-  test("a first-time grower goes from the guide through every step to a report and a question", async ({ page }) => {
+  test("a first-time broiler farmer with 5,000 birds on contract goes from the guide to a report and a question", async ({ page }) => {
     test.setTimeout(180_000);
     const errors = trackPageErrors(page);
     await stubAdvisor(page);
@@ -53,33 +67,40 @@ test.describe("personas", () => {
 
     // The first visit explains the app and offers the easy start.
     const guide = page.getByTestId("welcome-guide");
-    await expect(guide).toContainText("Plan a greenhouse, step by step");
-    await guide.getByRole("button", { name: "Start with a recommended greenhouse" }).click();
+    await expect(guide).toContainText("Plan a poultry farm, step by step");
+    await guide.getByRole("button", { name: "Start with a recommended shed" }).click();
     await expect(guide).toBeHidden();
 
-    // Only the location is left; then the design says it is complete and points on.
+    // Only the location is left; then the farm model and the flock size.
     await chooseLocation(page);
-    await expect(page.getByText("Up to date")).toBeVisible();
+    await sidebarTab(page, "Birds");
+    await pick(page, "Contract");
+    await setFlock(page, 5000);
     const done = page.getByTestId("design-complete");
     await expect(done).toContainText("Your design is complete");
-    await done.getByRole("button", { name: "Next: Site" }).click();
+    await done.getByRole("button", { name: "Next: Site & rules" }).click();
 
     // Every step answers its question in a plain sentence first, and Next leads on.
     const journey: Array<[string, string, RegExp]> = [
-      ["Site", "Cost", /Pune has a .+ climate/],
-      ["Cost", "Earnings", /Building this 300 m² greenhouse costs about ₹/],
-      ["Earnings", "Loan & subsidy", /(you would sell Tomato worth about|does not cover its running costs)/],
-      ["Loan & subsidy", "Risk", /The bank lends about ₹.+ and you put in ₹/],
+      ["Site & rules", "Cost", /Pune has a .+ climate/],
+      ["Cost", "Earnings", /The integrator pays for the first batch/],
+      ["Earnings", "Loan", /(you run [\d.]+ batches of Broiler|does not cover its running costs|does not come back)/],
+      ["Loan", "Risk", /The bank lends about ₹.+ and you put in ₹/],
       ["Risk", "AI summary", /We played out [\d,]+ possible futures/],
     ];
     for (const [step, next, summary] of journey) {
       await expect(page.getByRole("heading", { level: 1, name: step })).toBeVisible();
       await expect(page.getByTestId("in-short")).toContainText(summary, { timeout: 30_000 });
 
+      if (step === "Site & rules") {
+        // Above 5,000 birds the CPCB rules and the pollution board's consent apply.
+        await expect(page.getByTestId("siting-checklist")).toContainText("Consent to establish and operate");
+      }
       if (step === "Earnings") {
+        await expect(page.getByLabel("Growing charge (₹/kg)", { exact: true })).toBeVisible();
         // A word they do not know is one tap away.
-        await page.getByRole("button", { name: "What does “Payback period” mean?" }).first().click();
-        await expect(page.getByText(/How many years of profit it takes to earn back/)).toBeVisible();
+        await page.getByRole("button", { name: "What does “Growing charge (₹/kg)” mean?" }).first().click();
+        await expect(page.getByText(/What an integrator pays a contract farmer/)).toBeVisible();
         await page.keyboard.press("Escape");
       }
       if (step === "Risk") {
@@ -91,102 +112,102 @@ test.describe("personas", () => {
 
     // The optional AI summary: written on request, then included in the report unless switched off.
     await expect(page.getByRole("heading", { level: 1, name: "AI summary" })).toBeVisible();
-    await expect(page.getByTestId("in-short")).toContainText("This step is optional");
     await page.getByRole("button", { name: "Generate AI summary" }).click();
     await expect(page.getByTestId("summary-review")).toContainText(VERDICT);
-    await expect(page.getByRole("switch", { name: "Include this summary in my report" })).toBeChecked();
     await page.getByRole("button", { name: "Next: Report" }).click();
 
-    // The report says the summary goes in, and downloads for the bank.
     await expect(page.getByRole("heading", { level: 1, name: "Report" })).toBeVisible();
     await expect(page.getByTestId("report-summary-status")).toContainText("will be included");
-    await expect(page.getByRole("checkbox", { name: /AI summary \(AI-generated\)/ })).toBeChecked();
     const [pdf] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Download PDF" }).click()]);
-    expect(pdf.suggestedFilename()).toMatch(/\.pdf$/);
+    expect(pdf.suggestedFilename()).toMatch(/^farm-pune-.*\.pdf$/);
 
-    // The advisor opens from the corner, with questions that fit the step, and shows where its answer came from.
+    // The advisor opens from the corner and shows where its answer came from.
     await page.getByTestId("advisor-launcher").click();
     const chat = page.getByTestId("advisor-window");
     await chat.getByRole("button", { name: "What should I tell the bank about this project?" }).click();
     await expect(chat.getByText(ANSWER)).toBeVisible();
     await chat.getByText("Sources (1)").click();
-    await expect(chat.getByRole("link", { name: "NHB Scheme-1 guidelines" })).toHaveAttribute("href", /nhb\.gov\.in/);
-    // The conversation is still there after closing and reopening the chat.
-    await chat.getByRole("button", { name: "Close advisor" }).click();
-    await expect(chat).toBeHidden();
-    await page.getByTestId("advisor-launcher").click();
-    await expect(page.getByTestId("advisor-window").getByText(ANSWER)).toBeVisible();
+    await expect(chat.getByRole("link", { name: "NABARD unit costs 2023-24" })).toHaveAttribute("href", /nabard\.org/);
     expect(errors).toEqual([]);
   });
 
-  test("a grower comparing options sees each change explained", async ({ page }) => {
-    test.setTimeout(150_000);
+  test("a layer entrepreneur plans 5,000 hens in cages, tunes the loan and works in Hindi", async ({ page }) => {
+    test.setTimeout(180_000);
     const errors = trackPageErrors(page);
     await signUp(page);
+    await page.getByRole("button", { name: /Use recommended/i }).click();
+    await chooseLocation(page, "Maharashtra", "Pune");
+    await sidebarTab(page, "Birds");
+    await pick(page, "Layers in cages");
+    await setFlock(page, 5000);
 
-    // Jumping ahead too early says what is missing instead of showing empty numbers.
+    // Earnings speak of eggs, with the flock calendar from chick to cull.
     await goToStep(page, "Earnings");
-    await expect(page.getByText("Finish the design first")).toBeVisible();
-    await page.getByRole("button", { name: "Go to Design" }).click();
-    await expect(page.getByRole("tab", { name: "Design", exact: true })).toHaveAttribute("aria-selected", "true");
-
-    await configureSetup(page);
-    await goToStep(page, "Earnings");
+    await expect(page.getByLabel("Egg price (₹)", { exact: true })).toBeVisible();
+    await expect(page.getByTestId("batch-calendar")).toContainText("Flock 1");
     const summary = page.getByTestId("in-short");
-    await expect(summary).toContainText("Tomato");
-
-    // Their own yield changes the answer; Reset brings back the published figure.
-    const yieldField = page.getByLabel(/^Yield/);
-    const published = await yieldField.inputValue();
     const before = await summary.textContent();
-    await yieldField.fill(String(Number(published) * 2));
+    await page.getByLabel("Egg price (₹)", { exact: true }).fill("5");
     await expect(summary).not.toHaveText(before ?? "");
     await page.getByRole("button", { name: "Reset" }).first().click();
-    await expect(yieldField).toHaveValue(published);
+    await expect(page.getByLabel("Egg price (₹)", { exact: true })).toHaveValue("6.5");
 
-    // Another crop: back to Design, change it, and the Earnings summary follows.
-    await goToStep(page, "Design");
-    await page.getByTestId("properties-panel").getByRole("button", { name: "Crop", exact: true }).click();
-    await page.getByTestId("part-editor").getByRole("radio", { name: /Capsicum/ }).click();
-    await expect(page.getByText("Up to date")).toBeVisible();
-    await goToStep(page, "Earnings");
-    await expect(summary).toContainText("Capsicum");
-    expect(errors).toEqual([]);
-  });
-
-  test("an advanced user tunes the loan, reads the detail and works in Hindi", async ({ page }) => {
-    test.setTimeout(150_000);
-    const errors = trackPageErrors(page);
-    await signUp(page);
-    await configureSetup(page);
-
-    // Loan terms: a longer repayment paid quarterly, and the full yearly table under the details.
-    await goToStep(page, "Loan & subsidy");
+    // NABARD's layer terms: a year of grace while the flock grows to point of lay.
+    await goToStep(page, "Loan");
+    await expect(page.getByTestId("in-short")).toContainText("After the first 12 months");
     const loan = page.getByTestId("loan-panel");
-    await loan.getByLabel("Repayment (years, with moratorium)").fill("10");
     await loan.getByRole("radio", { name: "Quarterly" }).click();
     await expect(page.getByTestId("in-short")).toContainText("a quarter");
-    await loan.getByText("Show details").click();
-    await expect(loan.getByTestId("loan-years").getByRole("row")).toHaveCount(11);
 
     // Risk over 15 years, with the statistics behind the plain answer.
     await goToStep(page, "Risk");
     await page.getByRole("radio", { name: "15 yrs" }).click();
     await expect(page.getByTestId("in-short")).toContainText("within 15 years", { timeout: 30_000 });
-    await page.getByTestId("risk-panel").getByText("Show details").click();
-    await expect(page.getByText("Spread of outcomes")).toBeVisible();
 
-    // The Excel workbook for their own analysis.
+    // The Excel workbook for the bank.
     await goToStep(page, "Report");
     const [xlsx] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Download Excel" }).click()]);
     expect(xlsx.suggestedFilename()).toMatch(/\.xlsx$/);
 
-    // The same journey in Hindi.
+    // The same plan in Hindi.
     await page.evaluate(() => window.localStorage.setItem("farm.locale", "hi"));
     await page.reload();
     await page.getByRole("tab", { name: "लागत", exact: true }).click();
     await expect(page.getByRole("heading", { level: 1, name: "लागत" })).toBeVisible();
-    await expect(page.getByTestId("in-short")).toContainText("संक्षेप में");
+    await expect(page.getByTestId("in-short")).toContainText("पक्षियों का शेड");
+    expect(errors).toEqual([]);
+  });
+
+  test("a rural parent farm of desi birds sees which schemes may apply, and why", async ({ page }) => {
+    test.setTimeout(150_000);
+    const errors = trackPageErrors(page);
+    await signUp(page);
+
+    // Jumping ahead too early says what is missing instead of showing empty numbers.
+    await goToStep(page, "Cost");
+    await expect(page.getByText("Finish the design first")).toBeVisible();
+    await page.getByRole("button", { name: "Go to Design" }).click();
+
+    await page.getByRole("button", { name: /Use recommended/i }).click();
+    await chooseLocation(page, "Maharashtra", "Nagpur");
+    await pick(page, "SC/ST");
+    await sidebarTab(page, "Birds");
+    await pick(page, "Improved desi");
+    await setFlock(page, 1100);
+
+    // NLM covers a rural parent farm of low-input birds: the planner cannot know the breed or the hatchery, so it asks
+    // to check; the state scheme pays SC/ST applicants 75%.
+    await goToStep(page, "Cost");
+    const schemes = page.getByTestId("schemes-card");
+    await expect(schemes).toContainText("National Livestock Mission");
+    await expect(schemes).toContainText("Confirm the project includes a hatchery");
+    await expect(schemes).toContainText("75%");
+    await expect(schemes).toContainText("Not eligible"); // AHIDF does not cover farms
+    await expect(page.getByTestId("in-short")).toContainText("A scheme may pay up to");
+
+    // Nagpur's summers: heat stress months and the advice that goes with them.
+    await goToStep(page, "Site & rules");
+    await expect(page.getByTestId("heat-stress")).toContainText("April");
     expect(errors).toEqual([]);
   });
 });

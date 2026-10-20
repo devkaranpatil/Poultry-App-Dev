@@ -3,90 +3,23 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { StepViews, type ResultStepId } from '@/components/workspace/StepViews';
 import { I18nProvider } from '@/context/I18nContext';
-import { computeFinancials, defaultFinanceAssumptions } from '@/lib/finance';
-import { DEFAULT_LOAN_TERMS } from '@/lib/loan';
-import type { CalculationResult, FarmConfig } from '@/types/farm';
+import { poultryLoanTerms } from '@/lib/loan';
+import { SAMPLE_CONFIG, sampleResult } from './helpers/poultryResult';
 
-vi.mock('@/services/risk.service', () => ({ runRiskSimulation: vi.fn(() => new Promise(() => {})) }));
+vi.mock('@/services/risk.service', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/risk.service')>()),
+  runRiskSimulation: vi.fn(() => new Promise(() => {})),
+}));
 
-const config: FarmConfig = {
-  length: 30,
-  width: 10,
-  gutterHeight: 4,
-  ridgeHeight: 6,
-  greenhouseType: 'naturally-ventilated',
-  roofType: 'gable',
-  structureMaterial: 'gi-steel',
-  coverMaterial: 'uv-polyfilm',
-  sideVentilation: 'manual-rollup',
-  doorEntry: 'single-sliding',
-  selectedCrop: 'tomato',
-  irrigationSystem: 'drip',
-  state: 'Goa',
-  district: 'North Goa',
-};
-
-const result: CalculationResult = {
-  area: 300,
-  volume: 1500,
-  climate: {
-    climateZone: 'Tropical Coastal',
-    avgTemperature: 27,
-    humidity: 78,
-    rainfall: 2900,
-    climateFactor: 1.05,
-    advisories: ['High rainfall region - ensure robust site drainage.'],
-  },
-  cost: {
-    structureCost: 255000,
-    coverCost: 36000,
-    ventilationCost: 13500,
-    foundationCost: 54000,
-    irrigationCost: 16500,
-    electricalCost: 0,
-    laborCost: 86250,
-    miscCost: 10500,
-    totalCost: 495338,
-    costPerSqm: 1651,
-    climateAdjustment: 0.05,
-  },
-  selectedCrop: {
-    name: 'Tomato',
-    suitability: 'good',
-    expectedYield: '40-60 t/ha',
-    season: 'Year-round',
-    notes: 'Reliable protected-cultivation staple with strong market demand.',
-    isSelected: true,
-  },
-  irrigation: {
-    system: 'drip',
-    ratePerSqm: 55,
-    notes: ['Best fit for row crops with strong water-use efficiency.'],
-  },
-  crops: [
-    {
-      name: 'Cucumber',
-      suitability: 'excellent',
-      expectedYield: '220-300 t/ha',
-      season: 'Year-round',
-      notes: 'Ventilation is critical for disease control.',
-    },
-    {
-      name: 'Gerbera',
-      suitability: 'excellent',
-      expectedYield: '250-350 stems/m2/year',
-      season: 'Year-round',
-      notes: 'Strong market in humid zones.',
-    },
-  ],
-};
-
-const assumptions = defaultFinanceAssumptions('tomato');
+// A 1,076-bird open broiler shed in Nagpur, sold at Rs 110 a kg so it makes a profit.
+const config = SAMPLE_CONFIG;
+const result = sampleResult(config, { saleInrPerKg: 110 });
 
 function renderStep(step: ResultStepId, overrides: Partial<Parameters<typeof StepViews>[0]> = {}) {
   window.localStorage.setItem('farm.locale', 'en');
   const onNavigate = vi.fn();
   const onAssumptionsChange = vi.fn();
+  const onSitingTicksChange = vi.fn();
   render(
     <MemoryRouter>
       <I18nProvider>
@@ -100,10 +33,12 @@ function renderStep(step: ResultStepId, overrides: Partial<Parameters<typeof Ste
           onRetry={vi.fn()}
           ready
           missingItems={[]}
-          assumptions={assumptions}
+          assumptions={result.assumptions}
           onAssumptionsChange={onAssumptionsChange}
-          financials={computeFinancials(result.cost.totalCost, result.area, assumptions, result.subsidy)}
-          loanTerms={DEFAULT_LOAN_TERMS}
+          financials={result.returns}
+          sitingTicks={{}}
+          onSitingTicksChange={onSitingTicksChange}
+          loanTerms={poultryLoanTerms('broiler')}
           onLoanTermsChange={vi.fn()}
           onShare={vi.fn()}
           includeAiSummary
@@ -113,7 +48,7 @@ function renderStep(step: ResultStepId, overrides: Partial<Parameters<typeof Ste
       </I18nProvider>
     </MemoryRouter>
   );
-  return { onNavigate, onAssumptionsChange };
+  return { onNavigate, onAssumptionsChange, onSitingTicksChange };
 }
 
 describe('StepViews', () => {
@@ -122,18 +57,24 @@ describe('StepViews', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Cost' })).toBeInTheDocument();
     expect(screen.getByText('Step 3 of 8')).toBeInTheDocument();
     const inShort = screen.getByTestId('in-short');
-    expect(inShort).toHaveTextContent(/Building this 300 m² greenhouse costs about ₹4\.95 L/);
-    expect(inShort).toHaveTextContent(/The biggest part is structure/);
+    expect(inShort).toHaveTextContent(/Building the shed for 1,076 birds costs about ₹/);
+    expect(inShort).toHaveTextContent(/The biggest part is shed \(civil work\)/);
+    expect(inShort).toHaveTextContent(/The first batch of chicks, feed and vaccines adds/);
   });
 
-  it('formats the cost breakdown in rupees with Indian digit grouping', () => {
+  it('lists the build cost, the first batch, the NABARD norm and every scheme with its verdict', () => {
     renderStep('cost');
     expect(screen.getAllByText(/^₹\d{1,2}(,\d{2})*,\d{3}$/).length).toBeGreaterThan(1);
+    expect(screen.getByText('The first batch')).toBeInTheDocument();
+    expect(screen.getByTestId('nabard-card')).toHaveTextContent(/1,000-bird unit/);
+    const schemes = screen.getByTestId('schemes-card');
+    expect(within(schemes).getAllByText('Not eligible')).toHaveLength(2);
+    expect(within(schemes).getByText(/Mukhyamantri Gramin Pashudhan/)).toBeInTheDocument();
   });
 
   it('walks on to the next step and back', () => {
     const { onNavigate } = renderStep('earnings');
-    fireEvent.click(screen.getByRole('button', { name: 'Next: Loan & subsidy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next: Loan' }));
     expect(onNavigate).toHaveBeenCalledWith('loan');
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(onNavigate).toHaveBeenCalledWith('cost');
@@ -147,33 +88,46 @@ describe('StepViews', () => {
     expect(onNavigate).toHaveBeenCalledWith('design');
   });
 
-  it('shows the site climate, advisories and crops for this climate', () => {
-    renderStep('site');
-    expect(screen.getByTestId('in-short')).toHaveTextContent(/North Goa has a Tropical Coastal climate/);
-    expect(screen.getByText('Cucumber')).toBeInTheDocument();
-    expect(screen.getByText('Gerbera')).toBeInTheDocument();
-    expect(screen.getByText('Ventilation is critical for disease control.')).toBeInTheDocument();
-    expect(screen.getByText('High rainfall region - ensure robust site drainage.')).toBeInTheDocument();
+  it('shows the site climate, heat stress and the siting checklist', () => {
+    const { onSitingTicksChange } = renderStep('site');
+    expect(screen.getByRole('heading', { level: 1, name: 'Site & rules' })).toBeInTheDocument();
+    const inShort = screen.getByTestId('in-short');
+    expect(inShort).toHaveTextContent(/Nagpur has a/);
+    expect(inShort).toHaveTextContent(/3 month\(s\) a year bring severe heat stress/);
+    expect(screen.getByTestId('heat-stress')).toHaveTextContent(/April, May, June/);
+    const checklist = screen.getByTestId('siting-checklist');
+    expect(checklist).toHaveTextContent(/Registration with the state animal husbandry department/);
+    expect(checklist).toHaveTextContent(/2 item\(s\) not confirmed yet/);
+    fireEvent.click(within(checklist).getAllByRole('checkbox')[0]);
+    expect(onSitingTicksChange).toHaveBeenCalledWith({ 'existing-farms': true });
   });
 
-  it('explains earnings in words and passes edits of the numbers up', () => {
+  it('explains earnings in words, shows the batch calendar and passes edits up', () => {
     const { onAssumptionsChange } = renderStep('earnings');
-    expect(screen.getByTestId('in-short')).toHaveTextContent(/In a normal year you would sell Tomato worth about/);
-    fireEvent.change(screen.getByLabelText('Subsidy (%)'), { target: { value: '0' } });
-    expect(onAssumptionsChange).toHaveBeenCalledWith(expect.objectContaining({ subsidyPct: 0 }));
+    expect(screen.getByTestId('in-short')).toHaveTextContent(/you run 6\.5 batches of Broiler/);
+    expect(screen.getByTestId('batch-calendar')).toHaveTextContent(/Batch 7: placed day 336/);
+    fireEvent.change(screen.getByLabelText('Live-bird price (₹/kg)'), { target: { value: '120' } });
+    expect(onAssumptionsChange).toHaveBeenCalledWith(expect.objectContaining({ saleInrPerKg: 120 }));
+    expect(screen.getByTestId('unverified-assumptions')).toHaveTextContent(/Live-bird price/);
+  });
+
+  it('gives the break-even price when the farm loses money', () => {
+    const losing = sampleResult(config, { saleInrPerKg: 80 });
+    renderStep('earnings', { result: losing, financials: losing.returns, assumptions: losing.assumptions });
+    expect(screen.getByTestId('in-short')).toHaveTextContent(/it needs about ₹\d+(\.\d+)? a kg to break even/);
   });
 
   it('explains a hard word when its question mark is pressed', async () => {
     renderStep('earnings');
-    fireEvent.click(screen.getAllByRole('button', { name: 'What does “Payback period” mean?' })[0]);
-    expect(await screen.findByText(/How many years of profit it takes to earn back/)).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: 'What does “Feed conversion ratio” mean?' })[0]);
+    expect(await screen.findByText(/kg of feed per kg of live weight/)).toBeInTheDocument();
   });
 
   it('sums up the loan and how well the farm covers it', () => {
     renderStep('loan');
     const inShort = screen.getByTestId('in-short');
     expect(inShort).toHaveTextContent(/The bank lends about/);
-    expect(inShort).toHaveTextContent(/After the first 12 months you pay about/);
+    expect(inShort).toHaveTextContent(/You pay about .* a month/);
     expect(within(screen.getByTestId('loan-panel')).getByText('Bank loan')).toBeInTheDocument();
   });
 

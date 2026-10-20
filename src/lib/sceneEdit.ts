@@ -5,7 +5,7 @@ import {
   IRRIGATION_SYSTEM_OPTIONS,
   SIDE_VENTILATION_OPTIONS,
   type FarmConfig,
-} from '@/types/farm';
+} from '@/components/farm/scene/legacyConfig';
 
 /** The editable parts of the model, as named by the user. 'size' is the house as a whole. */
 export type EditablePart = 'size' | 'roof' | 'frame' | 'cover' | 'vents' | 'door' | 'irrigation' | 'crop' | 'type';

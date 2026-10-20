@@ -1,10 +1,12 @@
-// "What if" questions in the chat ("what if I build 500 m2 of fan and pad?", "and at Rs 40 a kilo?") are answered
-// by the planner, not by the language model: the model only turns the question into a list of changes (constrained
-// to WHAT_IF_SCHEMA), the calculator and the returns arithmetic produce both sets of figures, and the model is told
-// to quote them. So every number in such an answer comes from code.
+// "What if" questions in the chat ("what if I keep 5,000 broilers?", "and on contract?", "at Rs 110 a kilo?") are
+// answered by the planner, not by the language model: the model only turns the question into a list of changes
+// (constrained to WHAT_IF_SCHEMA), the poultry calculator produces both sets of figures, and the model is told to
+// quote them. So every number in such an answer comes from code.
 
 const INDIA_LOCATIONS = require("../../shared/india-locations.json");
-const { computeReturns } = require("./returns");
+const { floorAreaFor } = require("./flock");
+const { defaultAssumptions } = require("./poultry/production");
+const { NORMS } = require("../data/poultry/norms");
 
 // A cheap first check, so ordinary questions never pay for the extraction step.
 const WHAT_IF_HINT =
@@ -16,47 +18,64 @@ const UNCHANGED = "unchanged";
 const option = (values) => ({ enum: [UNCHANGED, ...values] });
 const numberOrNull = { type: ["number", "null"] };
 
+const BIRD_TYPES = Object.keys(NORMS.birdTypes);
+const ASSUMPTION_FIELDS = ["saleInrPerKg", "eggInr", "growingChargeInrPerKg", "feedInrPerKg", "chickInr", "mortalityPct", "subsidyInr"];
+
 /** What the model fills in: every field present; "unchanged" or null when the question does not change it. */
 const WHAT_IF_SCHEMA = {
   type: "object",
   properties: {
     isWhatIf: { type: "boolean" },
+    birds: numberOrNull,
     lengthM: numberOrNull,
     widthM: numberOrNull,
     areaSqm: numberOrNull,
-    greenhouseType: option(["naturally-ventilated", "climate-controlled", "shade-net"]),
-    roofType: option(["flat", "gable", "gothic"]),
-    structureMaterial: option(["gi-steel", "aluminium", "bamboo"]),
-    coverMaterial: option(["uv-polyfilm", "shade-net", "insect-net", "glass"]),
-    selectedCrop: option(["tomato", "capsicum", "cucumber", "lettuce", "strawberry", "gerbera"]),
-    irrigationSystem: option(["drip", "sprinkler", "fogger", "hydroponic-nft"]),
+    birdType: option(BIRD_TYPES),
+    housingSystem: option(["open-sided", "environment-controlled", "backyard"]),
+    farmingModel: option(["independent", "contract"]),
+    roofType: option(["gable", "monitor", "lean-to"]),
+    roofSheet: option(["gi-sheet", "galvalume", "fibre-cement", "puf-panel", "thatch"]),
+    feedingSystem: option(["manual", "semi-auto", "automatic", "trough"]),
     state: option(Object.keys(INDIA_LOCATIONS)),
-    yieldPerSqm: numberOrNull,
-    pricePerUnit: numberOrNull,
-    subsidyPct: numberOrNull,
-    operatingCostPct: numberOrNull,
+    ...Object.fromEntries(ASSUMPTION_FIELDS.map((field) => [field, numberOrNull])),
   },
 };
 
 const EXTRACTION_SYSTEM = [
-  "You turn a farmer's question about their polyhouse project into the change they are asking about.",
-  "Set isWhatIf to true only if the question asks what would happen with a different size, structure, material, crop, irrigation, state, yield, price, subsidy or running cost.",
-  "Fill only the fields the question changes; leave every other field \"unchanged\" or null. Sizes are in metres or square metres; yield in kg (or stems) per square metre per year; price in rupees per kg (or per stem); subsidy and running cost in percent.",
+  "You turn a farmer's question about their poultry farm project into the change they are asking about.",
+  "Set isWhatIf to true only if the question asks what would happen with a different flock size, shed size, bird type, shed type, contract or independent farming, roof, feeding system, state, price, mortality or subsidy.",
+  "Fill only the fields the question changes; leave every other field \"unchanged\" or null. birds is the number of birds; sizes are in metres or square metres; saleInrPerKg is the live-bird price in rupees per kg, eggInr the price of one egg, growingChargeInrPerKg the integrator's growing charge per kg, feedInrPerKg and chickInr the feed and chick prices, mortalityPct in percent, subsidyInr in rupees.",
 ].join(" ");
 
-// The words that name each option. A small model fills fields nobody asked about (in testing it turned "switch to
-// bamboo" into bamboo + fan and pad + flat roof + glass), so an option change counts only when the question names it.
+// The words that name each option. A small model fills fields nobody asked about, so an option change counts only
+// when the question names it.
 const OPTION_WORDS = {
-  greenhouseType: {
-    "climate-controlled": /fan[\s-]*(and|&|n)?[\s-]*pad|climate[\s-]*control|cooling pads?/i,
-    "shade-net": /shade[\s-]*net/i,
-    "naturally-ventilated": /natural(ly)?[\s-]*ventilat/i,
+  birdType: {
+    broiler: /\bbroilers?\b/i,
+    "layer-cage": /\bcages?\b|\blayers?\b(?![^.?]*\b(floor|deep[\s-]*litter)\b)/i,
+    "layer-floor": /\blayers?\b[^.?]*\b(floor|deep[\s-]*litter)\b|\b(floor|deep[\s-]*litter)\b[^.?]*\blayers?\b/i,
+    desi: /\bdesi\b|vanaraja|kaveri|giriraja|gramapriya|kadaknath|country (chicken|bird)|indigenous/i,
   },
-  roofType: { flat: /flat\s*roof/i, gothic: /gothic|arched?\s*roof/i, gable: /gable/i },
-  structureMaterial: { bamboo: /bamboo/i, aluminium: /alumin/i, "gi-steel": /\bG\.?I\.?\b|galvani[sz]ed|steel/i },
-  coverMaterial: { glass: /glass/i, "insect-net": /insect[\s-]*net/i, "uv-polyfilm": /poly[\s-]*film|polythene|plastic film/i },
-  selectedCrop: Object.fromEntries(["tomato", "capsicum", "cucumber", "lettuce", "strawberry", "gerbera"].map((crop) => [crop, new RegExp(crop, "i")])),
-  irrigationSystem: { drip: /\bdrip/i, sprinkler: /sprinkl/i, fogger: /fogg/i, "hydroponic-nft": /\bNFT\b|hydroponic/i },
+  housingSystem: {
+    "environment-controlled": /environment[\s-]*controlled|\bEC\b|tunnel|cooling pads?|climate[\s-]*control/i,
+    "open-sided": /open[\s-]*(sided|shed|house)/i,
+    backyard: /backyard/i,
+  },
+  farmingModel: { contract: /contract|integrator/i, independent: /independent|on my own|without (an )?integrator/i },
+  roofType: { monitor: /monitor/i, gable: /gable/i, "lean-to": /lean[\s-]*to/i },
+  roofSheet: {
+    "gi-sheet": /\bG\.?I\.?\b|galvani[sz]ed/i,
+    galvalume: /galvalume/i,
+    "fibre-cement": /fib(re|er)[\s-]*cement|asbestos|cement sheet/i,
+    "puf-panel": /\bPUF\b|insulated/i,
+    thatch: /thatch/i,
+  },
+  feedingSystem: {
+    manual: /manual|bell drinker|round feeder/i,
+    "semi-auto": /semi[\s-]*auto|nipple/i,
+    automatic: /(?<!semi[\s-]*)\bautomatic\b|auto[\s-]*feed/i,
+    trough: /trough/i,
+  },
   state: Object.fromEntries(Object.keys(INDIA_LOCATIONS).map((state) => [state, new RegExp(`\\b${state.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i")])),
 };
 
@@ -83,23 +102,39 @@ function groundExtraction(extracted, question) {
     if ((!chosen || chosen === UNCHANGED || !named.includes(chosen)) && named.length === 1) grounded[field] = named[0];
   }
   const numbers = numbersIn(question);
-  for (const field of ["lengthM", "widthM", "areaSqm", ...ASSUMPTION_FIELDS]) {
+  for (const field of ["birds", "lengthM", "widthM", "areaSqm", ...ASSUMPTION_FIELDS]) {
     if (typeof grounded[field] === "number" && !numbers.has(grounded[field])) grounded[field] = null;
   }
   return grounded;
 }
 
 const round1 = (value) => Math.round(value * 10) / 10;
-const CONFIG_FIELDS = ["greenhouseType", "roofType", "structureMaterial", "coverMaterial", "selectedCrop", "irrigationSystem"];
-const ASSUMPTION_FIELDS = ["yieldPerSqm", "pricePerUnit", "subsidyPct", "operatingCostPct"];
+const CONFIG_FIELDS = ["birdType", "housingSystem", "farmingModel", "roofType", "roofSheet", "feedingSystem"];
 const positive = (value) => typeof value === "number" && Number.isFinite(value) && value > 0;
+const isLayer = (birdType) => NORMS.birdTypes[birdType]?.product === "eggs";
+
+/** The choices that follow from a new bird or shed type, so a single change still makes a valid shed. */
+function keepCompatible(config) {
+  const next = { ...config };
+  if (next.birdType === "layer-cage" && !["trough", "automatic"].includes(next.feedingSystem)) next.feedingSystem = "trough";
+  if (next.birdType !== "layer-cage" && next.feedingSystem === "trough") next.feedingSystem = "manual";
+  if (isLayer(next.birdType)) next.farmingModel = "independent";
+  if (next.housingSystem === "environment-controlled") next.sideWalls = "closed-tunnel";
+  else if (next.sideWalls === "closed-tunnel") next.sideWalls = "mesh-curtain";
+  if (next.housingSystem === "backyard") next.frameMaterial = "bamboo-wood";
+  else {
+    if (next.frameMaterial === "bamboo-wood") next.frameMaterial = "steel-truss";
+    if (next.roofSheet === "thatch") next.roofSheet = "gi-sheet";
+  }
+  return next;
+}
 
 /**
  * The project's setup with the extracted changes applied, and a readable list of what changed.
- * @param {object} rawConfig  the setup as the client sent it (stateName, doorType, ...)
+ * @param {object} rawConfig  the setup as the client sent it (state or stateName)
  */
 function applyChanges(rawConfig, extracted) {
-  const config = { ...rawConfig };
+  let config = { ...rawConfig };
   const changes = [];
   for (const field of CONFIG_FIELDS) {
     const next = extracted[field];
@@ -108,7 +143,6 @@ function applyChanges(rawConfig, extracted) {
       config[field] = next;
     }
   }
-  // The browser sends stateName (toFarmPayload); older clients and tests send state.
   const currentState = rawConfig.stateName ?? rawConfig.state ?? null;
   if (extracted.state && extracted.state !== UNCHANGED && extracted.state !== currentState) {
     changes.push({ field: "state", from: currentState, to: extracted.state });
@@ -116,14 +150,18 @@ function applyChanges(rawConfig, extracted) {
     config.state = extracted.state;
     config.district = ""; // the old district is in the old state
   }
+  config = keepCompatible(config);
 
   const length = Number(rawConfig.length);
   const width = Number(rawConfig.width);
-  if (positive(extracted.lengthM) || positive(extracted.widthM)) {
+  if (positive(extracted.birds) && width > 0) {
+    // "5,000 birds" keeps the shed's width and lengthens it to hold them at its stocking density.
+    const area = floorAreaFor({ birds: extracted.birds, birdType: config.birdType, housing: config.housingSystem, stockingDensity: config.stockingDensity });
+    if (area) config.length = Math.ceil((area / width) * 2) / 2;
+  } else if (positive(extracted.lengthM) || positive(extracted.widthM)) {
     config.length = positive(extracted.lengthM) ? extracted.lengthM : length;
     config.width = positive(extracted.widthM) ? extracted.widthM : width;
   } else if (positive(extracted.areaSqm) && length > 0 && width > 0) {
-    // A new floor area keeps the house's proportions.
     const scale = Math.sqrt(extracted.areaSqm / (length * width));
     config.length = Math.round(length * scale * 2) / 2;
     config.width = Math.round(width * scale * 2) / 2;
@@ -134,83 +172,60 @@ function applyChanges(rawConfig, extracted) {
   return { config, changes };
 }
 
-/**
- * The figures the chat quotes, for one setup and one set of planning assumptions. With `profitComparable` false
- * (another crop, no yield or price given) cost, subsidy and net investment still count; profit and payback do not.
- */
-function figures(result, assumptions, profitComparable = true) {
-  const returns = assumptions
-    ? computeReturns({
-        capitalCost: result.cost.totalCost,
-        areaSqm: result.area,
-        scheme: result.subsidy,
-        subsidyPct: assumptions.subsidyPct,
-        yieldPerSqm: assumptions.yieldPerSqm,
-        pricePerUnit: assumptions.pricePerUnit,
-        operatingCostPct: assumptions.operatingCostPct,
-      })
-    : null;
+/** The figures the chat quotes for one setup, all from the poultry calculator. */
+function figures(result) {
+  const r = result.returns;
   return {
-    areaSqm: result.area,
-    totalCostInr: result.cost.totalCost,
-    subsidyScheme: result.subsidy?.scheme ?? null,
-    subsidyInr: Math.round(returns ? returns.subsidyAmount : result.subsidy?.amountInr ?? 0),
-    netInvestmentInr: returns ? Math.round(returns.netInvestment) : null,
-    annualProfitInr: returns && profitComparable ? Math.round(returns.annualProfit) : null,
-    paybackYears: returns && profitComparable && returns.paybackYears !== null ? round1(returns.paybackYears) : null,
+    birds: result.flock.birds,
+    capitalCostInr: result.cost.capitalCost,
+    financedCostInr: result.financedCost,
+    subsidyInr: Math.round(r.subsidyAmount),
+    netInvestmentInr: Math.round(r.netInvestment),
+    annualProfitInr: Math.round(r.annualProfit),
+    paybackYears: r.paybackYears !== null ? round1(r.paybackYears) : null,
+    breakEvenPrice: r.breakEvenPrice !== null ? Math.round(r.breakEvenPrice * 100) / 100 : null,
+    product: r.product,
   };
 }
-
-const assumptionsFrom = (financials) =>
-  financials && ASSUMPTION_FIELDS.every((field) => typeof financials[field] === "number")
-    ? Object.fromEntries(ASSUMPTION_FIELDS.map((field) => [field, financials[field]]))
-    : null;
 
 /**
  * Both sets of figures for a what-if: the project as it is, and with the changes. Null when the question is not
  * a what-if or changes nothing; { error } when the changed setup is not valid (the planner's own message).
- * @param {{ rawConfig: object, financials: object|null, extracted: object, runCalculation: Function }} input
+ * @param {{ rawConfig: object, assumptions: object|null, extracted: object, question?: string, runCalculation: Function }} input
  */
-function planScenario({ rawConfig, financials, extracted: modelReading, question, runCalculation }) {
+function planScenario({ rawConfig, assumptions, extracted: modelReading, question, runCalculation }) {
   if (!modelReading || modelReading.isWhatIf !== true) return null;
-  // With the question at hand, keep only the changes it really asks for (see groundExtraction).
   const extracted = question === undefined ? modelReading : groundExtraction(modelReading, question);
   const { config, changes } = applyChanges(rawConfig, extracted);
 
-  const baseAssumptions = assumptionsFrom(financials);
-  const nextAssumptions = baseAssumptions ? { ...baseAssumptions } : null;
-  let note = null;
-  let profitComparable = true;
+  const base = assumptions || {};
+  // Another bird or farming model has its own production figures and prices: start from its defaults.
+  const familyChanged = changes.some((change) => change.field === "birdType" || change.field === "farmingModel");
+  const next = familyChanged ? { ...defaultAssumptions(config.birdType, config.farmingModel), subsidyInr: base.subsidyInr ?? 0 } : { ...base };
   for (const field of ASSUMPTION_FIELDS) {
     const value = extracted[field];
     // A value equal to today's is the model repeating the project, not a change.
-    if (typeof value === "number" && Number.isFinite(value) && value >= 0 && value !== baseAssumptions?.[field]) {
-      changes.push({ field, from: baseAssumptions?.[field] ?? null, to: extracted[field] });
-      if (nextAssumptions) nextAssumptions[field] = extracted[field];
+    if (typeof value === "number" && Number.isFinite(value) && value >= 0 && value !== base[field]) {
+      changes.push({ field, from: base[field] ?? null, to: value });
+      next[field] = value;
     }
   }
   if (changes.length === 0) return null;
-  // Another crop sells at another yield and price; without them the returns would compare apples and oranges.
-  const cropChanged = changes.some((change) => change.field === "selectedCrop");
-  if (cropChanged && nextAssumptions && typeof extracted.yieldPerSqm !== "number" && typeof extracted.pricePerUnit !== "number") {
-    profitComparable = false;
-    note = "The crop changes, so profit and payback are not compared: give the new crop's yield and price to compare them.";
-  }
+  const note = familyChanged
+    ? "The bird or the farming model changes, so its production figures and prices start from the planner's defaults for it."
+    : null;
 
-  const baseline = runCalculation(rawConfig);
-  const scenario = runCalculation(config);
+  const baseline = runCalculation(rawConfig, assumptions || undefined);
+  const scenario = runCalculation(config, next);
   if (baseline.errors) return null;
   if (scenario.errors) return { changes, error: Object.values(scenario.errors)[0] };
-  return {
-    changes,
-    baseline: figures(baseline.result, baseAssumptions),
-    scenario: figures(scenario.result, nextAssumptions, profitComparable),
-    note,
-  };
+  return { changes, baseline: figures(baseline.result), scenario: figures(scenario.result), note };
 }
 
-const inr = (value) => (value === null ? "not compared" : `Rs ${Math.round(value).toLocaleString("en-IN")}`);
-const years = (value) => (value === null ? "no payback or not compared" : `${value} years`);
+const inr = (value) => (value === null ? "not available" : `Rs ${Math.round(value).toLocaleString("en-IN")}`);
+const years = (value) => (value === null ? "no payback" : `${value} years`);
+const breakEven = (figure) =>
+  figure.breakEvenPrice === null ? "not available" : `Rs ${figure.breakEvenPrice} ${figure.product === "eggs" ? "per egg" : "per kg"}`;
 
 /** The prompt block the model must quote from. */
 function scenarioBlock(plan) {
@@ -219,12 +234,14 @@ function scenarioBlock(plan) {
     return `PLANNER WHAT-IF: the planner cannot calculate this change (${changeText}): ${plan.error}. Say so and do not estimate figures.`;
   }
   const rows = [
-    ["Floor area", `${plan.baseline.areaSqm} m2`, `${plan.scenario.areaSqm} m2`],
-    ["Total build cost", inr(plan.baseline.totalCostInr), inr(plan.scenario.totalCostInr)],
-    ["Subsidy", `${inr(plan.baseline.subsidyInr)} (${plan.baseline.subsidyScheme ?? "-"})`, `${inr(plan.scenario.subsidyInr)} (${plan.scenario.subsidyScheme ?? "-"})`],
+    ["Birds", plan.baseline.birds.toLocaleString("en-IN"), plan.scenario.birds.toLocaleString("en-IN")],
+    ["Build cost", inr(plan.baseline.capitalCostInr), inr(plan.scenario.capitalCostInr)],
+    ["Cost financed (with the first batch)", inr(plan.baseline.financedCostInr), inr(plan.scenario.financedCostInr)],
+    ["Subsidy counted", inr(plan.baseline.subsidyInr), inr(plan.scenario.subsidyInr)],
     ["Net investment", inr(plan.baseline.netInvestmentInr), inr(plan.scenario.netInvestmentInr)],
     ["Yearly profit", inr(plan.baseline.annualProfitInr), inr(plan.scenario.annualProfitInr)],
     ["Payback", years(plan.baseline.paybackYears), years(plan.scenario.paybackYears)],
+    ["Break-even price", breakEven(plan.baseline), breakEven(plan.scenario)],
   ];
   return [
     `PLANNER WHAT-IF (calculated by the planner; quote these figures exactly and do not calculate your own). Change: ${changeText}.`,
@@ -235,4 +252,4 @@ function scenarioBlock(plan) {
     .join("\n");
 }
 
-module.exports = { EXTRACTION_SYSTEM, WHAT_IF_SCHEMA, applyChanges, groundExtraction, looksLikeWhatIf, planScenario, scenarioBlock };
+module.exports = { ASSUMPTION_FIELDS, EXTRACTION_SYSTEM, WHAT_IF_SCHEMA, applyChanges, groundExtraction, looksLikeWhatIf, planScenario, scenarioBlock };

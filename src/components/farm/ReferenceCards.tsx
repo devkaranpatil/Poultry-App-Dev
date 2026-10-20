@@ -1,79 +1,21 @@
-import { AlertTriangle, ExternalLink, Landmark, MapPin, Store } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, CircleHelp, ExternalLink, Landmark, MapPin, Ruler, Thermometer, XCircle } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useI18n } from '@/context/I18nContext';
-import { formatINR, formatNumber } from '@/lib/format';
-import type { ReferenceContext } from '@/types/farm';
+import { formatINR, formatINRCompact, formatNumber } from '@/lib/format';
+import { cn } from '@/lib/utils';
+import type { HeatStress, NabardComparison, ReferenceContext, SchemesResult, SchemeStatus, SitingRule } from '@/types/farm';
 
-/** Government cost norm, subsidy estimate and area-limit check, from the official NHB/MIDH documents. */
-export function GovernmentNormCard({ reference }: { reference: ReferenceContext }) {
-  const { t } = useI18n();
-  const { governmentNorm, indicativeSubsidy, areaLimit } = reference;
-  if (!governmentNorm && !areaLimit) return null;
-
-  return (
-    <section className="space-y-2.5 rounded-xl border border-border bg-muted/30 p-3" aria-label={t('right.normTitle')}>
-      <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-        <Landmark className="h-3.5 w-3.5 text-primary" />
-        {t('right.normTitle')}
-      </p>
-
-      {governmentNorm ? (
-        <div className="space-y-1 text-sm">
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="text-muted-foreground">
-              {t('right.normOfficial', { perSqm: formatINR(governmentNorm.normPerSqmInr) })}
-            </span>
-            <span className="font-medium tabular-nums text-foreground">{formatINR(governmentNorm.normCostInr)}</span>
-          </div>
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="text-muted-foreground">{t('right.normYours')}</span>
-            <span className="font-medium tabular-nums text-foreground">{formatINR(governmentNorm.yourStructureAndCoverInr)}</span>
-          </div>
-          <p className="text-[11px] text-muted-foreground">{t('right.normHint')}</p>
-        </div>
-      ) : null}
-
-      {indicativeSubsidy ? (
-        <div className="rounded-lg bg-accent px-3 py-2 text-sm">
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="text-accent-foreground">{t('right.subsidyIndicative', { percent: indicativeSubsidy.percent })}</span>
-            <span className="font-semibold tabular-nums text-accent-foreground">{formatINR(indicativeSubsidy.amountInr)}</span>
-          </div>
-          {indicativeSubsidy.cappedAtInr ? (
-            <p className="mt-1 text-[11px] text-accent-foreground/80">{t('right.subsidyCapped', { cap: formatINR(indicativeSubsidy.cappedAtInr) })}</p>
-          ) : null}
-          <p className="mt-1 text-[11px] text-accent-foreground/80">
-            {t(indicativeSubsidy.scheme === 'NHB' ? 'right.subsidyNhb' : 'right.subsidyNhm', { limit: formatNumber(areaLimit?.limitSqm ?? 4000) })}
-          </p>
-        </div>
-      ) : null}
-
-      {areaLimit ? (
-        areaLimit.exceedsLimit ? (
-          <p className="flex gap-2 rounded-lg bg-warning/10 px-3 py-2 text-xs text-foreground">
-            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
-            {t('right.areaLimitExceeded', { limit: formatNumber(areaLimit.limitSqm), date: areaLimit.effectiveFrom })}
-          </p>
-        ) : (
-          <p className="text-xs text-muted-foreground">{t('right.areaLimitOk', { limit: formatNumber(areaLimit.limitSqm) })}</p>
-        )
-      ) : null}
-
-      {governmentNorm ? (
-        <a
-          href={governmentNorm.sourceUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
-        >
-          {t('right.normSource')}
-          <ExternalLink className="h-3 w-3" />
-        </a>
-      ) : null}
-    </section>
+const SourceLink = ({ url, children }: { url: string | null; children: string }) =>
+  url ? (
+    <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
+      {children}
+      <ExternalLink className="h-3 w-3" />
+    </a>
+  ) : (
+    <span>{children}</span>
   );
-}
 
-/** The district's own climate (NASA POWER), shown beside the state profile the cost model uses. */
+/** The district's own climate from NASA POWER, when the database has it. */
 export function DistrictClimateCard({ reference }: { reference: ReferenceContext }) {
   const { t } = useI18n();
   const climate = reference.districtClimate;
@@ -100,53 +42,185 @@ export function DistrictClimateCard({ reference }: { reference: ReferenceContext
   );
 }
 
-/** Today's mandi prices for the suggested crops, with a rough sale value for this floor area. */
-export function MarketPricesCard({ reference, stateName }: { reference: ReferenceContext; stateName: string }) {
+/** The temperature-humidity index month by month, with the months of severe stress marked. */
+export function HeatStressCard({ heatStress }: { heatStress: HeatStress }) {
   const { t } = useI18n();
-  const prices = reference.marketPrices ?? [];
-  if (prices.length === 0) return null;
-
+  const top = Math.max(heatStress.threshold + 4, ...heatStress.thiByMonth.map((m) => m.thi));
+  const bottom = Math.min(15, ...heatStress.thiByMonth.map((m) => m.thi));
+  const severe = new Set(heatStress.severeMonths);
   return (
-    <section className="space-y-2 rounded-xl border border-border p-3" aria-label={t('right.marketTitle')}>
+    <section className="space-y-2 rounded-xl border border-border p-3" aria-label={t('heat.title')} data-testid="heat-stress">
       <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-        <Store className="h-3.5 w-3.5 text-primary" />
-        {t('right.marketTitle')}
+        <Thermometer className="h-3.5 w-3.5 text-primary" />
+        {t('heat.title')}
       </p>
+      <p className="text-sm text-foreground">
+        {heatStress.severeMonths.length > 0
+          ? t('heat.severe', { count: heatStress.severeMonths.length, months: heatStress.severeMonths.map((m) => t(`month.${m}`)).join(', ') })
+          : t('heat.none')}
+      </p>
+      <div className="flex h-24 items-end gap-1" role="img" aria-label={t('heat.chart', { threshold: heatStress.threshold })}>
+        {heatStress.thiByMonth.map(({ month, thi }) => (
+          <div key={month} className="flex flex-1 flex-col items-center gap-1">
+            <div
+              className={cn('w-full rounded-t', severe.has(month) ? 'bg-destructive/70' : 'bg-primary/50')}
+              style={{ height: `${Math.max(4, ((thi - bottom) / (top - bottom)) * 80)}px` }}
+              title={`${t(`month.${month}`)}: THI ${thi}`}
+            />
+            <span className="text-[9px] text-muted-foreground">{t(`month.${month}`).slice(0, 1)}</span>
+          </div>
+        ))}
+      </div>
+      <p className="text-[11px] text-muted-foreground">{t(heatStress.basis === 'district' ? 'heat.noteDistrict' : 'heat.noteState', { threshold: heatStress.threshold })}</p>
+    </section>
+  );
+}
+
+/** Your cost against the NABARD unit cost for the same flock, the cost norm a bank or scheme recognises. */
+export function NabardCard({ nabard }: { nabard: NabardComparison }) {
+  const { t } = useI18n();
+  const above = nabard.ownCostInr > nabard.normCostInr;
+  return (
+    <section className="space-y-2 rounded-xl border border-border bg-muted/30 p-3" aria-label={t('nabard.title')} data-testid="nabard-card">
+      <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+        <Landmark className="h-3.5 w-3.5 text-primary" />
+        {t('nabard.title')}
+      </p>
+      <dl className="grid grid-cols-2 gap-2 text-sm">
+        <div>
+          <dt className="text-xs text-muted-foreground">{t('nabard.norm', { birds: formatNumber(nabard.unitBirds), perBird: formatINR(nabard.perBirdInr) })}</dt>
+          <dd className="font-semibold tabular-nums text-foreground">{formatINR(nabard.normCostInr)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">{t('nabard.yours')}</dt>
+          <dd className={cn('font-semibold tabular-nums', above ? 'text-warning' : 'text-foreground')}>{formatINR(nabard.ownCostInr)}</dd>
+        </div>
+      </dl>
+      <p className="text-xs text-muted-foreground">{t(above ? 'nabard.above' : 'nabard.within', { recognised: formatINR(nabard.recognisedCostInr) })}</p>
+      {nabard.note ? <p className="text-xs text-muted-foreground">{t('nabard.controlledNote')}</p> : null}
+      <p className="text-[11px] text-muted-foreground">
+        <SourceLink url={nabard.source.url}>{`${nabard.source.document} (${nabard.state}, ${nabard.year})`}</SourceLink>
+      </p>
+    </section>
+  );
+}
+
+const STATUS_ICON: Record<SchemeStatus, typeof CheckCircle2> = { eligible: CheckCircle2, check: CircleHelp, 'not-eligible': XCircle };
+const STATUS_STYLE: Record<SchemeStatus, string> = {
+  eligible: 'text-primary',
+  check: 'text-warning',
+  'not-eligible': 'text-muted-foreground',
+};
+
+/** Every scheme checked, with its verdict and why; says plainly when none applies. */
+export function SchemesCard({ schemes }: { schemes: SchemesResult }) {
+  const { t } = useI18n();
+  return (
+    <section className="space-y-3" aria-label={t('schemes.title')} data-testid="schemes-card">
+      {schemes.noneApplies ? (
+        <p className="rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-sm text-foreground" role="note">
+          {t('schemes.none')}
+        </p>
+      ) : null}
       <ul className="space-y-2">
-        {prices.map((p) => {
-          const shown = p.state && p.state.markets >= 3 ? p.state : p.india;
-          const scope = shown === p.state ? stateName : t('right.marketIndia');
+        {schemes.schemes.map((scheme) => {
+          const Icon = STATUS_ICON[scheme.status];
           return (
-            <li key={p.crop} className="rounded-lg bg-muted/30 px-3 py-2 text-sm">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="font-medium text-foreground">{p.crop}</span>
-                {shown ? (
-                  <span className="tabular-nums text-foreground">
-                    {t('right.marketPerQuintal', { price: formatINR(shown.medianInrPerQuintal) })}
-                  </span>
-                ) : null}
+            <li key={scheme.id} className="rounded-xl border border-border bg-card p-3">
+              <div className="flex items-start gap-2">
+                <Icon className={cn('mt-0.5 h-4 w-4 shrink-0', STATUS_STYLE[scheme.status])} aria-hidden />
+                <div className="min-w-0 flex-1 space-y-1">
+                  <p className="text-sm font-semibold text-foreground">{scheme.name}</p>
+                  <p className={cn('text-xs font-medium', STATUS_STYLE[scheme.status])}>
+                    {t(`schemes.status.${scheme.status}`)}
+                    {scheme.status !== 'not-eligible' && scheme.percent !== null
+                      ? ` · ${t('schemes.amount', { percent: scheme.percent, amount: formatINRCompact(scheme.amountInr) })}`
+                      : ''}
+                    {scheme.interestSubventionPct !== null ? ` · ${t('schemes.subvention', { pct: scheme.interestSubventionPct })}` : ''}
+                    {scheme.verified ? '' : ` · ${t('schemes.unverified')}`}
+                  </p>
+                  {scheme.reasons.length > 0 ? (
+                    <ul className="list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
+                      {scheme.reasons.map((reason) => (
+                        <li key={reason}>{reason}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {scheme.status !== 'not-eligible' && scheme.notes.length > 0 ? (
+                    <ul className="list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
+                      {scheme.notes.map((note) => (
+                        <li key={note}>{note}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  <p className="text-[11px] text-muted-foreground">
+                    <SourceLink url={scheme.source.url}>{scheme.source.document}</SourceLink>
+                  </p>
+                </div>
               </div>
-              {shown ? (
-                <p className="text-[11px] text-muted-foreground">
-                  {t('right.marketRange', {
-                    scope,
-                    low: formatINR(shown.lowInrPerQuintal),
-                    high: formatINR(shown.highInrPerQuintal),
-                    markets: shown.markets,
-                  })}
-                </p>
-              ) : null}
-              {p.revenue ? (
-                <p className="mt-1 text-xs text-foreground">
-                  {t('right.marketRevenue', { low: formatINR(p.revenue.lowInr), high: formatINR(p.revenue.highInr) })}
-                </p>
-              ) : null}
-              {p.stale ? <p className="text-[11px] text-warning">{t('right.marketStale', { date: p.date })}</p> : null}
             </li>
           );
         })}
       </ul>
-      <p className="text-[11px] text-muted-foreground">{t('right.marketNote', { date: prices[0].date })}</p>
+      <p className="text-[11px] text-muted-foreground">{t('schemes.disclaimer')}</p>
+    </section>
+  );
+}
+
+/**
+ * The siting and registration rules that apply to this farm, as a checklist the farmer ticks. Anything left unticked
+ * becomes a warning in the report.
+ */
+export function SitingChecklist({
+  rules,
+  ticked,
+  onTickedChange,
+}: {
+  rules: SitingRule[];
+  ticked: Record<string, boolean>;
+  onTickedChange: (next: Record<string, boolean>) => void;
+}) {
+  const { t } = useI18n();
+  const open = rules.filter((rule) => !ticked[rule.id]).length;
+  return (
+    <section className="space-y-2" aria-label={t('siting.title')} data-testid="siting-checklist">
+      <ul className="space-y-1.5">
+        {rules.map((rule) => (
+          <li key={rule.id} className="flex items-start gap-2.5 rounded-lg border border-border bg-card px-3 py-2">
+            <Checkbox
+              id={`siting-${rule.id}`}
+              checked={Boolean(ticked[rule.id])}
+              onCheckedChange={(checked) => onTickedChange({ ...ticked, [rule.id]: checked === true })}
+              className="mt-0.5"
+            />
+            <label htmlFor={`siting-${rule.id}`} className="min-w-0 flex-1 cursor-pointer space-y-0.5">
+              <span className="flex flex-wrap items-center gap-x-2 text-sm text-foreground">
+                {rule.description}
+                {rule.distanceM !== null ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+                    <Ruler className="h-3 w-3" />
+                    {t('siting.distance', { m: formatNumber(rule.distanceM) })}
+                  </span>
+                ) : null}
+              </span>
+              <span className="block text-[11px] text-muted-foreground">
+                {t(`siting.appliesTo.${rule.appliesTo.replace(/\s+/g, '-')}`)} · <SourceLink url={rule.source.url}>{rule.source.document}</SourceLink>
+              </span>
+            </label>
+          </li>
+        ))}
+      </ul>
+      {open > 0 ? (
+        <p className="flex items-center gap-1.5 text-xs text-warning" role="status">
+          <AlertTriangle className="h-3.5 w-3.5" />
+          {t('siting.open', { count: open })}
+        </p>
+      ) : (
+        <p className="flex items-center gap-1.5 text-xs text-primary" role="status">
+          <CheckCircle2 className="h-3.5 w-3.5" />
+          {t('siting.allTicked')}
+        </p>
+      )}
     </section>
   );
 }

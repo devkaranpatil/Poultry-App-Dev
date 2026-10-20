@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { FarmConfig } from '@/types/farm';
-import type { FinanceAssumptions, FinancialSummary } from '@/lib/finance';
+import type { PoultryAssumptions } from '@/lib/poultryFinance';
 import type { Locale } from '@/i18n/messages';
 import { toFarmPayload } from '@/services/calculation.service';
 
@@ -13,7 +13,7 @@ const STREAM_ERROR_MARKER = '[[AI_STREAM_ERROR]]';
 const SOURCES_MARKER = '[[AI_SOURCES]]';
 
 export type AdvisorVerdict = 'strong' | 'viable' | 'marginal' | 'weak';
-export type RecommendationCategory = 'structure' | 'crop' | 'climate' | 'cost' | 'operations';
+export type RecommendationCategory = 'structure' | 'birds' | 'climate' | 'cost' | 'operations';
 
 export interface AdvisorReport {
   summary: string;
@@ -21,20 +21,6 @@ export interface AdvisorReport {
   strengths: string[];
   risks: Array<{ title: string; detail: string; severity: 'low' | 'medium' | 'high' }>;
   recommendations: Array<{ title: string; detail: string; category: RecommendationCategory; impact: string }>;
-}
-
-export interface AiCropSuggestion {
-  name: string;
-  suitability: 'excellent' | 'good' | 'moderate' | 'poor';
-  reason: string;
-  expectedYield: string;
-  season: string;
-  marketNote: string;
-}
-
-export interface AiCropsResult {
-  crops: AiCropSuggestion[];
-  note: string;
 }
 
 /** A document passage the assistant used for an answer. `cited` is false when it only looks related. */
@@ -64,13 +50,15 @@ const sourceList = z.array(z.unknown()).transform((items) =>
 );
 
 const scenarioFigures = z.object({
-  areaSqm: z.number(),
-  totalCostInr: z.number(),
+  birds: z.number(),
+  capitalCostInr: z.number(),
+  financedCostInr: z.number(),
   subsidyInr: z.number(),
-  subsidyScheme: z.string().nullable(),
-  netInvestmentInr: z.number().nullable(),
-  annualProfitInr: z.number().nullable(),
+  netInvestmentInr: z.number(),
+  annualProfitInr: z.number(),
   paybackYears: z.number().nullable(),
+  breakEvenPrice: z.number().nullable(),
+  product: z.enum(['meat', 'eggs']),
 });
 
 /** A "what if" the planner calculated for this answer: the change, and the figures now and with it. */
@@ -106,8 +94,8 @@ export interface ChatMessage {
 
 export interface AiProjectContext {
   config: FarmConfig;
-  assumptions?: FinanceAssumptions;
-  financials?: FinancialSummary | null;
+  /** The farmer's planning assumptions; the server works out every figure from them. */
+  assumptions?: Partial<PoultryAssumptions>;
   locale: Locale;
 }
 
@@ -122,24 +110,10 @@ export class AiRequestError extends Error {
 }
 
 function buildBody(context: AiProjectContext, extra: Record<string, unknown> = {}) {
-  const { assumptions, financials } = context;
   return JSON.stringify({
     config: toFarmPayload(context.config),
     locale: context.locale,
-    financials:
-      financials && assumptions
-        ? {
-            subsidyPct: assumptions.subsidyPct,
-            operatingCostPct: assumptions.operatingCostPct,
-            yieldPerSqm: assumptions.yieldPerSqm,
-            pricePerUnit: assumptions.pricePerUnit,
-            netInvestment: Math.round(financials.netInvestment),
-            annualRevenue: Math.round(financials.annualRevenue),
-            annualProfit: Math.round(financials.annualProfit),
-            paybackYears: financials.paybackYears,
-            roi: financials.roi,
-          }
-        : undefined,
+    assumptions: context.assumptions ?? {},
     ...extra,
   });
 }
@@ -197,16 +171,6 @@ export async function requestAdvisorReport(
   return payload.report as AdvisorReport;
 }
 
-export async function requestAiCrops(
-  token: string,
-  context: AiProjectContext,
-  signal?: AbortSignal
-): Promise<AiCropsResult> {
-  const response = await postAi('/api/ai/crops', token, buildBody(context), signal);
-  if (!response.ok) throw await toAiError(response);
-  const payload = await response.json();
-  return { crops: payload.crops ?? [], note: payload.note ?? '' };
-}
 
 /** Does the text end with the start of a marker (e.g. "[[AI_SO")? Then wait for more before showing it. */
 function endsWithPartialMarker(text: string): number {
