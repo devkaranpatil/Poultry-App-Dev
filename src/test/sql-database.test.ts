@@ -43,6 +43,19 @@ describe('schema constraints', () => {
     await expect(insert('greenhouse', '[1,2]')).rejects.toMatchObject({ code: '23514' });
   });
 
+  it("accepts poultry designs alongside the polyhouse planner's own types", async () => {
+    for (const [index, type] of ['greenhouse', 'polyhouse', 'poultry'].entries()) {
+      await db.query(
+        "insert into saved_configurations (user_id, name, normalized_name, config_type, config) values ($1, $2, $2, $3, '{}'::jsonb)",
+        [USER_ID, `type-${index}`, type]
+      );
+    }
+    const { rows } = await db.query(
+      "select count(*) as n from pg_constraint where conrelid = 'public.saved_configurations'::regclass and contype = 'c' and conname like '%config_type%'"
+    );
+    expect(Number(rows[0].n)).toBe(1); // the old check was replaced, not joined by a second one
+  });
+
   it('removes a user configurations when the user is deleted', async () => {
     const id = '22222222-2222-4222-8222-222222222222';
     await db.query("insert into app_users (id, name, email) values ($1, 'D', 'cascade@example.test')", [id]);
@@ -68,10 +81,27 @@ describe('reference datasets', () => {
       midh_area_limits: 4,
       district_climate_monthly: 7020,
       district_climate_unresolved: 177,
+      poultry_unit_costs: 6,
+      poultry_production_norms: 7,
+      poultry_scheme_rules: 3,
+      poultry_siting_rules: 9,
     });
     expect(await loadReferenceData(db.query)).toEqual(first); // idempotent
     const { rows } = await db.query('select count(*) as n from district_climate_monthly');
     expect(Number(rows[0].n)).toBe(7020);
+  }, 60_000);
+
+  it('loads only the poultry tables when asked, leaving the polyhouse tables alone', async () => {
+    await db.query("delete from cost_norms where structure_type = 'Fan & Pad system'");
+    const before = await db.query('select count(*) as n from cost_norms');
+    const counts = await loadReferenceData(db.query, undefined, { only: 'poultry' });
+    expect(Object.keys(counts)).toEqual(['poultry_unit_costs', 'poultry_production_norms', 'poultry_scheme_rules', 'poultry_siting_rules']);
+    const after = await db.query('select count(*) as n from cost_norms');
+    expect(after.rows[0].n).toBe(before.rows[0].n);
+    const { rows } = await db.query("select cap_inr, verified from poultry_scheme_rules where scheme_id = 'nlm-edp-rural-poultry'");
+    expect(rows[0]).toMatchObject({ verified: true });
+    expect(Number(rows[0].cap_inr)).toBe(2500000);
+    await loadReferenceData(db.query); // restore the full set for the tests below
   }, 60_000);
 
   it('keeps the NHB tubular naturally ventilated norm exactly as published', async () => {

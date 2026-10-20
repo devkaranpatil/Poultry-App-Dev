@@ -65,6 +65,10 @@ describe('database module', () => {
       'district_climate_unresolved',
       'mandi_prices_daily',
       'midh_area_limits',
+      'poultry_production_norms',
+      'poultry_scheme_rules',
+      'poultry_siting_rules',
+      'poultry_unit_costs',
       'saved_configurations',
     ]);
   }, 60_000);

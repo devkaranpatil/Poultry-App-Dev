@@ -54,6 +54,17 @@ Arunachal Pradesh, Telangana, Gujarat, West Bengal, Meghalaya and Assam district
 or renamed districts). They are deliberately left out rather than guessed. Fall back to the state
 value for these.
 
+### Poultry planner datasets (Phase 2 of `docs/migration`)
+
+Loaded into the `poultry_*` tables by `node backend/scripts/loadReferenceData.js poultry`. The figures also live in code, and `src/test/poultry-data.test.ts` keeps the two equal.
+
+| File | Rows | What it holds | Source |
+|---|---|---|---|
+| `nabard_poultry_unit_costs.csv` | 6 | Unit cost of 250 to 5,000-bird broiler and cage layer units, with the cost breakdown | NABARD Unit Cost 2023-24, Jharkhand RO |
+| `poultry_production_norms.csv` | 7 | Floor space, rearing and cleaning days, mortality, weight, feed and eggs for each bird and shed | NABARD broiler, layer and indigenous model projects; NCDC broiler DPR (2020); ICAR housing norms |
+| `poultry_scheme_rules.csv` | 3 | NLM-EDP rural poultry, AHIDF, Maharashtra's state scheme (unverified) | NLM-EDP guideline (2024), AHIDF guidelines, secondary summaries |
+| `poultry_siting_rules.csv` | 9 | CPCB distances, pollution consent, NABARD 1 km rule, registration | CPCB guidelines and NGT orders, NABARD, DAHD 2025 |
+
 ## `knowledge/`: what the AI assistant reads
 
 `knowledge/manifest.json` lists every official document the assistant searches, with its publisher, URL, status (current or older) and any known gaps: the MIDH Operational Guidelines 2025, NHB cost norms and guidelines, the NCERT protected-cultivation textbook, TNAU crop guides and IPM schedule, Vikaspedia (capsicum) and AAU (strawberry). `python datasets/scripts/fetch_knowledge.py` downloads them into `knowledge/raw/` and extracts the text into `knowledge/text/` (it needs poppler's `pdftotext`, or `pip install pypdf`). Both folders are git-ignored because some documents are copyrighted. The backend also turns the CSVs above and its own cost model into passages, so the assistant can cite them.

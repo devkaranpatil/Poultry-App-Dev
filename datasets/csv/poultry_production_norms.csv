@@ -1,0 +1,8 @@
+bird_type,housing,sqft_per_bird,rearing_days,cleaning_days,mortality_pct,sale_weight_kg,feed_kg_per_bird,grower_weeks,laying_weeks,eggs_per_hen,laying_mortality_pct,source_ids
+broiler,open-sided,1,42,14,5,1.8,3.5,,,,,nabard-broiler-model;nabard-unit-cost-2023;ncdc-broiler-dpr
+broiler,environment-controlled,0.7,42,14,5,1.8,3.5,,,,,ec-housing-secondary;nabard-broiler-model;nabard-unit-cost-2023;ncdc-broiler-dpr
+layer-cage,open-sided,0.85,,,,,,20,52,310,10,nabard-layer-model
+layer-cage,environment-controlled,0.85,,,,,,20,52,310,10,nabard-layer-model
+layer-floor,open-sided,2,,,,,,20,52,310,10,icar-housing;nabard-layer-model
+desi,backyard,1,58,14,9,1,2.5,,,,,nabard-indigenous-model;nabard-broiler-model
+desi,open-sided,1,58,14,9,1,2.5,,,,,nabard-indigenous-model;nabard-broiler-model
