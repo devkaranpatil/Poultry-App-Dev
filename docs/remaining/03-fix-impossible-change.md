@@ -1,0 +1,26 @@
+# 03. An impossible change gets no limit
+
+**Status:** open. Found by the evaluation on 2026-10-20 (task 01).
+
+## The fault
+
+"What if I make the shed 10 km long?" was answered with general advice. The planner's answer is that the length must
+be between 2 and 150 m (`shared/poultry-limits.json`). Failed question: `whatif-impossible`.
+
+## Why it happens (likely)
+
+The model reads the question as `lengthM: 10000`. `groundExtraction` in `backend/services/whatIf.js` (line 96) keeps a
+number only when it appears in the question, and the question contains `10`, not `10000`. So the length is dropped,
+nothing changes, `planScenario` returns null, and the model answers without the planner's error block.
+
+## What to do
+
+1. In `groundExtraction`, accept a length or width that the question gives in another unit: when the question has
+   "km" or "kilometre" and the number times 1,000 matches, keep it (likewise "ft"/"feet" times 0.3048 when that is
+   added).
+2. Add a unit test: "make the shed 10 km long" with an extraction of `lengthM: 10000` keeps the length, and
+   `planScenario` returns `{ error: "Length must be between 2 and 150 m" }`.
+
+## Done when
+
+`npm run eval:assistant -- --only=whatif-impossible` passes, and the new unit test passes.

@@ -7,9 +7,9 @@ These documents plan the change of the app's topic from polyhouses (protected cu
 | [research.md](research.md) | The rules and figures: NLM-EDP, AHIDF, NABARD unit costs and model projects, IS 2732 and ICAR housing norms, CPCB siting, farm registration and biosecurity, price sources, heat stress. Each comes with its source, and unverified figures are marked |
 | [feature-changes.md](feature-changes.md) | Every feature and what it becomes: setup fields, steps, schemes, cost, returns, risk, prices, 3D, AI, branding and storage |
 | [implementation-plan.md](implementation-plan.md) | Eight phases with the files touched, tests and estimates (about 23 to 30 working days alone, about 15 with parallel agents), and the risks |
-| [remaining-work.md](remaining-work.md) | What is left after the migration: the full assistant evaluation, the faults it found, and the data and checks that need a person |
+| [../remaining](../remaining/README.md) | What is left after the migration, one file per task: the full assistant evaluation, the faults it found, and the data and checks that need a person |
 
-**Status (2026-10-20):** all phases are done and tagged (`phase-1` to `phase-7`); the polyhouse code is kept on the `polyhouse` tag. See [remaining-work.md](remaining-work.md) and [../project-status.md](../project-status.md).
+**Status (2026-10-20):** all phases are done and tagged (`phase-1` to `phase-7`); the polyhouse code is kept on the `polyhouse` tag. See [../remaining](../remaining/README.md) and [../project-status.md](../project-status.md).
 
 ## In one paragraph
 

@@ -6,7 +6,7 @@ polyhouse code is kept on the `polyhouse` git tag. The app name is a placeholder
 which every screen, the page title, the report and the emails read.
 
 **Migration status:** all seven phases are done (tags `phase-1` to `phase-7`). What is still open, including a full
-run of the assistant evaluation, is in [docs/migration/remaining-work.md](docs/migration/remaining-work.md); the plan,
+run of the assistant evaluation, is in [docs/remaining](docs/remaining/README.md), one file per task; the plan,
 research and feature changes are in [docs/migration](docs/migration/README.md).
 
 What it does:
