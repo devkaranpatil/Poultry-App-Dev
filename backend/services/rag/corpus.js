@@ -1,9 +1,11 @@
 // Builds the assistant's knowledge base: every passage it may quote, with the source it came from.
 //
-//   1. Official documents (datasets/knowledge/manifest.json -> text/<id>.txt, built by fetch_knowledge.py)
-//   2. The official datasets in datasets/csv (cost norms, area limits, published yields, district climate)
-//   3. The planner's own crop library, irrigation profiles and pricing constants (generated from the code,
-//      so the explanation can never drift from what the calculator does)
+//   1. Official documents (datasets/knowledge/manifest.json -> text/<id>.txt, built by fetch_knowledge.py):
+//      NLM-EDP and AHIDF guidelines, NABARD and NCDC poultry projects, CPCB and DAHD rules, TNAU and Vikaspedia guides
+//   2. The official tables in datasets/csv (NABARD unit costs, production norms, scheme rules, siting rules) and the
+//      district climate
+//   3. The planner's own norms, prices, schemes, siting rules and cost model (generated from the code and
+//      shared/poultry-norms.json, so the explanation can never drift from what the calculator does)
 //   4. The planner's documentation (docs/*.md)
 //
 // Nothing here is invented: each passage is a transcription of, or generated directly from, one of those sources.
@@ -12,8 +14,10 @@ const fs = require("fs");
 const path = require("path");
 const { APP_NAME } = require("../../config/app");
 const { parseCsv } = require("../../scripts/loadReferenceData");
-const pricing = require("../../data/pricing");
-const { CROP_LIBRARY, CROPS_BY_CLIMATE_GROUP, IRRIGATION_PROFILES, PUBLISHED_YIELDS } = require("../../data/cultivation");
+const NORMS = require("../../../shared/poultry-norms.json");
+const { SCHEMES } = require("../../data/poultry/schemes");
+const { CPCB_THRESHOLD_BIRDS, SITING_RULES } = require("../../data/poultry/siting");
+const { SEVERE_THI, assessHeatStress } = require("../poultry/heatStress");
 const { getClimateData } = require("../climate");
 const { chunkText, fixDegreeSigns } = require("./text");
 
@@ -83,127 +87,144 @@ function officialDocuments() {
   return { documents, missing, gaps: manifest.gaps || [] };
 }
 
-/* ------------------------------ 2. official datasets ------------------------------ */
+/* ------------------------------ 2. official tables ------------------------------ */
 
-function costNormDocument() {
-  const rows = readCsv("nhb_midh_protected_cultivation_cost_norms.csv");
+/** "nabard-unit-cost-2023" -> "NABARD Unit Cost 2023-24, ... (verified)", the way every planner passage names its source. */
+function sourceName(id) {
+  const source = NORMS.sources[id];
+  if (!source) return id;
+  if (id === "planner-assumption") return "the planner's own assumption, with no published source";
+  return `${source.document || id}${source.verified ? "" : " (secondary source, not verified)"}`;
+}
+
+function unitCostDocument() {
+  const rows = readCsv("nabard_poultry_unit_costs.csv");
   const doc = {
-    id: "dataset-cost-norms",
-    title: "NHB/MIDH protected cultivation cost norms (transcribed table)",
-    publisher: "National Horticulture Board / MIDH, transcribed into this project's datasets",
+    id: "dataset-nabard-unit-costs",
+    title: "NABARD poultry unit costs (transcribed table)",
+    publisher: "NABARD regional unit costs, transcribed into this project's datasets",
     url: rows[0]?.source_url || null,
-    priority: 1.12,
+    priority: 1.1,
     kind: "dataset",
     tags: { topic: "cost-norm" },
   };
   return documentFromPassages(
     doc,
     rows.map((row) => ({
-      section: row.component,
+      section: `${row.bird_type} ${row.birds} birds`,
+      tags: { bird: row.bird_type },
       text:
-        `${row.scheme}, ${row.component}: ${row.structure_type}. Cost norm ${inr(row.cost_norm_inr)} ${row.unit}` +
-        (row.cost_norm_hilly_inr ? ` (${inr(row.cost_norm_hilly_inr)} for hilly areas)` : "") +
-        `. Pattern of assistance: ${row.pattern_of_assistance_verbatim || "not stated"}. ` +
-        `Source: ${row.source_document}.${row.notes ? ` Note: ${row.notes}` : ""}`,
+        `NABARD unit cost (${row.state}, ${row.year}): ${row.bird_type}, ${row.system}, ${Number(row.birds).toLocaleString("en-IN")} birds: ` +
+        `${inr(row.unit_cost_inr)} for the unit, repaid over ${row.repayment_years} years. ` +
+        `${row.notes ? `${row.notes}. ` : ""}Banks finance against the unit cost of their own state; other states publish different figures. Source: ${row.source_document}.`,
     }))
   );
 }
 
-function areaLimitDocument() {
-  const rows = readCsv("midh_protected_cultivation_area_limits.csv");
+function productionNormsDocument() {
+  const rows = readCsv("poultry_production_norms.csv");
   const doc = {
-    id: "dataset-area-limits",
-    title: "MIDH protected cultivation area limits per beneficiary",
-    publisher: "Ministry of Agriculture & Farmers Welfare, Horticulture Division (letter File No. M-1401 1/5/2024-MIDH)",
-    url: rows[0]?.source_url || null,
+    id: "dataset-production-norms",
+    title: "Poultry production norms used by the planner (transcribed table)",
+    publisher: "NABARD, NCDC and published studies, transcribed into this project's datasets",
+    url: null,
+    priority: 1.05,
+    kind: "dataset",
+    tags: { topic: "production" },
+  };
+  const part = (label, value, unit = "") => (value !== "" && value !== undefined ? `${label} ${value}${unit}` : null);
+  return documentFromPassages(
+    doc,
+    rows.map((row) => ({
+      section: `${row.bird_type}, ${row.housing}`,
+      tags: { bird: row.bird_type },
+      text:
+        `Production norms for ${row.bird_type} in a ${row.housing} shed: ` +
+        [
+          part("floor space", row.sqft_per_bird, " sq ft per bird"),
+          part("rearing", row.rearing_days, " days"),
+          part("cleaning between batches", row.cleaning_days, " days"),
+          part("mortality", row.mortality_pct, " percent"),
+          part("sale weight", row.sale_weight_kg, " kg"),
+          part("feed", row.feed_kg_per_bird, " kg per bird"),
+          part("grower period", row.grower_weeks, " weeks"),
+          part("laying period", row.laying_weeks, " weeks"),
+          part("eggs per hen", row.eggs_per_hen),
+          part("laying mortality", row.laying_mortality_pct, " percent"),
+          part("feed conversion ratio", row.fcr),
+        ]
+          .filter(Boolean)
+          .join(", ") +
+        `. Sources: ${String(row.source_ids).split(";").map(sourceName).join("; ")}.`,
+    }))
+  );
+}
+
+function schemeRulesDocument() {
+  const rows = readCsv("poultry_scheme_rules.csv");
+  const doc = {
+    id: "dataset-scheme-rules",
+    title: "Government schemes for poultry: the rules the planner checks",
+    publisher: "DAHD scheme guidelines and state notifications, transcribed into this project's datasets",
+    url: null,
     priority: 1.15,
     kind: "dataset",
     tags: { topic: "subsidy-rule" },
   };
-  return documentFromPassages(
-    doc,
-    rows.map((row) => {
-      const superseded = /superseded/i.test(row.rule);
-      return {
-        section: row.scheme,
-        status: superseded ? "older" : "current",
-        note: superseded ? "This rule was replaced by the MoA&FW letter of 2025-08-12 and is no longer in force." : undefined,
-        text:
-          `${superseded ? "SUPERSEDED, no longer in force. " : "CURRENT RULE. "}${row.scheme}: ${row.rule} is ${row.value} ${row.unit}, effective from ${row.effective_from}. ` +
-          `${row.notes || ""} Source: ${row.source_document}.`,
-      };
-    })
-  );
+  const passages = rows.map((row) => {
+    const verified = String(row.verified).toLowerCase() === "true";
+    return {
+      section: row.scheme,
+      status: verified ? "current" : "unverified",
+      note: verified ? undefined : "Not confirmed from the official notification; check with the state animal husbandry department.",
+      text:
+        `${verified ? "" : "UNVERIFIED. "}${row.scheme}${row.state ? ` (${row.state})` : " (central scheme)"}: for ${row.unit}. ` +
+        (row.percent_general ? `Subsidy ${row.percent_general} percent for general and ${row.percent_sc_st || row.percent_general} percent for SC/ST beneficiaries. ` : "") +
+        (row.cap_inr ? `Capped at ${inr(row.cap_inr)}. ` : "") +
+        (row.min_own_contribution_pct ? `The beneficiary puts in at least ${row.min_own_contribution_pct} percent. ` : "") +
+        (row.min_parent_females ? `At least ${row.min_parent_females} parent females and ${row.min_parent_males} males. ` : "") +
+        (String(row.greenfield_only).toLowerCase() === "true" ? "New (greenfield) projects only. " : "") +
+        `${row.notes || ""} Source: ${row.source_document}.`,
+    };
+  });
+  passages.push({
+    section: "Subsidy overview",
+    text:
+      "Government help for a poultry farm in India: there is no central capital subsidy for a plain commercial broiler or layer farm. " +
+      "The National Livestock Mission (NLM-EDP) gives a 50 percent back-ended capital subsidy, up to Rs 25 lakh, only for a rural poultry parent farm with a hatchery and brooder-mother unit. " +
+      "AHIDF gives a 3 percent interest subvention, but for feed plants and meat processing, not the farm itself. " +
+      "Some states run their own schemes. A broiler or layer farm is usually financed by a bank loan against NABARD's unit cost. " +
+      "The planner's scheme check (PROJECT FACTS) says which of these apply to the farmer's project.",
+  });
+  return documentFromPassages(doc, passages);
 }
 
-/** One plain-language passage on government assistance, assembled from the two official tables above. */
-function subsidySummaryDocument() {
-  const norms = readCsv("nhb_midh_protected_cultivation_cost_norms.csv");
-  const limits = readCsv("midh_protected_cultivation_area_limits.csv").filter((row) => !/superseded/i.test(row.rule));
+function sitingDocument() {
+  const rows = readCsv("poultry_siting_rules.csv");
   const doc = {
-    id: "dataset-subsidy-summary",
-    title: "Government subsidy for protected cultivation: overview from the official tables",
-    publisher: "National Horticulture Board / MIDH and the MoA&FW letter of 2025-08-12, summarised for this project",
-    url: norms[0]?.source_url || null,
-    priority: 1.2,
+    id: "dataset-siting-rules",
+    title: "Siting and consent rules for poultry farms (CPCB guidelines)",
+    publisher: "Central Pollution Control Board, transcribed into this project's datasets",
+    url: rows[0]?.source_url || null,
+    priority: 1.1,
     kind: "dataset",
-    tags: { topic: "subsidy-rule" },
+    tags: { topic: "siting" },
   };
-
-  // Group the structures by the assistance they get, so the overview reads "X percent applies to A, B and C".
-  const byPattern = new Map();
-  for (const row of norms) {
-    if (!row.pattern_of_assistance_verbatim) continue;
-    const key = row.pattern_of_assistance_verbatim.trim();
-    if (!byPattern.has(key)) byPattern.set(key, []);
-    byPattern.get(key).push(row.structure_type);
-  }
-  const patterns = [...byPattern.entries()]
-    .map(([pattern, structures]) => `"${pattern}" for ${structures.slice(0, 6).join(", ")}${structures.length > 6 ? " and others" : ""}`)
-    .join("; ");
-  const rules = limits
-    .map((row) => `${row.scheme}: ${row.rule} is ${row.value} ${row.unit} (from ${row.effective_from})`)
-    .join("; ");
-  const project = norms.find((row) => /project cost norm/i.test(row.structure_type));
-
   return documentFromPassages(doc, [
     {
-      section: "Subsidy and assistance overview",
+      section: "Consent",
       text:
-        "Government subsidy (pattern of assistance) for protected cultivation such as polyhouses, greenhouses and shade-net houses under the National Horticulture Board and MIDH. " +
-        `The official table gives the assistance for each structure: ${patterns}. ` +
-        (project ? `For a whole project the table states: ${project.pattern_of_assistance_verbatim || project.notes}. ` : "") +
-        `Area rules in force: ${rules}. ` +
-        (limits.length > 0
-          ? "The wording \"above 2500 Sq.m\" in the cost-norm table predates the letter of 2025-08-12; the area thresholds above replace it. "
-          : "") +
-        "Subsidy is credit linked and back-ended. Small projects go to the state horticulture mission, whose rates can differ by state; confirm the current rates with the state horticulture department.",
+        `Farms with more than ${CPCB_THRESHOLD_BIRDS.toLocaleString("en-IN")} birds need consent to establish and to operate from the State Pollution Control Board under the Air and Water Acts, ` +
+        "under the CPCB Environmental Guidelines for Poultry Farms enforced by NGT orders. The siting distances below apply to these farms.",
     },
-  ]);
-}
-
-function yieldDocument() {
-  const rows = readCsv("crop_yields_published.csv");
-  const doc = {
-    id: "dataset-published-yields",
-    title: "Published polyhouse crop yields",
-    publisher: "Indian Journal of Horticulture and Indian Farming (transcribed into this project's datasets)",
-    url: null,
-    priority: 1.05,
-    kind: "dataset",
-    tags: { topic: "yield" },
-  };
-  return documentFromPassages(
-    doc,
-    rows.map((row) => ({
-      section: row.crop,
-      tags: { crop: row.crop.toLowerCase() },
+    ...rows.map((row) => ({
+      section: row.rule_id,
       text:
-        `${row.crop} yield ${row.yield_low} to ${row.yield_high} ${row.unit} (${row.period}), ${row.measure}. ` +
-        `Setting: ${row.structure_and_location}. ${row.used_by_app === "yes" ? "The planner shows this figure." : "Not used by the planner."} ` +
-        `Source: ${row.source_document}.${row.notes ? ` ${row.notes}` : ""}`,
-    }))
-  );
+        `${row.description}${row.distance_m ? `: at least ${row.distance_m} m` : ""}` +
+        `${row.applies_above_birds ? `, for farms above ${Number(row.applies_above_birds).toLocaleString("en-IN")} birds` : ""}` +
+        `${row.applies_to ? ` (${row.applies_to})` : ""}. Source: ${row.source_document}.`,
+    })),
+  ]);
 }
 
 function climateDocument() {
@@ -233,8 +254,8 @@ function climateDocument() {
     const coldest = monthly.reduce((a, b) => (Number(b.t2m_mean_c) < Number(a.t2m_mean_c) ? b : a));
     const rainfallMm = Number(annual.precip_mm_per_day) * 365;
     const used = getClimateData(state, district);
-    const heavyRain = used.rainfall > pricing.CLIMATE_SURCHARGE.heavyRainfallMm;
-    const hot = typeof used.hottestMonthMeanC === "number" && used.hottestMonthMeanC >= pricing.CLIMATE_SURCHARGE.hotMonthMeanC;
+    const heat = assessHeatStress({ stateName: state, district, product: "meat", housingSystem: "open-sided" });
+    const severe = heat ? heat.severeMonths : [];
     passages.push({
       section: `${district}, ${state}`,
       tags: { state, district },
@@ -245,8 +266,10 @@ function climateDocument() {
         `Solar radiation ${fmt(annual.solar_mj_m2_per_day)} MJ/m2/day. Wind ${fmt(annual.wind_2m_m_per_s)} m/s at 2 m. ` +
         `Monthly mean temperature (C): ${monthly.map((m) => `${m.month} ${fmt(m.t2m_mean_c)}`).join(", ")}. ` +
         `Monthly rainfall (mm/day): ${monthly.map((m) => `${m.month} ${fmt(m.precip_mm_per_day, 1)}`).join(", ")}. ` +
-        `In the planner this district is in the "${used.group}" climate group (${used.zone}); it prices rainfall at ${fmt(used.rainfall, 0)} mm (${used.rainfallSource} value), ` +
-        `so the heavy-rain surcharge ${heavyRain ? "applies" : "does not apply"}, and the heat surcharge ${hot ? "applies" : "does not apply"}.`,
+        `In the planner this district is in the "${used.group}" climate group (${used.zone}), with ${fmt(used.rainfall, 0)} mm of rain a year (${used.rainfallSource} value). ` +
+        (severe.length > 0
+          ? `Broilers in an open shed face severe heat stress (temperature-humidity index above ${SEVERE_THI}) in ${severe.join(", ")}.`
+          : `No month reaches severe heat stress for broilers (temperature-humidity index above ${SEVERE_THI}) on monthly averages, though afternoons can still be hot.`),
     });
   }
   return documentFromPassages(doc, passages);
@@ -254,97 +277,148 @@ function climateDocument() {
 
 /* ------------------------------ 3. the planner's own data ------------------------------ */
 
-function cropDocument() {
+const fromValue = (entry) => {
+  if (!entry || typeof entry !== "object") return String(entry);
+  if (entry.value !== undefined) return String(entry.value);
+  if (entry.low !== undefined) return `${entry.low} to ${entry.high}`;
+  return "";
+};
+const label = (key) => key.replace(/([A-Z])/g, " $1").replace(/Inr/g, " (Rs)").replace(/\s+/g, " ").trim().toLowerCase();
+
+function birdDocument() {
   const doc = {
-    id: "planner-crops",
-    title: "Crops in the planner",
-    publisher: `${APP_NAME} crop library (suitability ratings and seasons are the planner's own judgement)`,
+    id: "planner-birds",
+    title: "Birds in the planner",
+    publisher: `${APP_NAME} bird norms (shared/poultry-norms.json)`,
     url: null,
     priority: 0.95,
     kind: "planner",
-    tags: { topic: "crop" },
+    tags: { topic: "birds" },
   };
-  const passages = [];
-  for (const [key, crop] of Object.entries(CROP_LIBRARY)) {
-    const published = PUBLISHED_YIELDS[crop.name];
-    passages.push({
-      section: crop.name,
-      tags: { crop: key },
+  const passages = Object.entries(NORMS.birdTypes).map(([key, bird]) => {
+    const facts = Object.entries(bird)
+      .filter(([name, value]) => !["label", "product", "housing", "sources", "sqftPerBird", "sqftPerBirdSources"].includes(name) && typeof value !== "object")
+      .map(([name, value]) => `${label(name)} ${value}${bird.sources?.[name] ? ` (${sourceName(bird.sources[name])})` : ""}`);
+    const space = Object.entries(bird.sqftPerBird || {}).map(
+      ([housing, value]) => `${value} sq ft per bird in ${/^[aeiou]/.test(housing) ? "an" : "a"} ${housing} shed (${sourceName(bird.sqftPerBirdSources?.[housing])})`
+    );
+    return {
+      section: bird.label,
+      tags: { bird: key },
       text:
-        `${crop.name} in the planner: expected yield ${crop.expectedYield}; season ${crop.season}. ${crop.notes} ` +
-        `Suitability by climate group: ${Object.entries(crop.suitabilityByZone).map(([group, rating]) => `${group} ${rating}`).join(", ")}. ` +
-        (published
-          ? `The yield comes from published trials: ${published.basis}. Source: ${published.source}. ${published.note}`
-          : "This yield is the planner's own unverified estimate; no published trial in the datasets supports it."),
-    });
-  }
-  for (const [group, rows] of Object.entries(CROPS_BY_CLIMATE_GROUP)) {
-    passages.push({
-      section: `Suggested crops for ${group} climates`,
-      text:
-        `Crops the planner suggests for the ${group} climate group, best first: ` +
-        rows.map(([name, rating, yieldText, season, notes]) => `${name} (${rating}; ${yieldText}; ${season}; ${notes})`).join(" "),
-    });
-  }
-  for (const [key, profile] of Object.entries(IRRIGATION_PROFILES)) {
-    passages.push({
-      section: profile.label,
-      tags: { irrigation: key },
-      text:
-        `${profile.label} irrigation in the planner costs ${inr(pricing.IRRIGATION_RATE_PER_SQM[key])} per m2 of floor area. ${profile.notes.join(" ")} ` +
-        "This irrigation rate is an unsourced assumption: no public price dataset exists for it.",
-    });
-  }
+        `${bird.label} (${key}) in the planner, kept for ${bird.product}, in ${bird.housing.join(" or ")} sheds. ` +
+        `Floor space: ${space.join("; ")}. ${facts.join("; ")}.`,
+    };
+  });
+  passages.push({
+    section: "Shed types",
+    text:
+      "Shed types in the planner: " +
+      Object.entries(NORMS.housingSystems)
+        .map(([key, housing]) => `${housing.label} (${key})`)
+        .join("; ") +
+      ". An environment-controlled shed has closed walls with tunnel fans and cooling pads; an open-sided shed has a low wall, wire mesh and curtains.",
+  });
   return documentFromPassages(doc, passages);
 }
 
-function pricingDocument() {
+function costModelDocument() {
   const doc = {
     id: "planner-cost-model",
-    title: "How the planner prices a structure",
-    publisher: `${APP_NAME} cost model (backend/data/pricing.js)`,
+    title: "How the planner prices a poultry shed and its running costs",
+    publisher: `${APP_NAME} cost model (backend/services/poultry/costModel.js, shared/poultry-norms.json)`,
     url: null,
     priority: 1.08,
     kind: "planner",
     tags: { topic: "cost-model" },
   };
-  const list = (rates) => Object.entries(rates).map(([name, rate]) => `${name.replace(/_/g, " ")} ${rate}`).join(", ");
-  const unsourced = [...pricing.UNSOURCED_MATERIALS.structureMaterial, ...pricing.UNSOURCED_MATERIALS.coverMaterial].join(" and ");
+  const isObject = (entry) => entry !== null && typeof entry === "object";
+  // One cost item: "shed (rs) per sqft: broiler 319 (NABARD ...)". An item with its own source and several numbers
+  // ({ sqft: 100, inrPerSqft: 275, source }) lists the numbers; a group ({ broiler: {...}, layer: {...} }) lists its members.
+  const describe = (key, entry) => {
+    if (!isObject(entry)) return `${label(key)} ${entry}`;
+    const note = entry.note ? ` (${entry.note})` : "";
+    const source = entry.source ? `, ${sourceName(entry.source)}` : "";
+    if (entry.value !== undefined || entry.low !== undefined) return `${label(key)} ${fromValue(entry)}${note}${source}`;
+    if (entry.source) {
+      const numbers = Object.entries(entry)
+        .filter(([name]) => !["source", "note"].includes(name))
+        .map(([name, value]) => `${label(name)} ${isObject(value) ? fromValue(value) : value}`);
+      return `${label(key)}: ${numbers.join(", ")}${note}${source}`;
+    }
+    return `${label(key)}: ${Object.entries(entry).map(([name, value]) => describe(name, value)).join("; ")}`;
+  };
+  const { workingCapital, ...capital } = NORMS.costs;
+  // One passage per cost item, so a question about one rate finds that rate and not a page of all of them.
+  const passages = Object.entries(capital).map(([key, entry]) => ({
+    section: label(key),
+    text: `A cost item the planner uses to build and equip a shed (rupees): ${describe(key, entry)}.`,
+  }));
+  if (workingCapital) {
+    for (const [key, entry] of Object.entries(workingCapital)) {
+      passages.push({ section: `Working capital: ${key}`, text: `Working capital for the first batch or flock (${key} birds): ${describe(key, entry)}.` });
+    }
+  }
+  for (const [key, entries] of Object.entries(NORMS.prices)) {
+    const list = Array.isArray(entries) ? entries : [entries];
+    passages.push({
+      section: label(key),
+      tags: { topic: "price" },
+      text:
+        `Prices for ${label(key)} known to the planner: ` +
+        list
+          .map((entry) => `${entry.bird ? `${entry.bird}: ` : ""}${fromValue(entry)}${entry.note ? ` (${entry.note})` : ""} from ${sourceName(entry.source)}`)
+          .join("; ") +
+        ". Market prices change daily; the farmer can set their own in the planner's assumptions.",
+    });
+  }
+  return documentFromPassages(doc, passages);
+}
+
+function plannerSchemesDocument() {
+  const doc = {
+    id: "planner-schemes",
+    title: "How the planner checks government schemes",
+    publisher: `${APP_NAME} scheme rules (backend/data/poultry/schemes.js)`,
+    url: null,
+    priority: 1.05,
+    kind: "planner",
+    tags: { topic: "subsidy-rule" },
+  };
+  return documentFromPassages(
+    doc,
+    Object.values(SCHEMES).map((scheme) => ({
+      section: scheme.name,
+      status: scheme.verified ? "current" : "unverified",
+      text:
+        `${scheme.verified ? "" : "UNVERIFIED. "}${scheme.name}${scheme.state ? ` (${scheme.state})` : ""}: ` +
+        (scheme.percent ? `subsidy ${scheme.percent.general} percent (general), ${scheme.percent["sc-st"]} percent (SC/ST)` : "no capital subsidy") +
+        (scheme.capInr ? `, capped at ${inr(scheme.capInr)}` : "") +
+        (scheme.interestSubventionPct ? `; ${scheme.interestSubventionPct} percent interest subvention` : "") +
+        `. ${(scheme.notes || []).join(" ")} Source: ${scheme.source?.document || "not stated"}.`,
+    }))
+  );
+}
+
+function plannerSitingDocument() {
+  const doc = {
+    id: "planner-siting",
+    title: "Siting rules the planner asks the farmer to confirm",
+    publisher: `${APP_NAME} siting checklist (backend/data/poultry/siting.js)`,
+    url: null,
+    priority: 0.95,
+    kind: "planner",
+    tags: { topic: "siting" },
+  };
   return documentFromPassages(doc, [
     {
-      section: "Rates",
+      section: "Siting checklist",
       text:
-        "The planner's rates, in rupees per square metre of FLOOR area: " +
-        `structure: ${list(pricing.STRUCTURE_RATE_PER_SQM)}. Cover: ${list(pricing.COVER_RATE_PER_SQM)}. ` +
-        `Side ventilation: ${list(pricing.VENTILATION_RATE_PER_SQM)}. Irrigation: ${list(pricing.IRRIGATION_RATE_PER_SQM)}. ` +
-        `Foundation ${pricing.FOUNDATION_RATE_PER_SQM}. Miscellaneous ${pricing.MISC_RATE_PER_SQM}. ` +
-        `Labour is ${pricing.LABOR_RATIO * 100} percent of structure plus cover plus foundation. ` +
-        `Climate-controlled (fan and pad) houses add ${pricing.CLIMATE_CONTROL_RATE_PER_SQM} per m2 for cooling and controls. ` +
-        `The rates for ${unsourced} have no official source; they are the planner's assumptions and the result screen warns about them.`,
-    },
-    {
-      section: "Climate surcharge and estimate band",
-      text:
-        `The total is multiplied by a climate factor: plus ${pricing.CLIMATE_SURCHARGE.heavyRainfall * 100} percent when the rainfall used is above ${pricing.CLIMATE_SURCHARGE.heavyRainfallMm} mm a year, ` +
-        `and plus ${pricing.CLIMATE_SURCHARGE.hotTemp * 100} percent when the district's hottest month averages ${pricing.CLIMATE_SURCHARGE.hotMonthMeanC} C or more. ` +
-        "The 35 C threshold and the percentages are the planner's own choices, not from any official source. The quoted range is the total plus or minus 10 percent.",
-    },
-    {
-      section: "Reference design and shade-net houses",
-      text:
-        `Structure and cover quantities scale with the real outer surface (walls, gable ends and roof) compared with the NHB reference house: ` +
-        `gutter height ${pricing.REFERENCE_DESIGN.gutterHeight} m, ridge height ${pricing.REFERENCE_DESIGN.ridgeHeight} m, ${pricing.REFERENCE_DESIGN.roofType} roof (NHB Technical Standard NHB-PH-Type 02-2011). ` +
-        "A taller house or a different roof therefore costs more or less than the reference. " +
-        `A shade-net house is lighter than a covered house, so its structure rate is multiplied by the official norm ratio: ` +
-        `${Object.entries(pricing.SHADE_NET_STRUCTURE_FACTOR).map(([name, factor]) => `${name.replace(/_/g, " ")} ${factor.toFixed(2)}`).join(", ")}. ` +
-        "The door type and the selected crop do not change the price: the official norms have no door rate, and a crop affects revenue, not build cost.",
-    },
-    {
-      section: "Official benchmark",
-      text:
-        `The planner's structure plus cover rate for a naturally ventilated steel house is ${pricing.STRUCTURE_RATE_PER_SQM.galvanized_iron + pricing.COVER_RATE_PER_SQM.uv_polyfilm} per m2, ` +
-        `about 15 percent above the official NHB norm of ${pricing.OFFICIAL_NORM_PER_SQM.naturallyVentilatedTubular} per m2; for bamboo it is about 16 percent above ${pricing.OFFICIAL_NORM_PER_SQM.naturallyVentilatedBamboo}. ` +
-        "The official norms are used as a sanity check and to derive ratios, not as prices.",
+        "The planner's siting checklist: " +
+        SITING_RULES.map(
+          (rule) => `${rule.description}${rule.distanceM ? ` at least ${rule.distanceM} m` : ""}${rule.appliesAboveBirds ? ` (above ${rule.appliesAboveBirds.toLocaleString("en-IN")} birds)` : ""}`
+        ).join("; ") +
+        ". The farmer ticks each rule on the Site step; the report warns about the ones left unticked.",
     },
   ]);
 }
@@ -352,7 +426,8 @@ function pricingDocument() {
 function plannerDocs() {
   const files = [
     { file: "backend-architecture.md", title: "Planner documentation: backend architecture, cost model and audit", priority: 1.0 },
-    { file: "3d-scene.md", title: "Planner documentation: the 3D scene", priority: 0.7 },
+    { file: "3d-scene.md", title: "Planner documentation: the 3D shed", priority: 0.7 },
+    { file: "3d-model-references.md", title: "Planner documentation: what Indian poultry sheds look like", priority: 0.75 },
   ];
   return files
     .filter(({ file }) => fs.existsSync(path.join(DOCS_DIR, file)))
@@ -388,13 +463,15 @@ function buildCorpus() {
   const official = officialDocuments();
   const built = [
     ...official.documents,
-    costNormDocument(),
-    areaLimitDocument(),
-    subsidySummaryDocument(),
-    yieldDocument(),
+    unitCostDocument(),
+    productionNormsDocument(),
+    schemeRulesDocument(),
+    sitingDocument(),
     climateDocument(),
-    cropDocument(),
-    pricingDocument(),
+    birdDocument(),
+    costModelDocument(),
+    plannerSchemesDocument(),
+    plannerSitingDocument(),
     ...plannerDocs(),
     ...gapsDocument(official.gaps),
   ];

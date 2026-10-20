@@ -67,7 +67,7 @@ async function main() {
         ? { config: evalSet.project, ...question.body }
         : {
             config: evalSet.project,
-            financials: evalSet.financials,
+            ...(evalSet.assumptions ? { assumptions: evalSet.assumptions } : {}),
             locale: question.locale || "en",
             messages: [...(question.history || []), { role: "user", content: question.question }],
           };
