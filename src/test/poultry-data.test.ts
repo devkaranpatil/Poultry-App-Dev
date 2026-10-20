@@ -31,6 +31,7 @@ type BirdNorms = {
   layingWeeks?: number;
   eggsPerHen?: number;
   layingMortalityPct?: number;
+  fcr?: number;
 };
 const birds = norms.birdTypes as Record<string, BirdNorms>;
 
@@ -72,6 +73,7 @@ describe('poultry norms', () => {
       expect(num(row.laying_weeks)).toBe(bird.layingWeeks ?? null);
       expect(num(row.eggs_per_hen)).toBe(bird.eggsPerHen ?? null);
       expect(num(row.laying_mortality_pct)).toBe(bird.layingMortalityPct ?? null);
+      expect(num(row.fcr)).toBe(bird.fcr ?? null);
     }
   });
 

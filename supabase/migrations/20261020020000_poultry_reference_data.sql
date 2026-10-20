@@ -30,6 +30,7 @@ create table public.poultry_production_norms (
   laying_weeks         integer,
   eggs_per_hen         integer,
   laying_mortality_pct numeric,
+  fcr                  numeric,
   source_ids           text    not null,
   constraint poultry_production_norms_key unique (bird_type, housing)
 );

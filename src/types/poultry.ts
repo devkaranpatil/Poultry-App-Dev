@@ -30,6 +30,10 @@ export interface PoultryConfig {
   sideWalls: SideWalls;
   entry: ShedEntry;
   birdType: BirdType;
+  /** Sq ft per bird; null uses the norm for the bird and shed (shared/poultry-norms.json). */
+  stockingDensity: number | null;
+  /** Tiers of cages for layers in cages (shown in 3D; the cage cost is per bird). */
+  cageTiers: 2 | 3 | 4;
   feedingSystem: FeedingSystem;
   farmingModel: FarmingModel;
   beneficiaryCategory: BeneficiaryCategory;
@@ -56,6 +60,8 @@ export const DEFAULT_POULTRY_CONFIG: PoultryConfig = {
   sideWalls: 'mesh-curtain',
   entry: 'door-footbath',
   birdType: 'broiler',
+  stockingDensity: null,
+  cageTiers: 3,
   feedingSystem: 'manual',
   farmingModel: 'independent',
   beneficiaryCategory: 'general',

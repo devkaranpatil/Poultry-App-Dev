@@ -1,4 +1,5 @@
 import type { FinancialSummary } from '@/lib/finance';
+import type { BirdType } from '@/types/poultry';
 
 // Bank term loan for the polyhouse, the way banks and NHB set it up:
 //  - the bank lends a share of the project cost; the farmer brings the rest (the margin);
@@ -52,6 +53,51 @@ export const LOAN_SOURCES: Array<{ text: string; verified: boolean; url?: string
   },
   {
     text: "Monthly instalments, and farm income starting when the moratorium ends: the app's assumptions; your bank sets the schedule to match the crop",
+    verified: false,
+  },
+];
+
+/** Highest loan share for a poultry unit: NABARD's model projects ask for a margin of 10% (desi birds) to 25%. */
+export const MAX_POULTRY_LOAN_SHARE_PCT = 90;
+
+/**
+ * Starting loan terms for a poultry farm, by the kind of bird, from NABARD's model bank projects (the poultry
+ * versions of the polyhouse defaults above). Bird type keys match src/types/poultry.ts.
+ */
+export function poultryLoanTerms(birdType: BirdType): LoanTerms {
+  if (birdType === 'desi') return { loanSharePct: 90, interestPct: 12, tenureYears: 5, moratoriumMonths: 0, frequency: 'monthly' };
+  if (birdType === 'layer-cage' || birdType === 'layer-floor') {
+    // A layer flock earns nothing until it lays at about 20 weeks: one year of grace.
+    return { loanSharePct: 75, interestPct: 12.5, tenureYears: 8, moratoriumMonths: 12, frequency: 'monthly' };
+  }
+  // Broilers sell their first batch within two months, so repayment starts at once.
+  return { loanSharePct: 75, interestPct: 12.5, tenureYears: 7, moratoriumMonths: 0, frequency: 'monthly' };
+}
+
+/** Where each poultry default comes from; `verified` is false for the app's own assumptions. */
+export const POULTRY_LOAN_SOURCES: Array<{ text: string; verified: boolean; url?: string }> = [
+  {
+    text: 'Broiler: margin 25%, interest 12.5%, 6 to 8 years: NABARD model bank project, poultry broiler farming (old prices)',
+    verified: true,
+    url: 'https://agritech.tnau.ac.in/banking/nabard_pdf/Animal%20husbandry/3.Poultry_Broiler_Farming.pdf',
+  },
+  {
+    text: 'Layer: margin 25%, interest 12.5%, 7 to 9 years with a 1-year grace: NABARD model bank project, poultry layer',
+    verified: true,
+    url: 'https://agritech.tnau.ac.in/banking/nabard_pdf/Animal%20husbandry/4.Poultry_Layer.pdf',
+  },
+  {
+    text: 'Improved desi birds: margin 10%, interest 12%, 5 years, no moratorium: NABARD model bank project on indigenous poultry',
+    verified: true,
+    url: 'https://www.nabard.org/auth/writereaddata/ModelBankProject/0604183125Model-_Indigenous_Poultry_Farming_English.pdf',
+  },
+  {
+    text: 'NLM subsidy is back-ended: paid through SIDBI in two instalments after the bank releases the loan, so it is adjusted against the last instalments here: NLM-EDP guideline 2021-26',
+    verified: true,
+    url: 'https://livestock.kerala.gov.in/wp-content/uploads/2024/07/KLDB-NLM-GUIDELINE.pdf',
+  },
+  {
+    text: "Middle of each published range (7 years for broilers, 8 for layers) and monthly instalments: the app's choices; your bank sets the schedule",
     verified: false,
   },
 ];

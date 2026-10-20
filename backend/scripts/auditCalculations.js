@@ -1,160 +1,125 @@
-// Audits the calculator against the official datasets in datasets/csv. Read-only: it needs no
-// database and changes nothing. Rerun it whenever a rate, a state profile or a dataset changes.
+// Audits the poultry calculator against the official datasets in datasets/csv. Read-only: it needs no
+// database and changes nothing. Rerun it whenever a rate, a norm or a dataset changes.
 //
 //   node backend/scripts/auditCalculations.js
 //
-// A. Cost rates against the NHB/MIDH cost norms (structure + cover per m2).
-// B. State climate profiles against the mean of NASA POWER district values in that state, and how
-//    many districts trigger the heat surcharge (hottest month mean >= the threshold in pricing.js).
+// A. NABARD reproduction: given the inputs of each NABARD 2023-24 unit (its shed area, flock and prices), the
+//    app must reproduce the unit cost within +/- 10% (src/test/poultry-calculations.test.ts holds it to that).
+// B. Heat stress: how many districts of each state have a month of severe stress for broilers and for layers.
 // C. Inputs that do not change the price, shown by varying one at a time.
 
 const fs = require("fs");
 const path = require("path");
 const { parseCsv } = require("./loadReferenceData");
-const pricing = require("../data/pricing");
-const STATE_CLIMATE = require("../data/stateClimate");
-const { normSelector } = require("../services/referenceData");
-const { createCalculator } = require("../services/calculator");
-const { createConfigValidator } = require("../validators/configValidator");
+const { SQFT_PER_SQM } = require("../data/poultry/norms");
+const { calculateShedCost, loadNabardUnits } = require("../services/poultry/costModel");
+const { assessHeatStress } = require("../services/poultry/heatStress");
+const { runPoultryCalculation } = require("../services/poultry/calculator");
 
 const CSV_DIR = path.resolve(__dirname, "../../datasets/csv");
-const read = (file) => parseCsv(fs.readFileSync(path.join(CSV_DIR, file), "utf8"));
-const pct = (n) => `${n >= 0 ? "+" : ""}${Math.round(n * 100)}%`;
-const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
+const TOLERANCE = 0.1;
+const pct = (n) => `${n >= 0 ? "+" : ""}${(n * 100).toFixed(1)}%`;
 
-// ---------------------------------------------------------------- A. cost rates vs norms
-function auditCostRates() {
-  const norms = read("nhb_midh_protected_cultivation_cost_norms.csv").filter((r) => r.scheme === "MIDH/NHB");
-  const rows = [];
-  const cases = [
-    { type: "naturally-ventilated", cover: "uv_polyfilm" },
-    { type: "shade-net", cover: "shade_net" },
-    { type: "climate-controlled", cover: "uv_polyfilm" },
-  ];
-  const materials = [
-    { name: "gi-steel", key: "galvanized_iron", norm: "gi-steel" },
-    { name: "aluminium", key: "aluminium", norm: "aluminium" },
-    { name: "bamboo", key: "bamboo", norm: "bamboo" },
-  ];
-  for (const c of cases) {
-    for (const m of materials) {
-      if (c.type === "climate-controlled" && m.name === "bamboo") continue; // cannot be fan-and-pad
-      const wanted = normSelector({ structureType: c.type, structureMaterial: m.norm });
-      const norm = norms.find((n) => n.component === wanted.component && n.structure_type === wanted.structure);
-      const shade = c.type === "shade-net" ? pricing.SHADE_NET_STRUCTURE_FACTOR[m.key] : 1;
-      const modelRate = Math.round(pricing.STRUCTURE_RATE_PER_SQM[m.key] * shade + pricing.COVER_RATE_PER_SQM[c.cover]);
-      const extra = c.type === "climate-controlled" ? pricing.CLIMATE_CONTROL_RATE_PER_SQM : 0;
-      rows.push({
-        structure: c.type,
-        material: m.name,
-        "norm row": wanted.structure,
-        "norm Rs/m2": Number(norm.cost_norm_inr),
-        "model structure+cover": modelRate,
-        "vs norm": pct(modelRate / Number(norm.cost_norm_inr) - 1),
-        "+electrical": extra ? modelRate + extra : "",
-        "vs norm (with electrical)": extra ? pct((modelRate + extra) / Number(norm.cost_norm_inr) - 1) : "",
-        // The norms have no aluminium row, so that comparison is against the tubular (GI) row and is not a defect.
-        note: pricing.UNSOURCED_MATERIALS.structureMaterial.includes(m.key) ? "no official aluminium norm; assumed rate" : "",
-      });
-    }
-  }
-  return rows;
+// The shed area NABARD allows per bird in its unit costs: 600 sq ft for 500 broilers, 1 sq ft per caged layer.
+const NABARD_SQFT_PER_BIRD = { broiler: 1.2, "layer-cage": 1 };
+// NABARD's unit prices: chicks Rs 35, feed Rs 30/kg, vaccines Rs 32 (broiler) and medicines Rs 25 (layer) a bird.
+const NABARD_PRICES = {
+  broiler: { chickInr: 35, feedInrPerKg: 30, vaccineInrPerBird: 32 },
+  "layer-cage": { chickInr: 35, feedInrPerKg: 30, vaccineInrPerBird: 25 },
+};
+
+/** The open shed NABARD prices, of a given floor area, 7 m wide where it fits. */
+function nabardShed(birdType, birds) {
+  const areaSqm = (birds * NABARD_SQFT_PER_BIRD[birdType]) / SQFT_PER_SQM;
+  const width = Math.min(7, Math.sqrt(areaSqm));
+  return {
+    length: areaSqm / width,
+    width,
+    eavesHeight: 2.1,
+    ridgeHeight: 3.5,
+    housingSystem: "open-sided",
+    roofType: "gable",
+    roofSheet: "gi-sheet",
+    sideWalls: "mesh-curtain",
+    entry: "single-door",
+    birdType,
+    feedingSystem: birdType === "layer-cage" ? "trough" : "manual",
+  };
 }
 
-// ---------------------------------------------------------------- B. state climate vs NASA
-function auditStateClimate() {
-  const monthly = read("district_climate_monthly.csv").filter((r) => r.month === "ANN");
+// ---------------------------------------------------------------- A. NABARD reproduction
+function auditNabardUnits() {
+  return loadNabardUnits().map((unit) => {
+    const { cost } = calculateShedCost(nabardShed(unit.birdType, unit.birds), unit.birds, NABARD_PRICES[unit.birdType]);
+    const off = cost.projectCost / unit.unitCostInr - 1;
+    return {
+      unit: `${unit.state} ${unit.year} ${unit.birdType} ${unit.birds}`,
+      "NABARD Rs": unit.unitCostInr,
+      "app Rs": cost.projectCost,
+      "capital Rs": cost.capitalCost,
+      "working capital Rs": cost.workingCapital.total,
+      off: pct(off),
+      within: Math.abs(off) <= TOLERANCE ? "yes" : "NO",
+      offShare: off,
+    };
+  });
+}
+
+// ---------------------------------------------------------------- B. heat stress by state
+function auditHeatStress() {
+  const rows = parseCsv(fs.readFileSync(path.join(CSV_DIR, "district_climate_monthly.csv"), "utf8")).filter((r) => r.month === "ANN");
   const byState = new Map();
-  for (const r of monthly) {
+  for (const r of rows) {
     if (!byState.has(r.state)) byState.set(r.state, []);
-    byState.get(r.state).push(r);
+    byState.get(r.state).push(r.district);
   }
-  const { hotMonthMeanC, heavyRainfallMm } = pricing.CLIMATE_SURCHARGE;
-  const profiles = require("../data/climateProfiles.json");
-  const rows = [];
-  for (const [state, profile] of Object.entries(STATE_CLIMATE)) {
-    const d = byState.get(state);
-    if (!d || d.length === 0) {
-      // Not a pricing gap: the app falls back to the state profile. These states are cool and wet, so neither
-      // surcharge changes (no month reaches the heat threshold; the state rainfall is already above the rain one).
-      rows.push({ state, districts: 0, note: "no NASA district match; state profile used" });
-      continue;
-    }
-    const temp = mean(d.map((r) => Number(r.t2m_mean_c)));
-    const rh = mean(d.map((r) => Number(r.rh2m_pct)));
-    const rain = mean(d.map((r) => Number(r.precip_mm_per_day) * 365));
-    rows.push({
-      state,
-      districts: d.length,
-      "temp app/NASA": `${profile.temp} / ${temp.toFixed(1)}`,
-      "RH app/NASA": `${profile.humidity} / ${Math.round(rh)}`,
-      "rain app/NASA": `${profile.rainfall} / ${Math.round(rain)}`,
-      "temp off": Math.abs(profile.temp - temp) >= 2 ? "YES" : "",
-      "RH off": Math.abs(profile.humidity - rh) >= 10 ? "YES" : "",
-      "rain off": rain / profile.rainfall > 1.5 || rain / profile.rainfall < 0.67 ? "YES" : "",
-      // Would the price surcharge flip if NASA's means were used instead of the app's profile?
-      "hot districts": `${Object.entries(profiles.districts).filter(([k, v]) => k.startsWith(`${state}|`) && v.hottestMonthMeanC >= hotMonthMeanC).length}/${d.length}`,
-      "rain flips": profile.rainfall > heavyRainfallMm !== rain > heavyRainfallMm ? "YES" : "",
-      // NASA POWER's gridded precipitation runs low over steep, wet terrain (Mizoram), so a flip here means
-      // "check the typed state value against IMD", not that the typed value is wrong.
-      note: profile.rainfall > heavyRainfallMm !== rain > heavyRainfallMm ? "NASA rain below typed value; verify against IMD" : "",
-    });
-  }
-  return rows;
+  return [...byState.entries()].sort().map(([state, districts]) => {
+    const count = (product) =>
+      districts.filter((district) => (assessHeatStress({ stateName: state, district, product, housingSystem: "open-sided" })?.severeMonths.length ?? 0) > 0).length;
+    return { state, districts: districts.length, "broilers stressed": count("meat"), "layers stressed": count("eggs") };
+  });
 }
 
 // ---------------------------------------------------------------- C. inputs that do not move the price
 function auditInertInputs() {
-  const calc = createCalculator({ typeField: "greenhouseType", validate: createConfigValidator({ typeField: "greenhouseType", typeLabel: "Greenhouse" }) });
   const base = {
-    length: 30, width: 10, gutterHeight: 4, ridgeHeight: 6, greenhouseType: "naturally-ventilated", roofType: "gable",
-    structureMaterial: "gi-steel", coverMaterial: "uv-polyfilm", sideVentilation: "manual-rollup", doorEntry: "single-sliding",
-    state: "Kerala", district: "Ernakulam", selectedCrop: "tomato", irrigationSystem: "drip",
+    length: 30, width: 7, eavesHeight: 2.1, ridgeHeight: 3.5, housingSystem: "open-sided", roofType: "gable",
+    frameMaterial: "steel-truss", roofSheet: "gi-sheet", sideWalls: "mesh-curtain", entry: "door-footbath",
+    birdType: "layer-cage", feedingSystem: "trough", cageTiers: 3, state: "Maharashtra", district: "Pune",
   };
   const total = (over) => {
-    const out = calc.runCalculation({ ...base, ...over });
-    return out.errors ? `invalid: ${Object.values(out.errors)[0]}` : out.result.cost.totalCost;
+    const out = runPoultryCalculation({ ...base, ...over });
+    return out.errors ? `invalid: ${Object.values(out.errors)[0]}` : out.result.cost.capitalCost;
   };
   const baseline = total({});
   // `inert` marks inputs that are meant not to change the build cost, with the reason.
   const variants = [
-    ["door entry", { doorEntry: "double-sliding" }, "NHB/MIDH norms have no door row; doors are not priced"],
-    ["door entry", { doorEntry: "roll-up" }, "NHB/MIDH norms have no door row; doors are not priced"],
-    ["roof type", { roofType: "gothic" }],
-    ["gutter height 4 -> 8 m", { gutterHeight: 8, ridgeHeight: 10 }],
-    ["ridge height 6 -> 12 m", { ridgeHeight: 12 }],
-    ["selected crop", { selectedCrop: "strawberry" }, "crop drives revenue and the advisor, not build cost"],
-    // Kerala's districts are all below both surcharge thresholds, so probe a state where the district decides them.
-    ["district: Hisar (hot) vs Panchkula", { state: "Haryana", district: "Hisar" }, null, { state: "Haryana", district: "Panchkula" }],
+    ["frame: RCC pillars", { frameMaterial: "rcc-pillars" }, "NABARD's rate is per sq ft whatever holds the roof up"],
+    ["cage tiers 3 -> 4", { cageTiers: 4 }, "cages are priced per bird"],
+    ["district: Nagpur", { district: "Nagpur" }, "the district changes the climate advice, not the cost"],
+    ["roof: monitor", { roofType: "monitor" }],
+    ["roof sheet: PUF panel", { roofSheet: "puf-panel" }],
+    ["entry: anteroom", { entry: "anteroom" }],
+    ["eaves 2.1 -> 3 m", { eavesHeight: 3, ridgeHeight: 4.4 }],
   ];
-  return [{ change: "(baseline)", "total Rs": baseline, "price moved": "", note: "" }].concat(
-    variants.map(([change, over, inert, against]) => {
+  return [{ change: "(baseline)", "capital Rs": baseline, "price moved": "", note: "" }].concat(
+    variants.map(([change, over, inert]) => {
       const t = total(over);
-      const compare = against ? total(against) : baseline;
-      const moved = t !== compare;
-      return {
-        change: `${change}${over.doorEntry ? `: ${over.doorEntry}` : ""}`,
-        "total Rs": t,
-        "price moved": moved ? "yes" : inert ? "no (expected)" : "NO",
-        note: moved || !inert ? "" : inert,
-      };
+      const moved = t !== baseline;
+      return { change, "capital Rs": t, "price moved": moved ? "yes" : inert ? "no (expected)" : "NO", note: moved || !inert ? "" : inert };
     })
   );
 }
 
 if (require.main === module) {
-  console.log("A. Cost rates against the NHB/MIDH cost norms (Rs per m2 of floor area)\n");
-  console.table(auditCostRates());
-  console.log("\nB. State climate profiles against NASA POWER district means (app / NASA)\n");
-  const states = auditStateClimate();
-  console.table(states);
-  const count = (key) => states.filter((r) => r[key] === "YES").length;
-  console.log(
-    `\n${states.length} states. Temperature off by 2 C or more: ${count("temp off")}. Humidity off by 10 points or more: ${count("RH off")}. ` +
-      `Rainfall off by a third or more: ${count("rain off")}. Rain surcharge would flip: ${count("rain flips")}.`
-  );
-  console.log("\nC. Does changing one input move the total price?\n");
+  console.log(`A. NABARD 2023-24 unit costs reproduced from their own inputs (tolerance +/- ${TOLERANCE * 100}%)\n`);
+  const units = auditNabardUnits();
+  console.table(units.map(({ offShare, ...row }) => row));
+  console.log("\nB. Districts with at least one month of severe heat stress (THI above 30), open-sided shed\n");
+  console.table(auditHeatStress());
+  console.log("\nC. Does changing one input move the capital cost?\n");
   console.table(auditInertInputs());
+  if (units.some((row) => row.within !== "yes")) process.exitCode = 1;
 }
 
-module.exports = { auditCostRates, auditStateClimate, auditInertInputs };
+module.exports = { TOLERANCE, NABARD_PRICES, nabardShed, auditNabardUnits, auditHeatStress, auditInertInputs };
