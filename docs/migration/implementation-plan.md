@@ -85,7 +85,7 @@ What was built:
 
 Still open:
 - **Apply the migration to the shared Supabase database.** I wasn't allowed to change the shared database myself; see the README.
-- **Run the full unit and e2e suites.** Some tests read `backend/.env`, which points at the shared database, so they weren't run in this phase. Lint, typecheck, the build, and the poultry and database tests (in PGlite) pass.
+- ~~Run the full unit and e2e suites.~~ Done: 521 unit tests and 46 e2e tests pass. The database tests use PGlite, never the shared database.
 - **Agmarknet names for egg and poultry.** The query to data.gov.in did not finish (the API was slow); retry it in Phase 3.
 - **Official Maharashtra scheme GR, NLM 2025 copy, current prices.** Not found yet; the figures stay marked unverified.
 
