@@ -3,24 +3,21 @@ import {
   AiRequestError,
   getAiStatus,
   requestAdvisorReport,
-  requestAiCrops,
   streamChat,
   type AdvisorReport,
-  type AiCropsResult,
   type AiScenario,
   type AiSource,
   type AiStatus,
   type ChatMessage,
 } from '@/services/ai.service';
-import type { FinanceAssumptions, FinancialSummary } from '@/lib/finance';
+import type { PoultryAssumptions } from '@/lib/poultryFinance';
 import type { Locale } from '@/i18n/messages';
 import type { FarmConfig } from '@/types/farm';
 
 interface UseAiAssistantInput {
   token: string | null;
   config: FarmConfig;
-  assumptions: FinanceAssumptions;
-  financials: FinancialSummary | null;
+  assumptions: Partial<PoultryAssumptions>;
   locale: Locale;
 }
 
@@ -44,18 +41,14 @@ function toErrorKey(err: unknown): AiErrorKey {
 
 const isAbort = (err: unknown) => err instanceof DOMException && err.name === 'AbortError';
 
-export function useAiAssistant({ token, config, assumptions, financials, locale }: UseAiAssistantInput) {
-  // Everything the AI reads goes in the key, so changing the finance, loan or language marks a summary stale.
-  const configKey = JSON.stringify({ config, assumptions, financials, locale });
+export function useAiAssistant({ token, config, assumptions, locale }: UseAiAssistantInput) {
+  // Everything the AI reads goes in the key, so changing the setup, the assumptions or the language marks a summary stale.
+  const configKey = JSON.stringify({ config, assumptions, locale });
   const [status, setStatus] = useState<AiStatus | null>(null);
 
   const [advisor, setAdvisor] = useState<Keyed<AdvisorReport> | null>(null);
   const [advisorLoading, setAdvisorLoading] = useState(false);
   const [advisorError, setAdvisorError] = useState<AiErrorKey | null>(null);
-
-  const [crops, setCrops] = useState<Keyed<AiCropsResult> | null>(null);
-  const [cropsLoading, setCropsLoading] = useState(false);
-  const [cropsError, setCropsError] = useState<AiErrorKey | null>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatStreaming, setChatStreaming] = useState(false);
@@ -73,7 +66,7 @@ export function useAiAssistant({ token, config, assumptions, financials, locale 
     };
   }, []);
 
-  const context = { config, assumptions, financials, locale };
+  const context = { config, assumptions, locale };
 
   const generateAdvisor = useCallback(async () => {
     if (!token) return;
@@ -90,23 +83,7 @@ export function useAiAssistant({ token, config, assumptions, financials, locale 
     }
     // `context` is rebuilt from these on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, configKey, assumptions, financials, locale]);
-
-  const generateCrops = useCallback(async () => {
-    if (!token) return;
-    const key = configKey;
-    setCropsLoading(true);
-    setCropsError(null);
-    try {
-      const result = await requestAiCrops(token, context);
-      setCrops({ value: result, configKey: key });
-    } catch (err) {
-      setCropsError(toErrorKey(err));
-    } finally {
-      setCropsLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, configKey, assumptions, financials, locale]);
+  }, [token, configKey, assumptions, locale]);
 
   const sendChat = useCallback(
     async (text: string) => {
@@ -149,7 +126,7 @@ export function useAiAssistant({ token, config, assumptions, financials, locale 
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [token, messages, chatStreaming, configKey, assumptions, financials, locale]
+    [token, messages, chatStreaming, configKey, assumptions, locale]
   );
 
   const stopChat = useCallback(() => chatAbortRef.current?.abort(), []);
@@ -166,11 +143,6 @@ export function useAiAssistant({ token, config, assumptions, financials, locale 
     advisorLoading,
     advisorError,
     generateAdvisor,
-    crops: crops?.value ?? null,
-    cropsStale: Boolean(crops && crops.configKey !== configKey),
-    cropsLoading,
-    cropsError,
-    generateCrops,
     messages,
     chatStreaming,
     chatError,

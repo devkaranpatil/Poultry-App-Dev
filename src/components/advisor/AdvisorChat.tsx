@@ -20,13 +20,18 @@ function ScenarioTable({ scenario }: { scenario: AiScenario }) {
   if (!baseline || !next) return null;
   const money = (value: number | null) => (value === null ? '—' : formatINRCompact(value));
   const payback = (value: number | null) => (value === null ? '—' : t('returns.paybackYears', { years: formatNumber(value) }));
+  const breakEven = (figures: typeof baseline) =>
+    figures.breakEvenPrice === null
+      ? '—'
+      : t(figures.product === 'eggs' ? 'returns.perEgg' : 'returns.perKg', { price: formatNumber(figures.breakEvenPrice) });
   const rows: Array<[string, string, string]> = [
-    [t('ai.whatIfArea'), `${formatNumber(baseline.areaSqm)} m²`, `${formatNumber(next.areaSqm)} m²`],
-    [t('ai.whatIfCost'), money(baseline.totalCostInr), money(next.totalCostInr)],
+    [t('ai.whatIfBirds'), formatNumber(baseline.birds), formatNumber(next.birds)],
+    [t('ai.whatIfCost'), money(baseline.capitalCostInr), money(next.capitalCostInr)],
     [t('ai.whatIfSubsidy'), money(baseline.subsidyInr), money(next.subsidyInr)],
     [t('ai.whatIfNet'), money(baseline.netInvestmentInr), money(next.netInvestmentInr)],
     [t('ai.whatIfProfit'), money(baseline.annualProfitInr), money(next.annualProfitInr)],
     [t('ai.whatIfPayback'), payback(baseline.paybackYears), payback(next.paybackYears)],
+    [t('ai.whatIfBreakEven'), breakEven(baseline), breakEven(next)],
   ];
   return (
     <div className="mt-3 overflow-hidden rounded-lg border border-border bg-background">

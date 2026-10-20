@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { FinanceAssumptions } from '@/lib/finance';
+import type { PoultryAssumptions } from '@/lib/poultryFinance';
 import { runRiskSimulation, type RiskResult, type RiskSimulation } from '@/services/risk.service';
 import type { FarmConfig } from '@/types/farm';
 
@@ -19,13 +19,18 @@ export interface RiskState {
  * Runs the simulation whenever the setup, the assumptions or the horizon change, so the answer is always there
  * without a button press.
  */
-export function useRiskSimulation(config: FarmConfig, assumptions: FinanceAssumptions, years: number): RiskState {
+export function useRiskSimulation(
+  config: FarmConfig,
+  assumptions: Partial<PoultryAssumptions>,
+  years: number,
+  outbreakChancePct: number
+): RiskState {
   const [result, setResult] = useState<RiskResult | null>(null);
   const [status, setStatus] = useState<RiskState['status']>('idle');
   const [ranFor, setRanFor] = useState('');
   const [attempt, setAttempt] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
-  const inputsKey = useMemo(() => JSON.stringify({ config, assumptions, years }), [config, assumptions, years]);
+  const inputsKey = useMemo(() => JSON.stringify({ config, assumptions, years, outbreakChancePct }), [config, assumptions, years, outbreakChancePct]);
 
   useEffect(() => {
     const timer = window.setTimeout(async () => {
@@ -34,7 +39,7 @@ export function useRiskSimulation(config: FarmConfig, assumptions: FinanceAssump
       abortRef.current = controller;
       setStatus('running');
       try {
-        const next = await runRiskSimulation(config, assumptions, { years }, controller.signal);
+        const next = await runRiskSimulation(config, assumptions, { years, outbreakChancePct }, controller.signal);
         setResult(next);
         setRanFor(inputsKey);
         setStatus('idle');
@@ -43,7 +48,7 @@ export function useRiskSimulation(config: FarmConfig, assumptions: FinanceAssump
       }
     }, RERUN_DELAY_MS);
     return () => window.clearTimeout(timer);
-    // inputsKey stands for config, assumptions and years.
+    // inputsKey stands for config, assumptions, years and the outbreak chance.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inputsKey, attempt]);
 

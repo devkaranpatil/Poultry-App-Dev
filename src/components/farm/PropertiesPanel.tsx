@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp, Minus, PanelRightClose, Plus, SlidersHorizontal, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/context/I18nContext';
-import { DIMENSION_LIMITS, type FarmConfig } from '@/types/farm';
+import { DIMENSION_LIMITS, type FarmConfig } from '@/components/farm/scene/legacyConfig';
 import {
   CONFIG_FIELD,
   PART_ORDER,

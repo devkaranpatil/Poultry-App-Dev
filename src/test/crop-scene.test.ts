@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CropType, IrrigationSystem } from '@/types/farm';
+import type { CropType, IrrigationSystem } from '@/components/farm/scene/legacyConfig';
 import { BED_WIDTH, CROP_SPECS, NFT_LINES, buildCropLayout, plantCap, type RenderQuality } from '@/components/farm/scene/cropLayout';
 import { buildCropParts } from '@/components/farm/scene/cropParts';
 import { aisleX, buildIrrigationParts } from '@/components/farm/scene/irrigationParts';

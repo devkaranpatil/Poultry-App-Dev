@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { CoverMaterial, StructureMaterial } from '@/types/farm';
+import type { CoverMaterial, StructureMaterial } from '@/components/farm/scene/legacyConfig';
 import type { RenderQuality } from './cropLayout';
 import type { PipeProfile } from './structureGeometry';
 

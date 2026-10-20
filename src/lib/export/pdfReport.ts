@@ -1,6 +1,6 @@
 import type { jsPDF as JsPdf } from 'jspdf';
 import { formatINRPlain, formatNumber } from '@/lib/format';
-import { PROJECTION_YEARS, SUBSIDY_AREA_CAP_SQM } from '@/lib/finance';
+import { PROJECTION_YEARS } from '@/lib/poultryFinance';
 import { downloadBlob, reportFileName, type ReportData } from './reportData';
 import { APP_NAME } from '@/config/app';
 
@@ -12,6 +12,7 @@ const INK: Rgb = [24, 33, 29];
 const MUTED: Rgb = [104, 114, 109];
 const BORDER: Rgb = [222, 228, 224];
 const DANGER: Rgb = [190, 64, 52];
+const WARN: Rgb = [166, 104, 20];
 
 const PAGE_MARGIN = 16;
 
@@ -27,6 +28,7 @@ export function toPdfText(value: string): { text: string; printable: boolean } {
     .replace(/[–—]/g, '-')
     .replace(/[•·]/g, '-')
     .replace(/…/g, '...')
+    .replace(/²/g, '2')
     .replace(/[\u00a0\u2009\u202f]/g, ' ');
   // eslint-disable-next-line no-control-regex
   return { text, printable: !/[^\x00-\xff]/.test(text) };
@@ -38,7 +40,10 @@ interface AutoTableDoc extends JsPdf {
   lastAutoTable?: { finalY: number };
 }
 
-/** Builds the report document in memory (no download), so it can be tested. */
+/**
+ * Builds the report document in memory (no download), so it can be tested. The sections follow the order NABARD's
+ * model projects and NLM applications use: technical, financial, managerial, then compliance.
+ */
 export async function buildPdfReport(data: ReportData): Promise<JsPdf> {
   const [{ jsPDF }, { autoTable }] = await Promise.all([import('jspdf'), import('jspdf-autotable')]);
   const doc: AutoTableDoc = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -57,6 +62,16 @@ export async function buildPdfReport(data: ReportData): Promise<JsPdf> {
   };
   const lastTableY = () => (doc.lastAutoTable?.finalY ?? y) + 6;
 
+  const partHeading = (title: string) => {
+    doc.addPage();
+    y = PAGE_MARGIN;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    setColor(BRAND);
+    doc.text(pdfText(title.toUpperCase()), PAGE_MARGIN, y);
+    y += 7;
+  };
+
   const sectionHeading = (title: string, subtitle?: string) => {
     ensureSpace(subtitle ? 18 : 12);
     doc.setFillColor(...BRAND);
@@ -70,8 +85,12 @@ export async function buildPdfReport(data: ReportData): Promise<JsPdf> {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.5);
       setColor(MUTED);
-      doc.text(pdfText(subtitle), PAGE_MARGIN + 4, y);
-      y += 5;
+      const lines = doc.splitTextToSize(pdfText(subtitle), contentWidth - 4) as string[];
+      lines.forEach((line) => {
+        doc.text(line, PAGE_MARGIN + 4, y);
+        y += 4;
+      });
+      y += 1;
     }
     y += 2;
   };
@@ -89,10 +108,10 @@ export async function buildPdfReport(data: ReportData): Promise<JsPdf> {
     y += 2;
   };
 
-  const bullets = (items: string[]) => {
+  const bullets = (items: string[], color: Rgb = INK) => {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9.5);
-    setColor(INK);
+    setColor(color);
     items.forEach((item) => {
       const lines = doc.splitTextToSize(pdfText(item), contentWidth - 5) as string[];
       lines.forEach((line, index) => {
@@ -116,13 +135,19 @@ export async function buildPdfReport(data: ReportData): Promise<JsPdf> {
     margin: { left: PAGE_MARGIN, right: PAGE_MARGIN },
   };
 
+  const { config, labels, result, financials } = data;
+  const figures = data.assumptions as unknown as Record<string, number>;
+  const layer = financials.product === 'eggs';
+  const contract = config.farmingModel === 'contract';
+  const money = (value: number) => formatINRPlain(value);
+
   /* ------------------------------- cover ------------------------------- */
   doc.setFillColor(...BRAND);
   doc.rect(0, 0, pageWidth, 46, 'F');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(198, 228, 211);
-  doc.text('GREENHOUSE IQ', PAGE_MARGIN, 15);
+  doc.text(pdfText(APP_NAME.toUpperCase()), PAGE_MARGIN, 15);
   doc.setFontSize(22);
   doc.setTextColor(255, 255, 255);
   doc.text(pdfText(data.title), PAGE_MARGIN, 27);
@@ -136,15 +161,11 @@ export async function buildPdfReport(data: ReportData): Promise<JsPdf> {
   );
   y = 56;
 
-  const { financials, result } = data;
   const metrics: Array<[string, string]> = [
-    ['Total project cost', formatINRPlain(result.cost.totalCost)],
-    ['Cost per m2', formatINRPlain(result.cost.costPerSqm)],
-    ['After subsidy', formatINRPlain(financials.netInvestment)],
-    [
-      'Payback period',
-      financials.paybackYears === null ? 'Does not pay back' : `${formatNumber(financials.paybackYears)} years`,
-    ],
+    ['Capital cost', money(result.cost.capitalCost)],
+    ['Birds housed', formatNumber(result.flock.birds)],
+    ['Profit a year', money(financials.annualProfit)],
+    ['Payback', financials.paybackYears === null ? 'Does not pay back' : `${formatNumber(financials.paybackYears)} years`],
   ];
   const gap = 4;
   const boxWidth = (contentWidth - gap * (metrics.length - 1)) / metrics.length;
@@ -160,7 +181,7 @@ export async function buildPdfReport(data: ReportData): Promise<JsPdf> {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11.5);
     setColor(index === 0 ? BRAND : INK);
-    doc.text(value, x + 3, y + 14.5);
+    doc.text(pdfText(value), x + 3, y + 14.5);
   });
   y += 28;
 
@@ -169,119 +190,204 @@ export async function buildPdfReport(data: ReportData): Promise<JsPdf> {
     try {
       doc.setDrawColor(...BORDER);
       doc.roundedRect(PAGE_MARGIN, y, contentWidth, imageHeight, 2, 2, 'S');
-      // Fit the capture inside the frame without distorting it (the viewer is
-      // rarely the frame's 2:1 shape), centred horizontally.
+      // Fit the capture inside the frame without distorting it, centred horizontally.
       const props = doc.getImageProperties(data.snapshot);
       const scale = Math.min((contentWidth - 1) / props.width, (imageHeight - 1) / props.height);
       const drawWidth = props.width * scale;
       const drawHeight = props.height * scale;
-      doc.addImage(
-        data.snapshot,
-        'JPEG',
-        PAGE_MARGIN + (contentWidth - drawWidth) / 2,
-        y + (imageHeight - drawHeight) / 2,
-        drawWidth,
-        drawHeight
-      );
+      doc.addImage(data.snapshot, 'JPEG', PAGE_MARGIN + (contentWidth - drawWidth) / 2, y + (imageHeight - drawHeight) / 2, drawWidth, drawHeight);
       y += imageHeight + 8;
     } catch {
       // A corrupt snapshot should never block the rest of the report.
     }
   }
+  const openRules = data.siting.filter((rule) => !rule.ticked).length;
+  paragraph(
+    `${labels.bird}, ${formatNumber(result.flock.birds)} birds in a ${config.length} m x ${config.width} m ${labels.housing.toLowerCase()} (${formatNumber(result.areaSqft)} sq ft), ` +
+      `${labels.farmingModel.toLowerCase()}. ${result.schemes.noneApplies ? 'No government scheme applies; the bank loan carries the project.' : ''} ` +
+      `${openRules > 0 ? `${openRules} siting or registration item(s) still to confirm (see Compliance).` : 'All siting and registration items confirmed.'}`,
+    9.5
+  );
 
-  sectionHeading('Project configuration');
-  const { config, labels } = data;
+  /* ============================== TECHNICAL ============================== */
+  partHeading('Part 1 - Technical');
+  sectionHeading('The shed');
   autoTable(doc, {
     ...tableStyles,
     startY: y,
     head: [['Parameter', 'Value', 'Parameter', 'Value']],
     body: [
-      ['Dimensions', `${config.length} m x ${config.width} m`, 'Greenhouse type', labels.type],
-      ['Floor area', `${formatNumber(result.area)} m2`, 'Roof', labels.roof],
-      ['Gutter / ridge height', `${config.gutterHeight} m / ${config.ridgeHeight} m`, 'Frame', labels.structure],
-      ['Volume', `${formatNumber(result.volume)} m3`, 'Cover', labels.cover],
-      ['Primary crop', labels.crop, 'Side ventilation', labels.sideVentilation],
-      ['Irrigation', labels.irrigation, 'Door', labels.door],
+      ['Size', `${config.length} m x ${config.width} m`, 'Housing', labels.housing],
+      ['Floor area', `${formatNumber(result.area)} m2 (${formatNumber(result.areaSqft)} sq ft)`, 'Roof', labels.roof],
+      ['Eaves / ridge height', `${config.eavesHeight} m / ${config.ridgeHeight} m`, 'Frame', labels.frame],
+      ['Volume', `${formatNumber(result.volume)} m3`, 'Roof sheet', labels.roofSheet],
+      ['Birds', `${labels.bird}: ${formatNumber(result.flock.birds)}`, 'Side walls', labels.sideWalls],
+      ['Floor space', `${result.flock.sqftPerBird ?? '-'} sq ft a bird${result.flock.normSqftPerBird !== null && result.flock.sqftPerBird !== result.flock.normSqftPerBird ? ` (norm ${result.flock.normSqftPerBird})` : ''}`, 'Entry', labels.entry],
+      ['Farming model', labels.farmingModel, 'Feeding', labels.feeding],
     ].map((row) => row.map(pdfText)),
     columnStyles: { 0: { textColor: MUTED }, 2: { textColor: MUTED } },
   });
   y = lastTableY();
 
-  /* --------------------------- cost breakdown -------------------------- */
-  doc.addPage();
-  y = PAGE_MARGIN;
-  sectionHeading('Capital cost breakdown', 'Estimated installed cost including labour and climate adjustment.');
+  sectionHeading('Production', layer ? 'One flock at a time: grown to point of lay and kept for the laying weeks in this shed.' : 'All-in all-out batches.');
+  autoTable(doc, {
+    ...tableStyles,
+    startY: y,
+    head: [['Figure', 'A year']],
+    body: [
+      [layer ? 'Flocks' : 'Batches', formatNumber(financials.cyclesPerYear)],
+      [layer ? 'Hens culled' : 'Birds sold', formatNumber(financials.birdsSoldPerYear)],
+      ...(layer ? [['Eggs', formatNumber(financials.eggsPerYear)]] : [['Live weight sold (kg)', formatNumber(financials.kgSoldPerYear)]]),
+      ['Feed (kg)', formatNumber(financials.feedKgPerYear)],
+    ],
+    columnStyles: { 0: { textColor: MUTED }, 1: { halign: 'right' } },
+  });
+  y = lastTableY();
+  autoTable(doc, {
+    ...tableStyles,
+    startY: y,
+    head: [[layer ? 'Flock' : 'Batch', 'Placed (day)', ...(layer ? ['Starts laying'] : []), layer ? 'Culled' : 'Sold', 'Shed ready']],
+    body: result.calendar.map((batch) => [
+      String(batch.batch),
+      String(batch.placeDay),
+      ...(layer ? [String(batch.pointOfLayDay ?? '-')] : []),
+      String(batch.saleDay),
+      String(batch.readyDay),
+    ]),
+    styles: { ...tableStyles.styles, fontSize: 8, halign: 'right' },
+  });
+  y = lastTableY();
+
+  sectionHeading('Site climate', `${data.location} - ${result.climate.climateZone}`);
+  autoTable(doc, {
+    ...tableStyles,
+    startY: y,
+    head: [['Average temperature', 'Humidity', 'Annual rainfall', 'Hottest month']],
+    body: [
+      [
+        `${result.climate.avgTemperature} C`,
+        `${result.climate.humidity}%`,
+        `${formatNumber(result.climate.rainfall)} mm`,
+        result.climate.hottestMonthMeanC === null ? '-' : `${result.climate.hottestMonthMeanC} C (24-hour mean)`,
+      ],
+    ],
+  });
+  y = lastTableY();
+  const heat = result.climate.heatStress;
+  if (heat) {
+    autoTable(doc, {
+      ...tableStyles,
+      startY: y,
+      head: [['THI', ...heat.thiByMonth.map((m) => m.month)]],
+      body: [['', ...heat.thiByMonth.map((m) => formatNumber(m.thi))]],
+      styles: { ...tableStyles.styles, fontSize: 7.5, halign: 'center', cellPadding: 1.4 },
+      didParseCell: (hook) => {
+        if (hook.section === 'body' && hook.column.index > 0 && heat.thiByMonth[hook.column.index - 1].thi > heat.threshold) {
+          hook.cell.styles.textColor = DANGER;
+          hook.cell.styles.fontStyle = 'bold';
+        }
+      },
+    });
+    y = lastTableY();
+    paragraph(`Temperature-humidity index from NASA POWER monthly means; above ${heat.threshold} (in red) is severe heat stress for the birds.`, 8, MUTED);
+  }
+  if (result.climate.advisories.length > 0) bullets(result.climate.advisories);
+
+  /* ============================== FINANCIAL ============================== */
+  partHeading('Part 2 - Financial');
+  sectionHeading('Capital cost', `NABARD 2023-24 rates; the ${result.diagnostics.envelopeFactor === 1 ? '' : `roof and wall area is ${formatNumber(result.diagnostics.envelopeFactor)} times that of `}standard open shed.`);
   autoTable(doc, {
     ...tableStyles,
     startY: y,
     head: [['Item', 'Amount', 'Share']],
-    body: data.costItems.map((item) => [pdfText(item.label), formatINRPlain(item.amount), `${(item.share * 100).toFixed(1)}%`]),
-    foot: [
-      [
-        `Total (incl. ${((result.cost.climateAdjustment ?? 0) * 100).toFixed(0)}% climate adjustment)`,
-        formatINRPlain(result.cost.totalCost),
-        '',
-      ],
-    ],
+    body: data.costItems.map((item) => [pdfText(item.label), money(item.amount), `${(item.share * 100).toFixed(1)}%`]),
+    foot: [['Capital cost', money(result.cost.capitalCost), '']],
     footStyles: { fillColor: BRAND_SOFT, textColor: INK, fontStyle: 'bold' },
     columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' } },
   });
   y = lastTableY();
-
-  // Horizontal bar chart of the same breakdown.
-  ensureSpace(data.costItems.length * 7 + 6);
-  const labelWidth = 44;
-  const barMax = contentWidth - labelWidth - 26;
-  const largest = Math.max(...data.costItems.map((item) => item.amount), 1);
-  doc.setFontSize(8.5);
-  data.costItems.forEach((item) => {
-    const barWidth = Math.max(0.5, (item.amount / largest) * barMax);
-    doc.setFont('helvetica', 'normal');
-    setColor(MUTED);
-    doc.text(pdfText(item.label), PAGE_MARGIN, y + 3.4);
-    doc.setFillColor(...BRAND);
-    doc.roundedRect(PAGE_MARGIN + labelWidth, y, barWidth, 4.6, 1, 1, 'F');
-    setColor(INK);
-    doc.text(`${(item.share * 100).toFixed(0)}%`, PAGE_MARGIN + labelWidth + barWidth + 2, y + 3.4);
-    y += 7;
-  });
-  y += 4;
-
-  /* ------------------------ investment & returns ----------------------- */
-  sectionHeading(
-    'Investment & returns',
-    `Planning estimate over ${PROJECTION_YEARS} years. ${
-      result.subsidy
-        ? `Subsidy: ${result.subsidy.scheme === 'NHB' ? 'NHB' : 'state mission (MIDH 2025)'} norm of ${formatINRPlain(result.subsidy.normPerSqmInr)}/m2 on ${formatNumber(result.subsidy.eligibleAreaSqm)} m2.`
-        : `Subsidy applies to the first ${formatNumber(SUBSIDY_AREA_CAP_SQM)} m2.`
-    }`
-  );
-  const { assumptions } = data;
   autoTable(doc, {
     ...tableStyles,
     startY: y,
-    head: [['Assumption', 'Value', 'Result', 'Value']],
-    body: [
-      ['Capital subsidy', `${assumptions.subsidyPct}%`, 'Subsidy amount', formatINRPlain(financials.subsidyAmount)],
-      ['Yield', `${assumptions.yieldPerSqm} ${data.unit}/m2/yr`, 'Net investment', formatINRPlain(financials.netInvestment)],
-      ['Farm-gate price', `Rs ${assumptions.pricePerUnit}/${data.unit}`, 'Annual revenue', formatINRPlain(financials.annualRevenue)],
-      ['Operating cost', `${assumptions.operatingCostPct}% of revenue`, 'Annual profit', formatINRPlain(financials.annualProfit)],
-      [
-        'Cultivable area',
-        '85% of floor area',
-        `${PROJECTION_YEARS}-year ROI`,
-        financials.roi === null ? '-' : `${formatNumber(financials.roi * 100)}%`,
-      ],
+    head: [['First batch (working capital)', 'Amount']],
+    body: data.workingItems.map((item) => [pdfText(item.label), money(item.amount)]),
+    foot: [
+      ['Working capital', money(result.cost.workingCapital.total)],
+      ['Project cost (capital + first batch)', money(result.cost.projectCost)],
     ],
-    columnStyles: { 0: { textColor: MUTED }, 2: { textColor: MUTED }, 3: { halign: 'right' } },
+    footStyles: { fillColor: BRAND_SOFT, textColor: INK, fontStyle: 'bold' },
+    columnStyles: { 1: { halign: 'right' } },
+  });
+  y = lastTableY();
+  if (contract) paragraph('Under contract the integrator supplies the chicks, feed and medicines, so the farmer finances the capital cost alone.', 8.5, MUTED);
+  if (result.diagnostics.unsourcedRates.length > 0) {
+    paragraph(`No published price for: ${result.diagnostics.unsourcedRates.join(', ')}. These use the planner's own rates; get a quotation.`, 8.5, WARN);
+  }
+  if (result.nabard) {
+    const n = result.nabard;
+    paragraph(
+      `NABARD unit cost (${n.state} ${n.year}): ${money(n.unitCostInr)} for ${formatNumber(n.unitBirds)} birds, ${money(n.perBirdInr)} a bird, ` +
+        `${money(n.normCostInr)} for this flock. Your project cost: ${money(n.ownCostInr)}. Cost a bank or scheme recognises: ${money(n.recognisedCostInr)}.` +
+        (n.note ? ' NABARD prices open-sided units; a controlled shed is expected to cost more.' : ''),
+      9
+    );
+  }
+
+  sectionHeading('Government schemes', 'Every scheme checked, with its verdict. "Check" depends on facts the planner does not know or on unverified rules.');
+  autoTable(doc, {
+    ...tableStyles,
+    startY: y,
+    head: [['Scheme', 'Verdict', 'Support', 'Why']],
+    body: result.schemes.schemes.map((scheme) => [
+      pdfText(scheme.name),
+      scheme.status === 'not-eligible' ? 'Not eligible' : scheme.status === 'check' ? 'Check' : 'Eligible',
+      scheme.status === 'not-eligible'
+        ? '-'
+        : scheme.interestSubventionPct !== null
+          ? `${scheme.interestSubventionPct}% interest subvention`
+          : `${scheme.percent ?? 0}%: ${money(scheme.amountInr)}${scheme.verified ? '' : ' (unverified)'}`,
+      pdfText(scheme.reasons.join(' ') || '-'),
+    ]),
+    columnStyles: { 0: { cellWidth: 52 }, 3: { cellWidth: 62 } },
+  });
+  y = lastTableY();
+  if (result.schemes.noneApplies) paragraph('No scheme applies to this farm: the bank loan carries the project.', 9, WARN);
+
+  sectionHeading('Assumptions', 'Each figure with its source. Figures marked "verify" come from secondary or old sources or are the planner\'s own.');
+  autoTable(doc, {
+    ...tableStyles,
+    startY: y,
+    head: [['Assumption', 'Value', 'Source']],
+    body: data.assumptionRows.map((row) => [pdfText(row.label), formatNumber(row.value), pdfText(`${row.source ?? 'Your figure'}${row.source && !row.verified ? ' (verify)' : ''}`)]),
+    styles: { ...tableStyles.styles, fontSize: 8 },
+    columnStyles: { 1: { halign: 'right', cellWidth: 22 }, 2: { cellWidth: 100 } },
   });
   y = lastTableY();
 
+  sectionHeading('Returns', `Planning estimate over ${PROJECTION_YEARS} years.`);
+  autoTable(doc, {
+    ...tableStyles,
+    startY: y,
+    head: [['Figure', 'Value', 'Figure', 'Value']],
+    body: [
+      ['Revenue a year', money(financials.annualRevenue), 'Subsidy counted', money(financials.subsidyAmount)],
+      ['Running cost a year', money(financials.annualOperatingCost), 'Net investment', money(financials.netInvestment)],
+      ['Profit a year', money(financials.annualProfit), `${PROJECTION_YEARS}-year ROI`, financials.roi === null ? '-' : `${formatNumber(financials.roi * 100)}%`],
+      [
+        'Break-even price',
+        financials.breakEvenPrice === null ? '-' : `Rs ${formatNumber(financials.breakEvenPrice)} ${layer ? 'an egg' : contract ? 'a kg (growing charge)' : 'a kg live'}`,
+        'Margin a bird a batch',
+        money(financials.marginPerBird),
+      ],
+    ],
+    columnStyles: { 0: { textColor: MUTED }, 1: { halign: 'right' }, 2: { textColor: MUTED }, 3: { halign: 'right' } },
+  });
+  y = lastTableY();
   autoTable(doc, {
     ...tableStyles,
     startY: y,
     head: [['', ...financials.cumulativeCashflow.map((_, year) => `Year ${year}`)]],
-    body: [['Cumulative cash', ...financials.cumulativeCashflow.map((value) => formatINRPlain(value))]],
+    body: [['Cumulative cash', ...financials.cumulativeCashflow.map((value) => money(value))]],
     styles: { ...tableStyles.styles, fontSize: 8, halign: 'right' },
     columnStyles: { 0: { halign: 'left', textColor: MUTED } },
     didParseCell: (hook) => {
@@ -293,40 +399,23 @@ export async function buildPdfReport(data: ReportData): Promise<JsPdf> {
   });
   y = lastTableY();
 
-  /* ----------------------------- bank loan ----------------------------- */
   const { loan } = data;
   const perPeriod = { monthly: 'a month', quarterly: 'a quarter', 'half-yearly': 'every 6 months' }[loan.terms.frequency];
   ensureSpace(70);
   sectionHeading(
     'Bank loan and repayment',
-    `${formatNumber(loan.terms.loanSharePct)}% term loan at ${formatNumber(loan.terms.interestPct)}% a year over ${loan.terms.tenureYears} years`
-  );
-  paragraph(
-    `${loan.terms.moratoriumMonths} months of interest only, then equal ${loan.terms.frequency} instalments. ` +
-      'The subsidy is held in a Subsidy Reserve Fund Account and adjusted against the last instalments (NHB), ' +
-      'so interest is paid on the whole loan until then.',
-    8.5,
-    MUTED
+    `${formatNumber(loan.terms.loanSharePct)}% term loan at ${formatNumber(loan.terms.interestPct)}% a year over ${loan.terms.tenureYears} years` +
+      (loan.terms.moratoriumMonths > 0 ? `, ${loan.terms.moratoriumMonths} months interest only` : '')
   );
   autoTable(doc, {
     ...tableStyles,
     startY: y,
     head: [['Means of finance', 'Amount', 'Repayment', 'Amount']],
     body: [
-      ['Bank term loan', formatINRPlain(loan.loanAmount), 'Instalment after moratorium', `${formatINRPlain(loan.installment)} ${perPeriod}`],
-      [
-        'Your margin',
-        formatINRPlain(loan.margin),
-        'Interest during moratorium',
-        loan.moratoriumPeriods > 0 ? `${formatINRPlain(loan.moratoriumPayment)} ${perPeriod}` : '-',
-      ],
-      ['Subsidy in reserve', formatINRPlain(loan.subsidyInReserve), 'Total interest', formatINRPlain(loan.totalInterest)],
-      [
-        'Project cost',
-        formatINRPlain(loan.projectCost),
-        'Lowest / average DSCR',
-        loan.minDscr === null ? '-' : `${formatNumber(loan.minDscr)} / ${formatNumber(loan.avgDscr ?? 0)}`,
-      ],
+      ['Bank term loan', money(loan.loanAmount), 'Instalment', `${money(loan.installment)} ${perPeriod}`],
+      ['Your margin', money(loan.margin), 'Interest during moratorium', loan.moratoriumPeriods > 0 ? `${money(loan.moratoriumPayment)} ${perPeriod}` : '-'],
+      ['Subsidy in reserve', money(loan.subsidyInReserve), 'Total interest', money(loan.totalInterest)],
+      ['Financed cost', money(loan.projectCost), 'Lowest / average DSCR', loan.minDscr === null ? '-' : `${formatNumber(loan.minDscr)} / ${formatNumber(loan.avgDscr ?? 0)}`],
     ],
     columnStyles: { 0: { textColor: MUTED }, 1: { halign: 'right' }, 2: { textColor: MUTED }, 3: { halign: 'right' } },
   });
@@ -337,11 +426,11 @@ export async function buildPdfReport(data: ReportData): Promise<JsPdf> {
     head: [['Year', 'Farm cash', 'Loan payments', 'Subsidy released', 'Left over', 'Cumulative', 'DSCR']],
     body: loan.years.map((row) => [
       `Year ${row.year}`,
-      formatINRPlain(row.farmCash),
-      formatINRPlain(row.debtService),
-      row.subsidyReleased > 0 ? formatINRPlain(row.subsidyReleased) : '-',
-      formatINRPlain(row.netCash),
-      formatINRPlain(row.cumulative),
+      money(row.farmCash),
+      money(row.debtService),
+      row.subsidyReleased > 0 ? money(row.subsidyReleased) : '-',
+      money(row.netCash),
+      money(row.cumulative),
       row.dscr === null ? '-' : formatNumber(row.dscr),
     ]),
     styles: { ...tableStyles.styles, fontSize: 8, halign: 'right' },
@@ -355,59 +444,41 @@ export async function buildPdfReport(data: ReportData): Promise<JsPdf> {
     },
   });
   y = lastTableY();
-  paragraph(
-    'DSCR = farm cash / loan payments in the year; below 1.0 the farm does not earn enough that year to pay the bank. ' +
-      'Farm income is assumed to start when the moratorium ends. Defaults: Central Bank of India poly house scheme (loan up to 80%, ' +
-      'up to 7 years with a 3-12 month moratorium) and Canara Bank agriculture term loan rate (one-year MCLR + 2.30%, 18.08.2026).',
-    8,
-    MUTED
-  );
+  paragraph('DSCR = farm cash / loan payments in the year; below 1.0 the farm does not earn enough that year to pay the bank. Default terms: NABARD model bank projects for poultry.', 8, MUTED);
 
-  /* -------------------------- climate & crops -------------------------- */
-  doc.addPage();
-  y = PAGE_MARGIN;
-  sectionHeading('Site climate', `${pdfText(data.location)} - ${pdfText(result.climate.climateZone)}`);
+  /* ============================== MANAGERIAL ============================== */
+  partHeading('Part 3 - Managerial');
+  sectionHeading('How the farm is run');
+  bullets([
+    contract
+      ? 'Contract farming: the integrator supplies chicks, feed and medicines and buys every bird; the farmer provides the shed, labour, litter and power and is paid a growing charge on the live weight.'
+      : 'Independent farm: the farmer buys chicks, feed and medicines and sells at the market.',
+    layer
+      ? `Labour: ${formatNumber(figures.labourInrPerMonth ?? 0)} rupees a month for each ${formatNumber(figures.labourBirdsPerWorker ?? 0)} birds.`
+      : `Labour: ${formatNumber(figures.labourInrPerBird ?? 0)} rupees a bird a batch.`,
+    'A tie-up with a reputed hatchery, a monthly veterinary visit and a written vaccination schedule (NABARD lending terms).',
+    layer ? 'A firm marketing arrangement for the eggs (NABARD lending terms).' : 'A buyer or integrator agreement for the birds before the first placement.',
+  ]);
+  sectionHeading('Biosecurity', 'DAHD biosecurity guidelines and NABARD lending terms.');
+  bullets(data.biosecurity);
+
+  /* ============================== COMPLIANCE ============================== */
+  sectionHeading('Siting and registration', `The rules that apply to ${formatNumber(result.flock.birds)} birds. Ticked on the Site step by the farmer.`);
   autoTable(doc, {
     ...tableStyles,
     startY: y,
-    head: [['Average temperature', 'Humidity', 'Annual rainfall', 'Climate cost factor']],
-    body: [
-      [
-        `${result.climate.avgTemperature} C`,
-        `${result.climate.humidity}%`,
-        `${formatNumber(result.climate.rainfall)} mm`,
-        `x${result.climate.climateFactor}`,
-      ],
-    ],
+    head: [['Rule', 'Distance', 'Confirmed']],
+    body: data.siting.map((rule) => [pdfText(rule.description), rule.distanceM === null ? '-' : `${formatNumber(rule.distanceM)} m`, rule.ticked ? 'Yes' : 'NOT CONFIRMED']),
+    columnStyles: { 1: { halign: 'right', cellWidth: 22 }, 2: { cellWidth: 38 } },
+    didParseCell: (hook) => {
+      if (hook.section === 'body' && hook.column.index === 2 && !data.siting[hook.row.index].ticked) {
+        hook.cell.styles.textColor = DANGER;
+        hook.cell.styles.fontStyle = 'bold';
+      }
+    },
   });
   y = lastTableY();
-  if (result.climate.advisories.length > 0) bullets(result.climate.advisories);
-
-  sectionHeading(
-    'Crop suggestions',
-    data.cropsSource === 'ai' ? 'AI-ranked for this structure, district and irrigation system.' : 'Based on the climate group of the location.'
-  );
-  const cropsPrintable = data.crops.every((crop) =>
-    [crop.name, crop.detail, crop.expectedYield, crop.season].every((field) => toPdfText(field).printable)
-  );
-  if (cropsPrintable) {
-    autoTable(doc, {
-      ...tableStyles,
-      startY: y,
-      head: [['Crop', 'Suitability', 'Expected yield', 'Season', 'Notes']],
-      body: data.crops.map((crop) => [
-        pdfText(crop.name),
-        crop.suitability.charAt(0).toUpperCase() + crop.suitability.slice(1),
-        pdfText(crop.expectedYield),
-        pdfText(crop.season),
-        pdfText(crop.detail),
-      ]),
-      columnStyles: { 0: { fontStyle: 'bold' }, 4: { cellWidth: 70 } },
-    });
-    y = lastTableY();
-  } else {
-    paragraph('Crop suggestions are in a language the PDF cannot render. Switch the app to English and regenerate to include them.', 9, MUTED);
-  }
+  if (openRules > 0) paragraph(`Warning: ${openRules} item(s) not confirmed. Check them before applying for a loan or consent.`, 9, DANGER);
 
   /* -------------------- AI summary (only when chosen) ------------------- */
   if (data.advisor) {
@@ -419,7 +490,7 @@ export async function buildPdfReport(data: ReportData): Promise<JsPdf> {
       ...advisor.recommendations.flatMap((rec) => [rec.title, rec.detail, rec.impact]),
     ];
     ensureSpace(40);
-    sectionHeading('AI summary (AI-generated)', 'Written by an open-source AI model from this project\'s figures and official documents. Verify before acting.');
+    sectionHeading('AI summary (AI-generated)', "Written by an open-source AI model from this project's figures and official documents. Verify before acting.");
     if (allText.every((text) => toPdfText(text).printable)) {
       doc.setFillColor(...BRAND_SOFT);
       doc.roundedRect(PAGE_MARGIN, y - 1, 42, 7, 1.5, 1.5, 'F');
@@ -472,7 +543,7 @@ export async function buildPdfReport(data: ReportData): Promise<JsPdf> {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     setColor(MUTED);
-    doc.text(`${APP_NAME} - planning estimate, not a quotation. Confirm prices and subsidies locally.`, PAGE_MARGIN, pageHeight - 7);
+    doc.text(pdfText(`${APP_NAME} - planning estimate, not a quotation. Confirm prices, schemes and siting locally.`), PAGE_MARGIN, pageHeight - 7);
     doc.text(`Page ${page} of ${pageCount}`, pageWidth - PAGE_MARGIN, pageHeight - 7, { align: 'right' });
   }
 

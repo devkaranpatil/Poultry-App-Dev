@@ -26,7 +26,7 @@ router.post("/", async (req, res) => {
   const { name, config, configType } = parsed.data;
 
   try {
-    const { created, ...configuration } = await configurations.upsert({
+    const saved = await configurations.upsert({
       id: crypto.randomUUID(),
       userId: req.user.id,
       name,
@@ -35,6 +35,9 @@ router.post("/", async (req, res) => {
       config,
       now: new Date(),
     });
+    // The name belongs to a setup this app does not own (saved by the polyhouse planner on the same account).
+    if (!saved) return failure(res, "That name is already used by another saved project. Choose another name.", 409, undefined, req);
+    const { created, ...configuration } = saved;
 
     return success(res, { configuration }, created ? 201 : 200, req);
   } catch (err) {

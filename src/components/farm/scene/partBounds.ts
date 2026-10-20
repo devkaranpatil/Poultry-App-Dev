@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { FarmConfig } from '@/types/farm';
+import type { FarmConfig } from '@/components/farm/scene/legacyConfig';
 import { MODEL_ROOT_NAME, objectBelongsToPart, type EditablePart } from '@/lib/sceneEdit';
 
 type Dimensions = Pick<FarmConfig, 'length' | 'width' | 'gutterHeight' | 'ridgeHeight'>;

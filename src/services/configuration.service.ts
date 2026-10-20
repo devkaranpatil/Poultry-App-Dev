@@ -4,14 +4,11 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.trim() ||
   (import.meta.env.DEV ? "http://localhost:5000" : "");
 
-export type ConfigurationType = "greenhouse" | "polyhouse";
+/** This app saves poultry setups only; the server never lists the polyhouse planner's records. */
+export type ConfigurationType = "poultry";
 export type AnyConfig = FarmConfig;
 
-/** Records saved as "polyhouse" kept the house type under `polyhouseType`; read it as the farm's own field. */
-function toFarmConfig(config: Partial<FarmConfig> & { polyhouseType?: FarmConfig["greenhouseType"] }): FarmConfig {
-  const { polyhouseType, ...rest } = config;
-  return normalizeFarmConfig({ greenhouseType: polyhouseType, ...rest });
-}
+const toFarmConfig = (config: Partial<FarmConfig>): FarmConfig => normalizeFarmConfig(config);
 
 export interface SavedConfiguration {
   id: string;
@@ -51,7 +48,7 @@ async function requestConfigurations(input: RequestInfo | URL, init?: RequestIni
 }
 
 function normalizeSavedConfiguration(item: SavedConfiguration): SavedConfiguration {
-  const configType = item.configType ?? "greenhouse";
+  const configType = item.configType ?? "poultry";
   const config = toFarmConfig(item.config);
   return { ...item, configType, config };
 }
@@ -83,7 +80,6 @@ export async function listConfigurations(token: string) {
   });
 
   const payload = await parseResponse<{ configurations: SavedConfiguration[] }>(response);
-  // The backend resolves configType (including legacy records) for every item.
   return payload.configurations.map(normalizeSavedConfiguration);
 }
 

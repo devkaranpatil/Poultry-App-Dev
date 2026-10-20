@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { CropType } from '@/types/farm';
+import type { CropType } from '@/components/farm/scene/legacyConfig';
 import { InstanceSet, addSegment } from './instancing';
 import { BED_WIDTH, noise, visibleRadius, type CropLayout, type RenderQuality } from './cropLayout';
 import { geo } from './sceneGeometry';

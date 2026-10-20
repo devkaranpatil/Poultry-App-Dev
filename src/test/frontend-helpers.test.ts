@@ -13,13 +13,13 @@ describe('normalizeFarmConfig', () => {
     const normalized = normalizeFarmConfig({
       length: 40,
       roofType: 'dome',
-      selectedCrop: 'banana',
-      _configType: 'greenhouse',
+      birdType: 'ostrich',
+      _configType: 'poultry',
     } as never);
 
     expect(normalized.length).toBe(40);
     expect(normalized.roofType).toBe(DEFAULT_CONFIG.roofType);
-    expect(normalized.selectedCrop).toBe(DEFAULT_CONFIG.selectedCrop);
+    expect(normalized.birdType).toBe(DEFAULT_CONFIG.birdType);
     expect(normalized).not.toHaveProperty('_configType');
   });
 
@@ -30,8 +30,9 @@ describe('normalizeFarmConfig', () => {
 
 describe('clampDimension', () => {
   it('caps values at the shared maximum', () => {
-    expect(clampDimension('length', 100000)).toBe(200);
-    expect(clampDimension('width', 30)).toBe(30);
+    expect(clampDimension('length', 100000)).toBe(150);
+    expect(clampDimension('width', 30)).toBe(18);
+    expect(clampDimension('eavesHeight', 2.4)).toBe(2.4);
   });
 });
 

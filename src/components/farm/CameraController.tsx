@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { FarmConfig } from '@/types/farm';
+import { FarmConfig } from '@/components/farm/scene/legacyConfig';
 import type { EditablePart } from '@/lib/sceneEdit';
 import {
   axisView,

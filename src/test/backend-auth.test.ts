@@ -69,7 +69,10 @@ describe('Supabase session verification', () => {
   it('keeps old saved data by adopting the profile with the same confirmed email', async () => {
     const oldId = '44444444-4444-4444-8444-444444444444';
     await query("insert into app_users (id, name, email) values ($1, 'Old Name', 'legacy@example.test')", [oldId]);
-    await query("insert into saved_configurations (user_id, name, normalized_name, config) values ($1, 'Old plan', 'old plan', '{}')", [oldId]);
+    await query(
+      "insert into saved_configurations (user_id, name, normalized_name, config_type, config) values ($1, 'Old plan', 'old plan', 'poultry', '{}')",
+      [oldId]
+    );
 
     const token = supabase.signIn({ email: 'legacy@example.test', name: 'New Name' });
     const me = await request(app).get('/api/auth/me').set(bearer(token));
@@ -109,28 +112,47 @@ describe('saved configurations', () => {
     const created = await request(app)
       .post('/api/configurations')
       .set(auth)
-      .send({ name: 'North block', configType: 'greenhouse', config: { length: 30, width: 10 } });
+      .send({ name: 'North shed', configType: 'poultry', config: { length: 30, width: 10, birdType: 'broiler' } });
     expect(created.status).toBe(201);
-    expect(created.body.configuration.configType).toBe('greenhouse');
+    expect(created.body.configuration.configType).toBe('poultry');
 
     const listed = await request(app).get('/api/configurations').set(auth);
     expect(listed.body.configurations).toHaveLength(1);
-    expect(listed.body.configurations[0].configType).toBe('greenhouse');
+    expect(listed.body.configurations[0].configType).toBe('poultry');
+  });
+
+  it('never lists, overwrites or deletes the polyhouse planner setups that share the database', async () => {
+    const token = supabase.signIn({ email: 'grower10@example.test' });
+    const auth = bearer(token);
+    const me = await request(app).get('/api/auth/me').set(auth);
+    const userId = me.body.user.id;
+    const { rows } = await query(
+      "insert into saved_configurations (user_id, name, normalized_name, config_type, config) values ($1, 'Tomato house', 'tomato house', 'greenhouse', '{\"length\":40}') returning id",
+      [userId]
+    );
+
+    expect((await request(app).get('/api/configurations').set(auth)).body.configurations).toHaveLength(0);
+    const clash = await request(app).post('/api/configurations').set(auth).send({ name: 'Tomato House', config: { length: 20 } });
+    expect(clash.status).toBe(409);
+    expect((await request(app).delete(`/api/configurations/${rows[0].id}`).set(auth)).status).toBe(404);
+
+    const kept = await query('select config_type, config from saved_configurations where id = $1', [rows[0].id]);
+    expect(kept.rows[0]).toMatchObject({ config_type: 'greenhouse', config: { length: 40 } });
   });
 
   it('saving the same name again overwrites it (200) and keeps one row', async () => {
     const auth = bearer(supabase.signIn({ email: 'grower7@example.test' }));
 
-    const first = await request(app).post('/api/configurations').set(auth).send({ name: 'Block A', configType: 'polyhouse', config: { length: 20 } });
+    const first = await request(app).post('/api/configurations').set(auth).send({ name: 'Shed A', config: { length: 20 } });
     expect(first.status).toBe(201);
-    const second = await request(app).post('/api/configurations').set(auth).send({ name: '  block   a ', configType: 'polyhouse', config: { length: 25 } });
+    const second = await request(app).post('/api/configurations').set(auth).send({ name: '  shed   a ', config: { length: 25 } });
     expect(second.status).toBe(200);
     expect(second.body.configuration.id).toBe(first.body.configuration.id);
 
     const listed = await request(app).get('/api/configurations').set(auth);
     expect(listed.body.configurations).toHaveLength(1);
     expect(listed.body.configurations[0].config.length).toBe(25);
-    expect(listed.body.configurations[0].configType).toBe('polyhouse');
+    expect(listed.body.configurations[0].configType).toBe('poultry');
   });
 
   it('keeps each user configurations private and refuses to delete another user config', async () => {

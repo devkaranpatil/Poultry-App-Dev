@@ -86,33 +86,42 @@ function configurationFromRow(row) {
   };
 }
 
+// The database is shared with the polyhouse planner, which saves its own setups in the same table: this app only
+// ever lists, overwrites or deletes rows of its own type.
+const CONFIG_TYPE = "poultry";
+
 const configurations = {
   async listByUser(userId) {
     const { rows } = await query(
-      "select id, name, config_type, config, updated_at from saved_configurations where user_id = $1 order by updated_at desc",
-      [userId]
+      "select id, name, config_type, config, updated_at from saved_configurations where user_id = $1 and config_type = $2 order by updated_at desc",
+      [userId, CONFIG_TYPE]
     );
     return rows.map(configurationFromRow);
   },
 
-  /** Saves under (user, name); an existing config with the same name is overwritten. */
+  /**
+   * Saves under (user, name); an existing config of the same type and name is overwritten. Returns null when the
+   * name is taken by a setup of another type (the polyhouse planner's), which is never overwritten.
+   */
   async upsert({ id, userId, name, normalizedName, configType, config, now }) {
     const { rows } = await query(
       `insert into saved_configurations (id, user_id, name, normalized_name, config_type, config, created_at, updated_at)
        values ($1, $2, $3, $4, $5, $6::jsonb, $7::timestamptz, $7::timestamptz)
        on conflict (user_id, normalized_name) do update
-         set name = excluded.name, config_type = excluded.config_type, config = excluded.config, updated_at = excluded.updated_at
+         set name = excluded.name, config = excluded.config, updated_at = excluded.updated_at
+         where saved_configurations.config_type = excluded.config_type
        returning id, name, config_type, config, updated_at, (xmax = 0) as inserted`,
       [id, userId, name, normalizedName, configType, JSON.stringify(config), iso(now)]
     );
+    if (rows.length === 0) return null;
     return { ...configurationFromRow(rows[0]), created: rows[0].inserted };
   },
 
   async deleteForUser(id, userId) {
     if (!isUuid(id)) return false;
-    const result = await query("delete from saved_configurations where id = $1 and user_id = $2", [id, userId]);
+    const result = await query("delete from saved_configurations where id = $1 and user_id = $2 and config_type = $3", [id, userId, CONFIG_TYPE]);
     return result.rowCount > 0;
   },
 };
 
-module.exports = { users, configurations, isUuid };
+module.exports = { CONFIG_TYPE, users, configurations, isUuid };

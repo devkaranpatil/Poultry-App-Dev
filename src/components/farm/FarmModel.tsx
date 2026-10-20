@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html, Line } from '@react-three/drei';
 import * as THREE from 'three';
-import { FarmConfig } from '@/types/farm';
+import { FarmConfig } from '@/components/farm/scene/legacyConfig';
 import { CropField } from './scene/CropField';
 import { IrrigationSystemModel } from './scene/IrrigationSystem';
 import { buildCropLayout } from './scene/cropLayout';

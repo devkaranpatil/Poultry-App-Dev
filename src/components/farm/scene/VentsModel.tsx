@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import type { ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
-import type { SideVentilation } from '@/types/farm';
+import type { SideVentilation } from '@/components/farm/scene/legacyConfig';
 import { InstanceSet, InstancedPart, addSegment } from './instancing';
 import type { RenderQuality } from './cropLayout';
 import { geo } from './sceneGeometry';

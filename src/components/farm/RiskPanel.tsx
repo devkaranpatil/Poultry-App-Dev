@@ -70,20 +70,23 @@ interface RiskPanelProps {
   risk: RiskState;
   years: number;
   onYearsChange: (years: number) => void;
+  /** Yearly chance of an outbreak that loses a batch, in percent: the farmer's own figure, as no official rate exists. */
+  outbreakChancePct: number;
+  onOutbreakChange: (pct: number) => void;
 }
 
+const OUTBREAK_CHOICES = [0, 2, 5, 10];
+
 /** The simulation, told as odds and plain outcomes; the statistics sit under "Show details". */
-export function RiskPanel({ risk, years, onYearsChange }: RiskPanelProps) {
+export function RiskPanel({ risk, years, onYearsChange, outbreakChancePct, onOutbreakChange }: RiskPanelProps) {
   const { t } = useI18n();
   const { result, status, stale } = risk;
   const simulation = result?.simulation;
   const sources = result?.sources;
   const priceNote = sources
-    ? sources.price.basis === 'history'
-      ? t('risk.sourcePriceHistory', { days: sources.price.days, from: sources.price.from ?? '', to: sources.price.to ?? '' })
-      : sources.price.basis === 'markets'
-        ? t('risk.sourcePriceMarkets', { markets: sources.price.markets, date: sources.price.to ?? '' })
-        : t('risk.sourcePriceAssumption')
+    ? sources.price.sigmaLog > 0
+      ? t('risk.sourcePriceAssumption', { spread: Math.round(sources.price.sigmaLog * 100) })
+      : t('risk.sourcePriceContract')
     : '';
 
   return (
@@ -104,6 +107,24 @@ export function RiskPanel({ risk, years, onYearsChange }: RiskPanelProps) {
               )}
             >
               {t('risk.yearsOption', { years: option })}
+            </button>
+          ))}
+        </div>
+        <span className="ml-2 text-sm text-muted-foreground">{t('risk.outbreakChance')}</span>
+        <div className="inline-flex rounded-lg bg-muted p-1" role="radiogroup" aria-label={t('risk.outbreakChance')}>
+          {OUTBREAK_CHOICES.map((option) => (
+            <button
+              key={option}
+              type="button"
+              role="radio"
+              aria-checked={option === outbreakChancePct}
+              onClick={() => onOutbreakChange(option)}
+              className={cn(
+                'rounded-md px-2.5 py-1 text-sm font-medium transition-colors',
+                option === outbreakChancePct ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {option}%
             </button>
           ))}
         </div>
@@ -207,9 +228,15 @@ export function RiskPanel({ risk, years, onYearsChange }: RiskPanelProps) {
             <ul className="space-y-1 text-xs leading-snug text-muted-foreground">
               <li className="flex gap-1.5">
                 <Info className="mt-0.5 h-3 w-3 shrink-0" />
-                {sources.yield.published
-                  ? t('risk.sourceYieldPublished', { range: sources.yield.range })
-                  : t('risk.sourceYieldPlanner', { range: sources.yield.range })}
+                {t('risk.sourceRanges', {
+                  mortality: simulation.assumptions.mortalityRangePct.join(' / '),
+                  conversion: simulation.assumptions.conversionRange.join(' / '),
+                  feed: simulation.assumptions.feedPriceBandPct,
+                })}
+              </li>
+              <li className="flex gap-1.5">
+                <Info className="mt-0.5 h-3 w-3 shrink-0" />
+                {t('risk.sourceOutbreak', { chance: simulation.assumptions.outbreakChancePct })}
               </li>
               <li className="flex gap-1.5">
                 <Info className="mt-0.5 h-3 w-3 shrink-0" />

@@ -287,22 +287,22 @@ describe('poultry loan terms', () => {
 
 describe('poultry routes', () => {
   it('calculates a shed', async () => {
-    const response = await request(app).post('/api/poultry/calculate').send({ config: SHED, assumptions: { saleInrPerKg: 110 } });
+    const response = await request(app).post('/api/farm/calculate').send({ config: SHED, assumptions: { saleInrPerKg: 110 } });
     expect(response.status).toBe(200);
     expect(response.body.data.flock.birds).toBe(1076);
     expect(response.body.data.returns.annualProfit).toBeGreaterThan(0);
   });
 
   it('says what is wrong with a setup', async () => {
-    const invalid = await request(app).post('/api/poultry/calculate').send({ config: { ...SHED, sideWalls: 'closed-tunnel' } });
+    const invalid = await request(app).post('/api/farm/calculate').send({ config: { ...SHED, sideWalls: 'closed-tunnel' } });
     expect(invalid.status).toBe(400);
     expect(invalid.body.errors.sideWalls).toMatch(/tunnel/);
-    const malformed = await request(app).post('/api/poultry/calculate').send({ config: SHED, assumptions: { mortalityPct: 140 } });
+    const malformed = await request(app).post('/api/farm/calculate').send({ config: SHED, assumptions: { mortalityPct: 140 } });
     expect(malformed.status).toBe(400);
   });
 
   it('simulates the risk of a shed', async () => {
-    const response = await request(app).post('/api/risk/poultry/simulate').send({ config: SHED, risk: { outbreakChancePct: 5 }, options: { trials: 500 } });
+    const response = await request(app).post('/api/risk/simulate').send({ config: SHED, risk: { outbreakChancePct: 5 }, options: { trials: 500 } });
     expect(response.status).toBe(200);
     expect(response.body.simulation.trials).toBe(500);
     expect(response.body.simulation.assumptions.outbreakChancePct).toBe(5);

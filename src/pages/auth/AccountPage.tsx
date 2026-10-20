@@ -7,7 +7,7 @@ import { linkGoogleAccount, rememberPostAuthRedirect, unlinkGoogleAccount, updat
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/context/I18nContext";
 import { TopRightMenu } from "@/components/TopRightMenu";
-import { BadgeCheck, KeyRound, Link2, Mail, ShieldCheck, Sparkles, Sprout, UserRound, XCircle } from "lucide-react";
+import { BadgeCheck, KeyRound, Link2, Mail, ShieldCheck, Sparkles, Bird, UserRound, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { APP_NAME } from "@/config/app";
 
@@ -91,7 +91,7 @@ export default function AccountPage() {
       <header className="sticky top-0 z-40 px-4 pt-4">
         <div className="glass mx-auto flex max-w-5xl items-center justify-between rounded-2xl px-4 py-3">
           <Link to="/" className="inline-flex items-center gap-2 font-semibold">
-            <Sprout className="h-5 w-5 text-primary" />
+            <Bird className="h-5 w-5 text-primary" />
             {APP_NAME}
           </Link>
           <TopRightMenu />

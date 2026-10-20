@@ -1,5 +1,6 @@
 import type { FarmConfig } from '@/types/farm';
-import type { CalculationResult as FarmCalculationResult, ClimateData } from '@/types/farm';
+import type { CalculationResult as FarmCalculationResult } from '@/types/farm';
+import type { PoultryAssumptions } from '@/lib/poultryFinance';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.trim() ||
@@ -23,44 +24,24 @@ async function postJson<T>(path: string, body: unknown, signal?: AbortSignal): P
   return payload as T;
 }
 
-/**
- * Normalize a FarmConfig to the field names the backend expects.
- * Frontend uses `state` and `doorEntry`; backend normalizes both but
- * also validates `stateName` and `doorType` internally — sending the
- * canonical names avoids any ambiguity in the save/load cycle.
- */
+/** The setup as the backend names it: `stateName` for the state (the backend accepts both). */
 export function toFarmPayload(config: FarmConfig): Record<string, unknown> {
-  const { state, doorEntry, ...rest } = config;
-  return { ...rest, stateName: state, doorType: doorEntry };
+  const { state, ...rest } = config;
+  return { ...rest, stateName: state };
 }
 
+/** Every figure for a setup and the farmer's planning assumptions, worked out by the server. */
 export async function calculateFarm(
   config: FarmConfig,
+  assumptions: Partial<PoultryAssumptions>,
   signal?: AbortSignal
 ): Promise<FarmCalculationResult> {
   const response = await postJson<{ success: true; data: FarmCalculationResult }>(
     '/api/farm/calculate',
-    toFarmPayload(config),
+    { config: toFarmPayload(config), assumptions },
     signal
   );
   return response.data;
-}
-
-export async function fetchCropSuggestions(
-  config: FarmConfig,
-  climate: ClimateData,
-  signal?: AbortSignal
-): Promise<string> {
-  // Backend returns { success, climateGroup, crops, suggestions } at the root level
-  // (not nested under `data`), so we read `suggestions` directly.
-  const response = await postJson<{
-    success: true;
-    climateGroup: string;
-    crops: unknown[];
-    suggestions: string;
-  }>('/api/farm/crop-suggestions', { config: toFarmPayload(config), climate }, signal);
-
-  return response.suggestions;
 }
 
 export interface BackendHealth {

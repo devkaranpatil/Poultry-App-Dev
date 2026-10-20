@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { FarmConfig } from '@/types/farm';
+import type { FarmConfig } from '@/components/farm/scene/legacyConfig';
 import {
   EMPTY_HISTORY,
   configMatches,

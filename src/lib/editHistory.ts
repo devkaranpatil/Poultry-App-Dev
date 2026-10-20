@@ -1,4 +1,4 @@
-import type { FarmConfig } from '@/types/farm';
+import type { FarmConfig } from '@/components/farm/scene/legacyConfig';
 
 export type ConfigPatch = Partial<FarmConfig>;
 

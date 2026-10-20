@@ -7,19 +7,21 @@ import { useI18n } from '@/context/I18nContext';
 import { Explain, Labelled, type TermId } from '@/components/workspace/Explain';
 import { MoreDetails } from '@/components/workspace/MoreDetails';
 import { cn } from '@/lib/utils';
-import type { FinancialSummary } from '@/lib/finance';
+import type { PoultryReturns } from '@/lib/poultryFinance';
+import type { BirdType } from '@/types/farm';
 import { formatINRCompact, formatNumber } from '@/lib/format';
 import {
-  DEFAULT_LOAN_TERMS,
-  LOAN_SOURCES,
-  MAX_BANK_LOAN_SHARE_PCT,
+  MAX_POULTRY_LOAN_SHARE_PCT,
+  POULTRY_LOAN_SOURCES,
+  poultryLoanTerms,
   computeLoanPlan,
   type LoanTerms,
   type RepaymentFrequency,
 } from '@/lib/loan';
 
 interface LoanPanelProps {
-  summary: FinancialSummary;
+  summary: Pick<PoultryReturns, 'capitalCost' | 'subsidyAmount' | 'annualRevenue' | 'annualOperatingCost'>;
+  birdType: BirdType;
   terms: LoanTerms;
   onTermsChange: (next: LoanTerms) => void;
 }
@@ -70,7 +72,7 @@ function TermField({
 }
 
 /** Bank term loan: margin, instalments, the back-ended subsidy and the yearly debt cover. */
-export function LoanPanel({ summary, terms, onTermsChange }: LoanPanelProps) {
+export function LoanPanel({ summary, birdType, terms, onTermsChange }: LoanPanelProps) {
   const { t } = useI18n();
   const plan = useMemo(
     () => computeLoanPlan(summary.capitalCost, summary.subsidyAmount, summary, terms),
@@ -129,7 +131,7 @@ export function LoanPanel({ summary, terms, onTermsChange }: LoanPanelProps) {
       <div className="space-y-4 rounded-2xl border border-border bg-card p-4">
         <div className="flex items-start justify-between gap-2">
           <h4 className="text-sm font-semibold text-foreground">{t('ws.loanTerms')}</h4>
-          <Button type="button" size="sm" variant="ghost" className="h-8 shrink-0 px-2 text-xs" onClick={() => onTermsChange(DEFAULT_LOAN_TERMS)}>
+          <Button type="button" size="sm" variant="ghost" className="h-8 shrink-0 px-2 text-xs" onClick={() => onTermsChange(poultryLoanTerms(birdType))}>
             <RotateCcw className="mr-1 h-3 w-3" />
             {t('returns.reset')}
           </Button>
@@ -169,10 +171,10 @@ export function LoanPanel({ summary, terms, onTermsChange }: LoanPanelProps) {
             ))}
           </div>
         </div>
-        {terms.loanSharePct > MAX_BANK_LOAN_SHARE_PCT ? (
+        {terms.loanSharePct > MAX_POULTRY_LOAN_SHARE_PCT ? (
           <p className="flex gap-1.5 text-xs leading-snug text-amber-700 dark:text-amber-400">
             <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
-            {t('loan.shareAboveBank', { max: MAX_BANK_LOAN_SHARE_PCT })}
+            {t('loan.shareAboveBank', { max: MAX_POULTRY_LOAN_SHARE_PCT })}
           </p>
         ) : null}
       </div>
@@ -226,7 +228,7 @@ export function LoanPanel({ summary, terms, onTermsChange }: LoanPanelProps) {
             <Info className="mt-0.5 h-3 w-3 shrink-0" />
             {t('loan.dscrHint')}
           </li>
-          {LOAN_SOURCES.map((source) => (
+          {POULTRY_LOAN_SOURCES.map((source) => (
             <li key={source.text} className="flex gap-1.5">
               <Info className="mt-0.5 h-3 w-3 shrink-0" />
               <span>

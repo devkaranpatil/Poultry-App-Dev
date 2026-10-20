@@ -4,7 +4,7 @@
  * orbit like Blender's numpad, the orientation gizmo, and where each named view puts the camera.
  */
 
-import type { FarmConfig } from '@/types/farm';
+import type { FarmConfig } from '@/components/farm/scene/legacyConfig';
 import { antechamber } from '@/components/farm/scene/structureLayout';
 
 export type Vec3 = [number, number, number];

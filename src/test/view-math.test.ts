@@ -22,7 +22,7 @@ import {
   type View,
 } from '@/lib/viewMath';
 import { antechamber } from '@/components/farm/scene/structureLayout';
-import { DEFAULT_CONFIG, DIMENSION_LIMITS, type DoorEntry } from '@/types/farm';
+import { DEFAULT_CONFIG, DIMENSION_LIMITS, type DoorEntry } from '@/components/farm/scene/legacyConfig';
 import { ORBIT_STEP, isTypingTarget, resolveViewportKey } from '@/lib/viewportKeys';
 
 const close = (a: Vec3, b: Vec3, digits = 5) => a.forEach((value, i) => expect(value).toBeCloseTo(b[i], digits));

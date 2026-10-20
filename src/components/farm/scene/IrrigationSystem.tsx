@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import type { ThreeEvent } from '@react-three/fiber';
-import type { IrrigationSystem as IrrigationId } from '@/types/farm';
+import type { IrrigationSystem as IrrigationId } from '@/components/farm/scene/legacyConfig';
 import { InstancedPart } from './instancing';
 import type { CropLayout, RenderQuality } from './cropLayout';
 import { buildIrrigationParts } from './irrigationParts';

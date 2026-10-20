@@ -1,13 +1,14 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { SAMPLE_CONFIG, sampleResult } from './helpers/poultryResult';
+import { formatINRCompact } from '@/lib/format';
 import { I18nProvider } from '@/context/I18nContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import LoginPage from '@/pages/auth/LoginPage';
 import Landing from '@/pages/Landing';
 import Index from '@/pages/Index';
 import { saveDraft } from '@/lib/configPersistence';
-import { DEFAULT_CONFIG } from '@/types/farm';
 import { authMock, makeSession, supabaseModule } from './helpers/mockSupabase';
 import * as calculationService from '@/services/calculation.service';
 
@@ -118,7 +119,7 @@ describe('LoginPage', () => {
 describe('Landing', () => {
   it('renders the key sections and opens sign-up from the hero', async () => {
     wrap(<Landing />);
-    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('Know what a greenhouse will cost');
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('Know what a poultry shed will cost');
     for (const id of ['problem', 'solution', 'features', 'ai', 'workflow', 'faq']) {
       expect(document.getElementById(id)).not.toBeNull();
     }
@@ -128,33 +129,27 @@ describe('Landing', () => {
 });
 
 describe('Workspace (Index)', () => {
-  const result = {
-    area: 300, volume: 1500,
-    climate: { climateZone: 'Tropical Coastal', avgTemperature: 27, humidity: 78, rainfall: 2900, climateFactor: 1.05, advisories: [] },
-    cost: {
-      structureCost: 255000, coverCost: 36000, ventilationCost: 13500, foundationCost: 54000, irrigationCost: 16500,
-      electricalCost: 0, laborCost: 86250, miscCost: 10500, totalCost: 495338, costPerSqm: 1651, climateAdjustment: 0.05,
-    },
-    crops: [], selectedCrop: null, irrigation: { system: 'drip' as const, ratePerSqm: 55, notes: [] },
-  };
+  // The real calculation for a Nagpur broiler shed, as the server would send it.
+  const result = sampleResult();
 
   it('restores the saved draft and calculates it automatically', async () => {
     authMock.setSession(makeSession());
     calc.calculateFarm.mockResolvedValue(result);
-    saveDraft({ ...DEFAULT_CONFIG, state: 'Goa', district: 'North Goa' });
+    saveDraft(SAMPLE_CONFIG);
 
     wrap(<Index />, '/visualizer');
 
-    expect(await screen.findByText('North Goa, Goa')).toBeInTheDocument();
+    expect(await screen.findByText('Nagpur, Maharashtra')).toBeInTheDocument();
     await waitFor(() => expect(calc.calculateFarm).toHaveBeenCalledTimes(1), { timeout: 3000 });
-    expect(calc.calculateFarm.mock.calls[0][0]).toMatchObject({ state: 'Goa', district: 'North Goa' });
-    expect(await screen.findByText('₹4.95 L')).toBeInTheDocument();
+    expect(calc.calculateFarm.mock.calls[0][0]).toMatchObject({ state: 'Maharashtra', district: 'Nagpur' });
+    expect(await screen.findByText(formatINRCompact(result.cost.capitalCost))).toBeInTheDocument();
+    expect(screen.getByText('1,076 birds')).toBeInTheDocument();
   });
 
   it('copies a share link for the current setup', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
-    saveDraft({ ...DEFAULT_CONFIG, state: 'Goa', district: 'North Goa' });
+    saveDraft(SAMPLE_CONFIG);
     calc.calculateFarm.mockResolvedValue(result);
 
     wrap(<Index />, '/visualizer');

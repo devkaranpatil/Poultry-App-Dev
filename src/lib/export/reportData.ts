@@ -1,19 +1,29 @@
 import { translate } from '@/context/I18nContext';
-import { CROP_ECONOMICS, computeFinancials, type FinanceAssumptions, type FinancialSummary } from '@/lib/finance';
-import { DEFAULT_LOAN_TERMS, computeLoanPlan, type LoanPlan, type LoanTerms } from '@/lib/loan';
-import type { AdvisorReport, AiCropsResult } from '@/services/ai.service';
-import type { CalculationResult, FarmConfig } from '@/types/farm';
+import { computeLoanPlan, poultryLoanTerms, type LoanPlan, type LoanTerms } from '@/lib/loan';
+import type { PoultryAssumptions, PoultryReturns } from '@/lib/poultryFinance';
+import { assumptionSource } from '@/lib/poultrySources';
+import type { AdvisorReport } from '@/services/ai.service';
+import { optionKey, type CalculationResult, type FarmConfig } from '@/types/farm';
 
 /** Exports are always English: the PDF fonts cannot render Devanagari. */
 const en = (key: string, vars?: Record<string, string | number>) => translate('en', key, vars);
-const optionKey = (value: string) => value.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
 
-export interface ReportCrop {
-  name: string;
-  suitability: string;
-  detail: string;
-  expectedYield: string;
-  season: string;
+/** The biosecurity measures the report lists (DAHD guidelines and NABARD's lending terms). */
+export const BIOSECURITY_KEYS = ['bio.footbath', 'bio.anteroom', 'bio.allInAllOut', 'bio.visitors', 'bio.quarantine', 'bio.disposal', 'bio.pests', 'bio.disinfect', 'bio.vaccination'];
+
+export interface ReportAssumptionRow {
+  field: string;
+  label: string;
+  value: number;
+  source: string | null;
+  verified: boolean;
+}
+
+export interface ReportSitingRow {
+  description: string;
+  distanceM: number | null;
+  ticked: boolean;
+  source: string;
 }
 
 export interface ReportData {
@@ -21,19 +31,18 @@ export interface ReportData {
   title: string;
   location: string;
   config: FarmConfig;
-  labels: Record<
-    'type' | 'roof' | 'structure' | 'cover' | 'sideVentilation' | 'door' | 'crop' | 'irrigation',
-    string
-  >;
+  labels: Record<'housing' | 'roof' | 'frame' | 'roofSheet' | 'sideWalls' | 'entry' | 'bird' | 'feeding' | 'farmingModel' | 'category', string>;
   result: CalculationResult;
-  assumptions: FinanceAssumptions;
-  financials: FinancialSummary;
+  /** The assumptions the figures were worked out with. */
+  assumptions: PoultryAssumptions;
+  financials: PoultryReturns;
   /** Bank loan, repayment schedule and debt cover for the project. */
   loan: LoanPlan;
-  unit: 'kg' | 'stems';
   costItems: Array<{ label: string; amount: number; share: number }>;
-  crops: ReportCrop[];
-  cropsSource: 'ai' | 'rules';
+  workingItems: Array<{ label: string; amount: number }>;
+  assumptionRows: ReportAssumptionRow[];
+  siting: ReportSitingRow[];
+  biosecurity: string[];
   advisor: AdvisorReport | null;
   snapshot: string | null;
 }
@@ -41,71 +50,78 @@ export interface ReportData {
 export interface BuildReportInput {
   config: FarmConfig;
   result: CalculationResult;
-  assumptions: FinanceAssumptions;
-  /** Loan terms from the Returns tab; the published defaults when omitted. */
+  /** Kept for the caller's convenience; the report uses the assumptions the result was worked out with. */
+  assumptions?: PoultryAssumptions;
+  /** Loan terms from the Loan step; NABARD's model-project terms for the bird when omitted. */
   loanTerms?: LoanTerms;
+  /** Siting rules the farmer confirmed on the Site step. */
+  sitingTicks?: Record<string, boolean>;
   advisor?: AdvisorReport | null;
-  aiCrops?: AiCropsResult | null;
   snapshot?: string | null;
   generatedAt?: Date;
 }
 
-export function buildReportData(input: BuildReportInput): ReportData {
-  const { config, result, assumptions } = input;
-  const cost = result.cost;
-  const items = [
-    { label: en('right.structure'), amount: cost.structureCost },
-    { label: en('right.coverMaterial'), amount: cost.coverCost },
-    { label: en('right.ventilation'), amount: cost.ventilationCost },
-    { label: en('right.foundation'), amount: cost.foundationCost },
-    { label: en('right.irrigation'), amount: cost.irrigationCost },
-    { label: en('right.electrical'), amount: cost.electricalCost },
-    { label: en('right.labor'), amount: cost.laborCost },
-    { label: en('right.misc'), amount: cost.miscCost },
-  ].map((item) => ({ ...item, amount: item.amount ?? 0 }));
-  const itemsTotal = items.reduce((sum, item) => sum + item.amount, 0) || 1;
+const MEAT_FIELDS = ['saleInrPerKg', 'chickInr', 'feedInrPerKg', 'vaccineInrPerBird', 'mortalityPct', 'saleWeightKg', 'fcr', 'rearingDays', 'cleaningDays', 'labourInrPerBird', 'otherCostInrPerBird'];
+const CONTRACT_FIELDS = ['growingChargeInrPerKg', 'mortalityPct', 'saleWeightKg', 'fcr', 'rearingDays', 'cleaningDays', 'labourInrPerBird', 'otherCostInrPerBird'];
+const LAYER_FIELDS = ['eggInr', 'chickInr', 'feedInrPerKg', 'vaccineInrPerBird', 'layingMortalityPct', 'eggsPerHen', 'growerWeeks', 'layingWeeks', 'growerFeedKgPerBird', 'layingFeedKgPerBird', 'culledBirdInr', 'labourInrPerMonth'];
 
-  const location = [config.district, config.state].filter(Boolean).join(', ');
-  const aiCrops = input.aiCrops?.crops?.length ? input.aiCrops.crops : null;
-  const financials = computeFinancials(cost.totalCost, result.area, assumptions, result.subsidy);
+export function buildReportData(input: BuildReportInput): ReportData {
+  const { config, result } = input;
+  const cost = result.cost;
+  const assumptions = result.assumptions;
+  const financials = result.returns;
+  const items = [
+    { label: en('cost.civil'), amount: cost.civilCost },
+    { label: en('cost.roofSheet'), amount: cost.roofSheetCost },
+    { label: en('cost.sideWalls'), amount: cost.sideWallCost },
+    { label: en('cost.entry'), amount: cost.entryCost },
+    { label: en('cost.equipment'), amount: cost.equipmentCost },
+    { label: en('cost.feedStore'), amount: cost.feedStoreCost },
+    { label: en('cost.fencing'), amount: cost.fencingCost },
+    { label: en('cost.water'), amount: cost.waterSupplyCost },
+    { label: en('cost.electrical'), amount: cost.electricalCost },
+  ].filter((item) => item.amount !== 0);
+  const itemsTotal = items.reduce((sum, item) => sum + item.amount, 0) || 1;
+  const wc = cost.workingCapital;
+  const fields = financials.product === 'eggs' ? LAYER_FIELDS : config.farmingModel === 'contract' ? CONTRACT_FIELDS : MEAT_FIELDS;
+  const values = assumptions as unknown as Record<string, number>;
+  const ticks = input.sitingTicks ?? {};
 
   return {
     generatedAt: input.generatedAt ?? new Date(),
     title: en('report.title'),
-    location,
+    location: [config.district, config.state].filter(Boolean).join(', '),
     config,
     labels: {
-      type: en(`options.greenhouse.${optionKey(config.greenhouseType)}`),
-      roof: en(`options.roof.${config.roofType}`),
-      structure: en(`options.structure.${optionKey(config.structureMaterial)}`),
-      cover: en(`options.cover.${optionKey(config.coverMaterial)}`),
-      sideVentilation: en(`options.sideVent.${optionKey(config.sideVentilation)}`),
-      door: en(`options.door.${optionKey(config.doorEntry)}`),
-      crop: en(`options.crop.${config.selectedCrop}`),
-      irrigation: en(`options.irrigation.${optionKey(config.irrigationSystem)}`),
+      housing: en(optionKey('housing', config.housingSystem)),
+      roof: en(optionKey('roof', config.roofType)),
+      frame: en(optionKey('frame', config.frameMaterial)),
+      roofSheet: en(optionKey('roofSheet', config.roofSheet)),
+      sideWalls: en(optionKey('sideWalls', config.sideWalls)),
+      entry: en(optionKey('entry', config.entry)),
+      bird: en(optionKey('bird', config.birdType)),
+      feeding: en(optionKey('feeding', config.feedingSystem)),
+      farmingModel: en(optionKey('farming', config.farmingModel)),
+      category: en(optionKey('category', config.beneficiaryCategory)),
     },
     result,
     assumptions,
     financials,
-    loan: computeLoanPlan(cost.totalCost, financials.subsidyAmount, financials, input.loanTerms ?? DEFAULT_LOAN_TERMS),
-    unit: CROP_ECONOMICS[config.selectedCrop].unit,
+    loan: computeLoanPlan(financials.capitalCost, financials.subsidyAmount, financials, input.loanTerms ?? poultryLoanTerms(config.birdType)),
     costItems: items.map((item) => ({ ...item, share: item.amount / itemsTotal })),
-    crops: aiCrops
-      ? aiCrops.map((crop) => ({
-          name: crop.name,
-          suitability: crop.suitability,
-          detail: [crop.reason, crop.marketNote].filter(Boolean).join(' '),
-          expectedYield: crop.expectedYield,
-          season: crop.season,
-        }))
-      : result.crops.map((crop) => ({
-          name: crop.name,
-          suitability: crop.suitability,
-          detail: crop.notes,
-          expectedYield: crop.expectedYield,
-          season: crop.season,
-        })),
-    cropsSource: aiCrops ? 'ai' : 'rules',
+    workingItems: [
+      { label: en('cost.chicks', { chicks: wc.chicks.toLocaleString('en-IN') }), amount: wc.chickCost },
+      { label: en('cost.feed'), amount: wc.feedCost },
+      { label: en('cost.insurance'), amount: wc.insuranceCost },
+      { label: en('cost.vaccines'), amount: wc.vaccineCost },
+      { label: en('cost.labour'), amount: wc.labourCost },
+    ].filter((item) => item.amount > 0),
+    assumptionRows: fields.map((field) => {
+      const source = assumptionSource(config.birdType, config.farmingModel, field);
+      return { field, label: en(`assumption.${field}`), value: values[field], source: source?.document ?? null, verified: source?.verified ?? false };
+    }),
+    siting: result.siting.map((rule) => ({ description: rule.description, distanceM: rule.distanceM, ticked: Boolean(ticks[rule.id]), source: rule.source.document })),
+    biosecurity: BIOSECURITY_KEYS.map((key) => en(key)),
     advisor: input.advisor ?? null,
     snapshot: input.snapshot ?? null,
   };

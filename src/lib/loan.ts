@@ -1,12 +1,11 @@
-import type { FinancialSummary } from '@/lib/finance';
 import type { BirdType } from '@/types/poultry';
 
-// Bank term loan for the polyhouse, the way banks and NHB set it up:
+// Bank term loan for the poultry farm, the way NABARD's model projects set it up:
 //  - the bank lends a share of the project cost; the farmer brings the rest (the margin);
 //  - interest only during the moratorium, then equal instalments (EMI) to the end of the tenure;
-//  - the subsidy is credit-linked and back-ended: it is held in a Subsidy Reserve Fund Account (SRFA) and
-//    adjusted against the last instalments, capped at the loan sanctioned (NHB Scheme guidelines, sections 9
-//    and 11.xii). Until then the farmer pays interest on the whole loan.
+//  - a scheme subsidy is back-ended: it is held in reserve and adjusted against the last instalments, capped at the
+//    loan sanctioned (NLM-EDP pays through SIDBI after the bank has released the loan). Until then the farmer pays
+//    interest on the whole loan.
 
 export type RepaymentFrequency = 'monthly' | 'quarterly' | 'half-yearly';
 
@@ -23,39 +22,6 @@ export interface LoanTerms {
 }
 
 export const PERIODS_PER_YEAR: Record<RepaymentFrequency, number> = { monthly: 12, quarterly: 4, 'half-yearly': 2 };
-
-/** Highest loan share the bank scheme below allows for protected cultivation. */
-export const MAX_BANK_LOAN_SHARE_PCT = 80;
-
-export const DEFAULT_LOAN_TERMS: LoanTerms = {
-  loanSharePct: 80,
-  interestPct: 11.05,
-  tenureYears: 7,
-  moratoriumMonths: 12,
-  frequency: 'monthly',
-};
-
-/** Where each default comes from; `verified` is false for the app's own assumptions. */
-export const LOAN_SOURCES: Array<{ text: string; verified: boolean; url?: string }> = [
-  {
-    text: 'Loan up to 80% of project cost (margin 20% above Rs 1 lakh); repayment up to 7 years including a 3-12 month moratorium: Central Bank of India, Cent Poly House / Green House / Shade Net scheme',
-    verified: true,
-    url: 'https://www.centralbank.bank.in/en/cent-poly-house-green-house-shade-net',
-  },
-  {
-    text: 'Interest 11.05%: Canara Bank agriculture term loans of Rs 3 lakh to Rs 1 crore at one-year MCLR + 2.30% (rates of 18.08.2026); one-year MCLR 8.75% from 12.05.2026',
-    verified: true,
-    url: 'https://www.canarabank.bank.in/documents/d/guest/roi-18-08-2026',
-  },
-  {
-    text: 'Subsidy held in a Subsidy Reserve Fund Account and adjusted against the last instalments, capped at the term loan sanctioned: NHB Scheme guidelines',
-    verified: true,
-  },
-  {
-    text: "Monthly instalments, and farm income starting when the moratorium ends: the app's assumptions; your bank sets the schedule to match the crop",
-    verified: false,
-  },
-];
 
 /** Highest loan share for a poultry unit: NABARD's model projects ask for a margin of 10% (desi birds) to 25%. */
 export const MAX_POULTRY_LOAN_SHARE_PCT = 90;
@@ -188,14 +154,14 @@ export function installmentFor(principal: number, rate: number, periods: number)
 /**
  * Builds the loan schedule and the yearly cash flow for a project.
  *
- * @param projectCost    build cost the bank finances (the calculator's total cost)
- * @param subsidyAmount  scheme subsidy (FinancialSummary.subsidyAmount)
+ * @param projectCost    what the bank finances (the calculation's financed cost)
+ * @param subsidyAmount  the scheme subsidy counted (PoultryReturns.subsidyAmount)
  * @param financials     annual revenue and running cost; income starts when the moratorium ends
  */
 export function computeLoanPlan(
   projectCost: number,
   subsidyAmount: number,
-  financials: Pick<FinancialSummary, 'annualRevenue' | 'annualOperatingCost'>,
+  financials: { annualRevenue: number; annualOperatingCost: number },
   rawTerms: LoanTerms
 ): LoanPlan {
   const terms = normalizeLoanTerms(rawTerms);

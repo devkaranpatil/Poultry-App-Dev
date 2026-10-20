@@ -1,4 +1,4 @@
-import { RotateCcw, Info } from 'lucide-react';
+import { Info, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,30 +6,67 @@ import { useI18n } from '@/context/I18nContext';
 import { Explain, Labelled, type TermId } from '@/components/workspace/Explain';
 import { MoreDetails } from '@/components/workspace/MoreDetails';
 import {
-  CROP_ECONOMICS,
   PROJECTION_YEARS,
-  defaultFinanceAssumptions,
-  type FinanceAssumptions,
-  type FinancialSummary,
-} from '@/lib/finance';
+  defaultPoultryAssumptions,
+  type BatchDates,
+  type PoultryAssumptions,
+  type PoultryReturns,
+} from '@/lib/poultryFinance';
+import { assumptionSource } from '@/lib/poultrySources';
 import { formatINRCompact, formatNumber } from '@/lib/format';
-import type { CropType } from '@/types/farm';
-
-/** The latest mandi price for the crop, already in ₹ per kg (from the calculation's reference data). */
-export interface LatestMandiPrice {
-  perUnit: number;
-  date: string;
-  scope: 'state' | 'india';
-}
+import type { BirdType, FarmingModel } from '@/types/farm';
 
 interface ReturnsPanelProps {
-  crop: CropType;
-  cropLabel: string;
-  assumptions: FinanceAssumptions;
-  onAssumptionsChange: (next: FinanceAssumptions) => void;
-  summary: FinancialSummary;
-  marketPrice?: LatestMandiPrice | null;
+  birdType: BirdType;
+  farmingModel: FarmingModel;
+  assumptions: PoultryAssumptions;
+  onAssumptionsChange: (next: PoultryAssumptions) => void;
+  summary: PoultryReturns;
+  calendar: BatchDates[];
 }
+
+interface FieldSpec {
+  field: string;
+  step: number;
+  max?: number;
+  term?: TermId;
+}
+
+/** The assumptions a farmer is most likely to know better than the planner, by the kind of farm. */
+const FIELDS: Record<'meat' | 'contract' | 'eggs', FieldSpec[]> = {
+  meat: [
+    { field: 'saleInrPerKg', step: 1, term: 'breakEven' },
+    { field: 'chickInr', step: 1 },
+    { field: 'feedInrPerKg', step: 0.5 },
+    { field: 'vaccineInrPerBird', step: 1 },
+    { field: 'mortalityPct', step: 0.5, max: 100, term: 'mortality' },
+    { field: 'saleWeightKg', step: 0.05 },
+    { field: 'fcr', step: 0.05, term: 'fcr' },
+    { field: 'rearingDays', step: 1, term: 'batch' },
+    { field: 'subsidyInr', step: 10000, term: 'subsidy' },
+  ],
+  contract: [
+    { field: 'growingChargeInrPerKg', step: 0.25, term: 'growingCharge' },
+    { field: 'mortalityPct', step: 0.5, max: 100, term: 'mortality' },
+    { field: 'saleWeightKg', step: 0.05 },
+    { field: 'fcr', step: 0.05, term: 'fcr' },
+    { field: 'labourInrPerBird', step: 0.5 },
+    { field: 'otherCostInrPerBird', step: 0.5 },
+    { field: 'rearingDays', step: 1, term: 'batch' },
+    { field: 'subsidyInr', step: 10000, term: 'subsidy' },
+  ],
+  eggs: [
+    { field: 'eggInr', step: 0.1, term: 'breakEven' },
+    { field: 'chickInr', step: 1 },
+    { field: 'feedInrPerKg', step: 0.5 },
+    { field: 'vaccineInrPerBird', step: 1 },
+    { field: 'layingMortalityPct', step: 0.5, max: 100, term: 'mortality' },
+    { field: 'eggsPerHen', step: 5 },
+    { field: 'layingFeedKgPerBird', step: 0.5 },
+    { field: 'culledBirdInr', step: 5 },
+    { field: 'subsidyInr', step: 10000, term: 'subsidy' },
+  ],
+};
 
 function AssumptionField({
   id,
@@ -99,22 +136,10 @@ function CashflowChart({ values, yearLabel }: { values: number[]; yearLabel: (ye
         const y = value >= 0 ? zeroY - barHeight : zeroY;
         return (
           <g key={year}>
-            <rect
-              x={x}
-              y={y}
-              width={barWidth}
-              height={barHeight}
-              rx={3}
-              className={value >= 0 ? 'fill-primary' : 'fill-destructive/70'}
-            >
+            <rect x={x} y={y} width={barWidth} height={barHeight} rx={3} className={value >= 0 ? 'fill-primary' : 'fill-destructive/70'}>
               <title>{`${yearLabel(year)}: ${formatINRCompact(value)}`}</title>
             </rect>
-            <text
-              x={x + barWidth / 2}
-              y={height - 4}
-              textAnchor="middle"
-              className="fill-muted-foreground text-[9px]"
-            >
+            <text x={x + barWidth / 2} y={height - 4} textAnchor="middle" className="fill-muted-foreground text-[9px]">
               {yearLabel(year)}
             </text>
           </g>
@@ -124,16 +149,104 @@ function CashflowChart({ values, yearLabel }: { values: number[]; yearLabel: (ye
   );
 }
 
-export function ReturnsPanel({ crop, cropLabel, assumptions, onAssumptionsChange, summary, marketPrice }: ReturnsPanelProps) {
+/** The year's batches on one line: growing time, then cleaning, from the first placement. */
+function BatchCalendar({ calendar, layer }: { calendar: BatchDates[]; layer: boolean }) {
   const { t } = useI18n();
-  const economics = CROP_ECONOMICS[crop];
-  const unit = t(`units.${economics.unit}`);
-  const sourceLine = (label: string, source: { text: string; verified: boolean }) =>
-    `${label}: ${source.text}${source.verified ? '' : ` (${t('returns.assumption')})`}`;
-  const update = (patch: Partial<FinanceAssumptions>) => onAssumptionsChange({ ...assumptions, ...patch });
+  const span = Math.max(365, ...calendar.map((batch) => batch.readyDay));
+  return (
+    <div className="space-y-2" data-testid="batch-calendar">
+      <div className="relative h-7 overflow-hidden rounded-md bg-muted" role="img" aria-label={t('returns.calendarLabel', { batches: calendar.length })}>
+        {calendar.map((batch) => (
+          <div key={batch.batch} className="absolute inset-y-0 flex" style={{ left: `${(batch.placeDay / span) * 100}%`, width: `${((batch.readyDay - batch.placeDay) / span) * 100}%` }}>
+            {layer && batch.pointOfLayDay !== null ? (
+              <>
+                <div className="h-full bg-primary/40" style={{ width: `${((batch.pointOfLayDay - batch.placeDay) / (batch.readyDay - batch.placeDay)) * 100}%` }} />
+                <div className="h-full flex-1 bg-primary" />
+              </>
+            ) : (
+              <div className="h-full flex-1 bg-primary" />
+            )}
+            <div className="h-full bg-amber-400/70" style={{ width: `${((batch.readyDay - batch.saleDay) / (batch.readyDay - batch.placeDay)) * 100}%` }} />
+          </div>
+        ))}
+        <div className="absolute inset-y-0 border-l-2 border-dashed border-foreground/40" style={{ left: `${(365 / span) * 100}%` }} aria-hidden />
+      </div>
+      <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+        {layer ? (
+          <li className="inline-flex items-center gap-1">
+            <span className="h-2 w-3 rounded-sm bg-primary/40" /> {t('returns.calendarGrowing')}
+          </li>
+        ) : null}
+        <li className="inline-flex items-center gap-1">
+          <span className="h-2 w-3 rounded-sm bg-primary" /> {t(layer ? 'returns.calendarLaying' : 'returns.calendarRearing')}
+        </li>
+        <li className="inline-flex items-center gap-1">
+          <span className="h-2 w-3 rounded-sm bg-amber-400/70" /> {t('returns.calendarCleaning')}
+        </li>
+        <li className="inline-flex items-center gap-1">
+          <span className="h-2 w-0 border-l-2 border-dashed border-foreground/40" /> {t('returns.calendarYearEnd')}
+        </li>
+      </ul>
+      <ol className="grid gap-1 text-xs text-foreground sm:grid-cols-2">
+        {calendar.map((batch) => (
+          <li key={batch.batch} className="tabular-nums">
+            {t(layer ? 'returns.calendarFlockRow' : 'returns.calendarBatchRow', {
+              n: batch.batch,
+              place: batch.placeDay,
+              lay: batch.pointOfLayDay ?? 0,
+              sale: batch.saleDay,
+              ready: batch.readyDay,
+            })}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+export function ReturnsPanel({ birdType, farmingModel, assumptions, onAssumptionsChange, summary, calendar }: ReturnsPanelProps) {
+  const { t } = useI18n();
+  const layer = summary.product === 'eggs';
+  const kind = layer ? 'eggs' : farmingModel === 'contract' ? 'contract' : 'meat';
+  const values = assumptions as unknown as Record<string, number>;
+  const update = (field: string, value: number) => onAssumptionsChange({ ...assumptions, [field]: value } as PoultryAssumptions);
+  const unverified = FIELDS[kind]
+    .map(({ field }) => ({ field, source: assumptionSource(birdType, farmingModel, field) }))
+    .filter(({ source }) => source && !source.verified);
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <section className="space-y-3 rounded-2xl border border-border bg-card p-4">
+        <h3 className="text-base font-semibold text-foreground">{t('returns.production')}</h3>
+        <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+          <div>
+            <dt className="text-xs text-muted-foreground">
+              <Labelled term="batch" label={t(layer ? 'returns.flocksYear' : 'returns.batchesYear')} />
+            </dt>
+            <dd className="font-semibold tabular-nums text-foreground">{formatNumber(summary.cyclesPerYear)}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted-foreground">{t(layer ? 'returns.eggsYear' : 'returns.kgYear')}</dt>
+            <dd className="font-semibold tabular-nums text-foreground">{formatNumber(layer ? summary.eggsPerYear : summary.kgSoldPerYear)}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted-foreground">{t('returns.feedYear')}</dt>
+            <dd className="font-semibold tabular-nums text-foreground">{formatNumber(summary.feedKgPerYear)}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted-foreground">
+              <Labelled term="breakEven" label={t('returns.breakEven')} />
+            </dt>
+            <dd className="font-semibold tabular-nums text-foreground">
+              {summary.breakEvenPrice === null
+                ? '—'
+                : t(layer ? 'returns.perEgg' : farmingModel === 'contract' ? 'returns.perKgCharge' : 'returns.perKg', { price: formatNumber(summary.breakEvenPrice) })}
+            </dd>
+          </div>
+        </dl>
+        <BatchCalendar calendar={calendar} layer={layer} />
+      </section>
+
       <section className="space-y-2 rounded-2xl border border-border bg-card p-4">
         <h3 className="text-base font-semibold text-foreground">{t('returns.cashflow')}</h3>
         <p className="text-sm text-muted-foreground">{t('returns.cashflowHint')}</p>
@@ -144,73 +257,37 @@ export function ReturnsPanel({ crop, cropLabel, assumptions, onAssumptionsChange
         <div className="flex items-start justify-between gap-2">
           <div>
             <h3 className="text-base font-semibold text-foreground">{t('returns.assumptions')}</h3>
-            <p className="mt-0.5 text-sm text-muted-foreground">{t('returns.assumptionsHint', { crop: cropLabel })}</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">{t(`returns.assumptionsHint.${kind}`)}</p>
           </div>
           <Button
             type="button"
             size="sm"
             variant="ghost"
             className="h-8 shrink-0 px-2 text-xs"
-            onClick={() => onAssumptionsChange(defaultFinanceAssumptions(crop))}
+            onClick={() => onAssumptionsChange({ ...defaultPoultryAssumptions(birdType, farmingModel), subsidyInr: assumptions.subsidyInr })}
           >
             <RotateCcw className="mr-1 h-3 w-3" />
             {t('returns.reset')}
           </Button>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <AssumptionField
-            id="returns-yield"
-            label={t('returns.yield', { unit })}
-            term="yield"
-            value={assumptions.yieldPerSqm}
-            step={0.5}
-            onChange={(yieldPerSqm) => update({ yieldPerSqm })}
-          />
-          <AssumptionField
-            id="returns-price"
-            label={t('returns.price', { unit })}
-            term="mandi"
-            value={assumptions.pricePerUnit}
-            step={1}
-            onChange={(pricePerUnit) => update({ pricePerUnit })}
-          />
-          <AssumptionField
-            id="returns-opex"
-            label={t('returns.opex')}
-            term="opex"
-            value={assumptions.operatingCostPct}
-            step={5}
-            max={100}
-            onChange={(operatingCostPct) => update({ operatingCostPct })}
-          />
-          <AssumptionField
-            id="returns-subsidy"
-            label={t('returns.subsidy')}
-            term="subsidy"
-            value={assumptions.subsidyPct}
-            step={5}
-            max={100}
-            onChange={(subsidyPct) => update({ subsidyPct })}
-          />
+          {FIELDS[kind].map(({ field, step, max, term }) => (
+            <AssumptionField
+              key={field}
+              id={`returns-${field}`}
+              label={t(`assumption.${field}`)}
+              term={term}
+              value={values[field]}
+              step={step}
+              max={max}
+              onChange={(value) => update(field, value)}
+            />
+          ))}
         </div>
-        {marketPrice && Math.abs(marketPrice.perUnit - assumptions.pricePerUnit) >= 0.5 ? (
-          <div className="space-y-1.5 rounded-xl border border-primary/20 bg-primary/5 p-3">
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              className="h-auto min-h-8 w-full whitespace-normal py-1.5 text-xs"
-              onClick={() => update({ pricePerUnit: Math.round(marketPrice.perUnit * 100) / 100 })}
-            >
-              {t('returns.useMandiPrice', {
-                price: formatNumber(marketPrice.perUnit),
-                unit,
-                scope: t(marketPrice.scope === 'state' ? 'returns.scopeState' : 'returns.scopeIndia'),
-                date: marketPrice.date,
-              })}
-            </Button>
-            <p className="text-xs leading-snug text-muted-foreground">{t('returns.mandiNote')}</p>
-          </div>
+        {unverified.length > 0 ? (
+          <p role="note" className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-foreground" data-testid="unverified-assumptions">
+            {t('returns.verifyThese', { items: unverified.map(({ field }) => t(`assumption.${field}`)).join(', ') })}
+          </p>
         ) : null}
       </section>
 
@@ -225,25 +302,30 @@ export function ReturnsPanel({ crop, cropLabel, assumptions, onAssumptionsChange
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-muted-foreground">
-              <Labelled term="subsidy" label={t('returns.subsidyAmount')} />
-            </dt>
-            <dd className="font-semibold text-foreground">{formatINRCompact(summary.subsidyAmount)}</dd>
+            <dt className="text-xs text-muted-foreground">{t('returns.marginPerBird')}</dt>
+            <dd className="font-semibold text-foreground">{formatINRCompact(summary.marginPerBird)}</dd>
           </div>
         </dl>
         <ul className="space-y-1 text-xs leading-snug text-muted-foreground">
-          <li className="flex gap-1.5">
-            <Info className="mt-0.5 h-3 w-3 shrink-0" />
-            {sourceLine(t('returns.yieldSource'), economics.yieldSource)}
-          </li>
-          <li className="flex gap-1.5">
-            <Info className="mt-0.5 h-3 w-3 shrink-0" />
-            {sourceLine(t('returns.priceSource'), economics.priceSource)}
-          </li>
-          <li className="flex gap-1.5">
-            <Info className="mt-0.5 h-3 w-3 shrink-0" />
-            {t('returns.subsidyHint')}
-          </li>
+          {FIELDS[kind].map(({ field }) => {
+            const source = assumptionSource(birdType, farmingModel, field);
+            if (!source) return null;
+            return (
+              <li key={field} className="flex gap-1.5">
+                <Info className="mt-0.5 h-3 w-3 shrink-0" />
+                <span>
+                  {t(`assumption.${field}`)}: {source.url ? (
+                    <a href={source.url} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                      {source.document}
+                    </a>
+                  ) : (
+                    source.document
+                  )}
+                  {source.verified ? '' : ` (${t('returns.assumption')})`}
+                </span>
+              </li>
+            );
+          })}
         </ul>
         <p className="text-xs text-muted-foreground">{t('returns.disclaimer')}</p>
       </MoreDetails>

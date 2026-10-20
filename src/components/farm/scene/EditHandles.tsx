@@ -3,7 +3,7 @@ import { Html } from '@react-three/drei';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import type { FarmConfig } from '@/types/farm';
+import type { FarmConfig } from '@/components/farm/scene/legacyConfig';
 import {
   HANDLE_GAP,
   RIDGE_GAP,

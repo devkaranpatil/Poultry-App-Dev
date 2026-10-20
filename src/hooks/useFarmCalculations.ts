@@ -1,8 +1,11 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { FarmConfig, CalculationResult } from '@/types/farm';
+import type { PoultryAssumptions } from '@/lib/poultryFinance';
 import { calculateFarm } from '@/services/calculation.service';
 
 const MAX_CACHED_RESULTS = 50;
+
+export const calculationKey = (config: FarmConfig, assumptions: Partial<PoultryAssumptions>) => JSON.stringify({ config, assumptions });
 
 export function useFarmCalculations() {
   const [isLoading, setIsLoading] = useState(false);
@@ -12,8 +15,9 @@ export function useFarmCalculations() {
   const cacheRef = useRef(new Map<string, CalculationResult>());
   const inFlightRef = useRef<AbortController | null>(null);
 
-  const calculate = useCallback(async (config: FarmConfig) => {
-    const cacheKey = JSON.stringify(config);
+  /** The key a result is stored under: the setup and the assumptions it was worked out with. */
+  const calculate = useCallback(async (config: FarmConfig, assumptions: Partial<PoultryAssumptions> = {}) => {
+    const cacheKey = calculationKey(config, assumptions);
     const cached = cacheRef.current.get(cacheKey);
     if (cached) {
       setResult(cached);
@@ -29,7 +33,7 @@ export function useFarmCalculations() {
     setError(null);
 
     try {
-      const data = await calculateFarm(config, controller.signal);
+      const data = await calculateFarm(config, assumptions, controller.signal);
       cacheRef.current.set(cacheKey, data);
       if (cacheRef.current.size > MAX_CACHED_RESULTS) {
         // Maps iterate in insertion order, so the first key is the oldest.
