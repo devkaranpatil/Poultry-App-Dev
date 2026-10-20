@@ -4,8 +4,8 @@
 //   node backend/scripts/loadReferenceData.js          (uses DATABASE_URL from backend/.env)
 //   node backend/scripts/loadReferenceData.js poultry  (only the poultry_* tables)
 //
-// The database is shared with the polyhouse planner, so load "poultry" there: the polyhouse tables are
-// that app's, and this repository's copies of their CSVs may drift from it over time.
+// The database is shared with the polyhouse planner. Its tables (cost_norms, midh_area_limits, mandi_prices_daily)
+// are that app's and are never touched here; their CSVs are kept only on the `polyhouse` git tag.
 
 const fs = require("fs");
 const path = require("path");
@@ -58,36 +58,6 @@ const bool = (value) => value === "true";
 
 // table -> { file, columns: [column, converter] }
 const TABLES = [
-  {
-    table: "cost_norms",
-    file: "nhb_midh_protected_cultivation_cost_norms.csv",
-    columns: [
-      ["scheme", (r) => r.scheme],
-      ["component", (r) => r.component],
-      ["structure_type", (r) => r.structure_type],
-      ["cost_norm_inr", (r) => num(r.cost_norm_inr)],
-      ["unit", (r) => r.unit],
-      ["cost_norm_hilly_inr", (r) => num(r.cost_norm_hilly_inr)],
-      ["pattern_of_assistance_verbatim", (r) => text(r.pattern_of_assistance_verbatim)],
-      ["source_document", (r) => r.source_document],
-      ["source_url", (r) => r.source_url],
-      ["notes", (r) => text(r.notes)],
-    ],
-  },
-  {
-    table: "midh_area_limits",
-    file: "midh_protected_cultivation_area_limits.csv",
-    columns: [
-      ["scheme", (r) => r.scheme],
-      ["rule", (r) => r.rule],
-      ["value", (r) => r.value],
-      ["unit", (r) => r.unit],
-      ["effective_from", (r) => r.effective_from],
-      ["source_document", (r) => r.source_document],
-      ["source_url", (r) => r.source_url],
-      ["notes", (r) => text(r.notes)],
-    ],
-  },
   {
     table: "district_climate_monthly",
     file: "district_climate_monthly.csv",

@@ -99,7 +99,7 @@
    "kind": "fact",
    "question": "How deep should the litter be at the start of a batch?",
    "mustMatch": [
-    "3\\s?(to|-|–)\\s?5"
+    "3\\s?[\\\"”″]?\\s?(inch(es)?\\s?)?(to|-|–)\\s?5"
    ],
    "mustNotMatch": [],
    "source": "tnau-litter: 3-5 inches"
@@ -109,7 +109,7 @@
    "kind": "fact",
    "question": "How deep can the litter build up to over time?",
    "mustMatch": [
-    "8\\s?(to|-|–)\\s?12"
+    "8\\s?[\\\"”″]?\\s?(inch(es)?\\s?)?(to|-|–)\\s?12"
    ],
    "mustNotMatch": [],
    "source": "tnau-litter: 8-12 inches"
@@ -129,7 +129,7 @@
    "kind": "fact",
    "question": "How fast should the brooding temperature be lowered each week, and down to what?",
    "mustMatch": [
-    "\\b5\\s?°?\\s?F|5 degrees",
+    "\\b5\\s?°?\\s?F|5 degrees|5°",
     "70"
    ],
    "mustNotMatch": [],
@@ -787,7 +787,7 @@
    "question": "How much floor space does a broiler need and how deep should the litter be at the start?",
    "mustMatch": [
     "\\b1\\s?(sq\\.?|square)\\s?f",
-    "3\\s?(to|-|–)\\s?5"
+    "3\\s?[\\\"”″]?\\s?(inch(es)?\\s?)?(to|-|–)\\s?5"
    ],
    "mustNotMatch": [],
    "source": "two-part question: both answers needed"

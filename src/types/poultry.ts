@@ -1,9 +1,8 @@
 import norms from '../../shared/poultry-norms.json';
 
 /**
- * The poultry setup the planner moves to (docs/migration/feature-changes.md, section 1). The screens still
- * use FarmConfig (the polyhouse fields) until Phases 3 and 4 switch them over; these types and the norms
- * behind them are ready first so the calculations can be built and tested against them.
+ * The poultry setup the planner works on (docs/migration/feature-changes.md, section 1): one shed, its birds and
+ * where it is built. FarmConfig in src/types/farm.ts is this type.
  */
 
 export type BirdType = 'broiler' | 'layer-cage' | 'layer-floor' | 'desi';
