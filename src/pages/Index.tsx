@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Box, CheckCircle2, FolderOpen, HelpCircle, LayoutDashboard, Share2, SlidersHorizontal } from 'lucide-react';
 import { DesignSidebar, type DesignTab } from '@/components/farm/DesignSidebar';
 import type { EditablePart } from '@/lib/sceneEdit';
-import { fromScenePatch, partForTab, tabForPart, toSceneConfig, type FarmConfig as SceneConfig } from '@/components/farm/scene/legacyConfig';
 import { SavedSetupsDialog } from '@/components/farm/SavedSetupsDialog';
 import { StepBar } from '@/components/workspace/StepBar';
 import { StepViews } from '@/components/workspace/StepViews';
@@ -80,11 +79,11 @@ const Index = () => {
   const [designTab, setDesignTab] = useState<DesignTab>('size');
   const selectOnModel = useCallback((part: EditablePart | null) => {
     setSelectedPart(part);
-    if (part) setDesignTab(tabForPart(part));
+    if (part) setDesignTab(part);
   }, []);
   const openDesignTab = useCallback((tab: DesignTab) => {
     setDesignTab(tab);
-    setSelectedPart(partForTab(tab) as EditablePart | null);
+    setSelectedPart(tab === 'location' ? null : tab);
   }, []);
   const [mobileDesignView, setMobileDesignView] = useState<MobileDesignView>('setup');
   // One switch for the AI summary in the report, shown on the summary step and in the export options.
@@ -141,16 +140,14 @@ const Index = () => {
   const area = config.length * config.width;
   // The 3D scene's geometry scales with the dimensions, so never hand it values
   // beyond the supported limits even while the user is mid-way through typing.
-  // The 3D scene still draws the polyhouse it was built for (Phase 5 rebuilds it): it gets the nearest shapes.
-  const modelConfig = useMemo<SceneConfig>(
-    () =>
-      toSceneConfig({
-        ...config,
-        length: clampDimension('length', config.length),
-        width: clampDimension('width', config.width),
-        eavesHeight: clampDimension('eavesHeight', config.eavesHeight),
-        ridgeHeight: clampDimension('ridgeHeight', config.ridgeHeight),
-      }),
+  const modelConfig = useMemo<FarmConfig>(
+    () => ({
+      ...config,
+      length: clampDimension('length', config.length),
+      width: clampDimension('width', config.width),
+      eavesHeight: clampDimension('eavesHeight', config.eavesHeight),
+      ridgeHeight: clampDimension('ridgeHeight', config.ridgeHeight),
+    }),
     [config]
   );
   const hasValidHeightRelation = config.ridgeHeight > config.eavesHeight;
@@ -210,8 +207,6 @@ const Index = () => {
     (patch: Partial<FarmConfig>) => setConfig((prev) => normalizeFarmConfig({ ...prev, ...patch })),
     []
   );
-  // A drag in the scene changes the shed's size and heights.
-  const handleScenePatch = useCallback((patch: Partial<SceneConfig>) => handleConfigPatch(fromScenePatch(patch)), [handleConfigPatch]);
 
   const middlePanel = (
     <ErrorBoundary
@@ -240,7 +235,7 @@ const Index = () => {
           config={modelConfig}
           isReady={isModelRenderable}
           missingItems={modelMissingItems}
-          onConfigChange={handleScenePatch}
+          onConfigChange={handleConfigPatch}
           selectedPart={selectedPart}
           onSelectedPartChange={selectOnModel}
         />

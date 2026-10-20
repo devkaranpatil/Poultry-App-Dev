@@ -3,7 +3,7 @@ import { Html } from '@react-three/drei';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import type { FarmConfig } from '@/components/farm/scene/legacyConfig';
+import type { FarmConfig } from '@/types/farm';
 import {
   HANDLE_GAP,
   RIDGE_GAP,
@@ -16,7 +16,7 @@ import {
   type HandleKey,
   type ResizeKey,
 } from '@/lib/sceneEdit';
-import { DOOR_OPENING, antechamber } from './structureLayout';
+import { entryWidth } from './shedLayout';
 
 /** What the view shows in its header while a grip is held. */
 export interface DragState {
@@ -64,7 +64,7 @@ const AXIS_VECTOR: Record<Axis, THREE.Vector3> = {
 const dimensionsOf = (config: FarmConfig) => ({
   length: config.length,
   width: config.width,
-  gutterHeight: config.gutterHeight,
+  eavesHeight: config.eavesHeight,
   ridgeHeight: config.ridgeHeight,
 });
 
@@ -102,7 +102,7 @@ function Arrow({ direction, size, color, opacity }: { direction: THREE.Vector3; 
 /**
  * Grips on the selected part that resize the house by dragging it, like Blender's transform gizmo:
  * push-pull arrows on the end wall (length) and side wall (width), a corner grip for both, the eave
- * for the gutter height and the ridge for the roof height. The pointer is followed with window
+ * for the eaves height and the ridge for the roof height. The pointer is followed with window
  * listeners and a ray against a plane through the drag axis, so the grip keeps tracking when the
  * pointer leaves it; the camera is held still while a grip is held and Esc puts everything back.
  */
@@ -132,15 +132,14 @@ export function EditHandles({
     callbacks.current = { onChange, onDragChange, onDragStart, onDragEnd, labels };
   });
 
-  const keys = handlesForPart(part, config);
+  const keys = handlesForPart(part);
   const halfLength = config.length / 2;
   const halfWidth = config.width / 2;
   const size = THREE.MathUtils.clamp(0.7 + Math.max(config.length, config.width) * 0.012, 0.8, 1.8);
   const hitRadius = size * (touch ? 1.5 : 0.95);
   // The length grip stands off to one side of the door end, so it never covers the door or the
   // entry room: the door stays easy to click and the grip easy to grab.
-  const room = antechamber(config.greenhouseType, config.doorEntry, config.gutterHeight);
-  const entryHalf = room ? room.width / 2 : DOOR_OPENING[config.doorEntry].width / 2;
+  const entryHalf = entryWidth(config.entry) / 2;
   const lengthX = -Math.min(Math.max(halfWidth - 0.3, 0), Math.max(halfWidth * 0.55, entryHalf + size * 0.6 + 0.3));
 
   const handles = useMemo<HandleDef[]>(() => {
@@ -148,14 +147,14 @@ export function EditHandles({
       length: {
         key: 'length',
         axis: 'z',
-        position: new THREE.Vector3(lengthX, Math.max(config.gutterHeight * 0.45, 1), halfLength + HANDLE_GAP),
+        position: new THREE.Vector3(lengthX, Math.max(config.eavesHeight * 0.45, 1), halfLength + HANDLE_GAP),
         color: AXIS_COLOR.z,
         cursor: 'ns-resize',
       },
       width: {
         key: 'width',
         axis: 'x',
-        position: new THREE.Vector3(halfWidth + HANDLE_GAP, Math.max(config.gutterHeight * 0.45, 1), 0),
+        position: new THREE.Vector3(halfWidth + HANDLE_GAP, Math.max(config.eavesHeight * 0.45, 1), 0),
         color: AXIS_COLOR.x,
         cursor: 'ew-resize',
       },
@@ -166,10 +165,10 @@ export function EditHandles({
         color: CORNER_COLOR,
         cursor: 'nwse-resize',
       },
-      gutterHeight: {
-        key: 'gutterHeight',
+      eavesHeight: {
+        key: 'eavesHeight',
         axis: 'y',
-        position: new THREE.Vector3(halfWidth + 0.3, config.gutterHeight, halfLength * 0.5),
+        position: new THREE.Vector3(halfWidth + 0.3, config.eavesHeight, halfLength * 0.5),
         color: AXIS_COLOR.y,
         cursor: 'ns-resize',
       },
@@ -182,9 +181,9 @@ export function EditHandles({
       },
     };
     return keys.map((key) => all[key]);
-    // keys is derived from part and roofType, both listed.
+    // keys is derived from part, which is listed.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [part, config.roofType, config.gutterHeight, config.ridgeHeight, halfLength, halfWidth, lengthX]);
+  }, [part, config.eavesHeight, config.ridgeHeight, halfLength, halfWidth, lengthX]);
 
   // Grips grow in when a part is selected.
   useEffect(() => {
@@ -394,19 +393,19 @@ export function EditHandles({
           );
         })}
 
-        {/* Edges that can be grabbed directly: the eave for the gutter, the ridge for the roof. */}
-        {keys.includes('gutterHeight') ? (
+        {/* Edges that can be grabbed directly: the eave for the eaves height, the ridge for the roof. */}
+        {keys.includes('eavesHeight') ? (
           <mesh
             name="handle-eave"
-            position={[halfWidth, config.gutterHeight, 0]}
-            onPointerDown={(event) => beginDrag(handles.find((h) => h.key === 'gutterHeight')!, event)}
+            position={[halfWidth, config.eavesHeight, 0]}
+            onPointerDown={(event) => beginDrag(handles.find((h) => h.key === 'eavesHeight')!, event)}
             onPointerOver={(event) => {
               event.stopPropagation();
-              setHovered('gutterHeight');
+              setHovered('eavesHeight');
               if (!active) gl.domElement.style.cursor = 'ns-resize';
             }}
             onPointerOut={() => {
-              setHovered((current) => (current === 'gutterHeight' ? null : current));
+              setHovered((current) => (current === 'eavesHeight' ? null : current));
               if (!active) gl.domElement.style.cursor = '';
             }}
             onClick={(event) => event.stopPropagation()}
@@ -414,9 +413,9 @@ export function EditHandles({
           >
             <boxGeometry args={[touch ? 0.6 : 0.3, touch ? 0.6 : 0.3, config.length]} />
             <meshBasicMaterial
-              color={active === 'gutterHeight' ? ACTIVE_COLOR : AXIS_COLOR.y}
+              color={active === 'eavesHeight' ? ACTIVE_COLOR : AXIS_COLOR.y}
               transparent
-              opacity={active === 'gutterHeight' || hovered === 'gutterHeight' ? 0.75 : 0.22}
+              opacity={active === 'eavesHeight' || hovered === 'eavesHeight' ? 0.75 : 0.22}
               depthTest={false}
               toneMapped={false}
             />

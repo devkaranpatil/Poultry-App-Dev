@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { EnvironmentId, SceneReach, SkyId } from '@/lib/sceneEnvironment';
-import type { RenderQuality } from './cropLayout';
+import type { RenderQuality } from './shedLayout';
 
 /**
  * What each landscape and sky looks like, and where the scenery around the house goes. Pure apart

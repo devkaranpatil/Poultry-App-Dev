@@ -2,66 +2,48 @@ import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { signUp, trackPageErrors } from "./helpers";
 
 /**
- * Every option the setup offers must produce its own 3D model. These tests open each option through
- * a share link, wait for the scene to finish building, and then inspect what was really built: the
- * named groups, the number of instances per part, and the materials. Screenshots of each option are
- * written to test-results/scene/ so they can be looked at.
+ * Every option the setup offers must produce its own 3D shed. These tests open each option through a share link,
+ * wait for the scene to finish building, and then inspect what was really built: the named groups, the number of
+ * instances per part, and the setup the model says it drew. Screenshots of each option are written to
+ * test-results/scene/ so they can be looked at against docs/3d-model-references.md.
  */
 
-const CROPS = ["tomato", "capsicum", "cucumber", "lettuce", "strawberry", "gerbera"] as const;
-const IRRIGATION = ["drip", "sprinkler", "fogger", "hydroponic-nft"] as const;
-const STRUCTURES = ["naturally-ventilated", "climate-controlled", "shade-net"] as const;
-const ROOFS = ["flat", "gable", "gothic"] as const;
-const MATERIALS = ["gi-steel", "aluminium", "bamboo"] as const;
-const COVERS = ["uv-polyfilm", "shade-net", "insect-net", "glass"] as const;
-const VENTS = ["none", "manual-rollup", "motorized-rollup", "louver"] as const;
-const DOORS = ["single-sliding", "double-sliding", "roll-up", "curtain"] as const;
+const BIRDS = ["broiler", "layer-cage", "layer-floor", "desi"] as const;
+const ROOFS = ["gable", "monitor", "lean-to"] as const;
+const SHEETS = ["gi-sheet", "galvalume", "fibre-cement", "puf-panel"] as const;
+const WALLS = ["mesh-curtain", "mesh-auto-curtain"] as const;
+const ENTRIES = ["single-door", "door-footbath", "anteroom"] as const;
 
 const BASE = {
-  length: 30,
-  width: 10,
-  gutterHeight: 4,
-  ridgeHeight: 6,
-  greenhouseType: "naturally-ventilated",
+  length: 14,
+  width: 7,
+  eavesHeight: 2.1,
+  ridgeHeight: 3.5,
+  housingSystem: "open-sided",
   roofType: "gable",
-  structureMaterial: "gi-steel",
-  coverMaterial: "uv-polyfilm",
-  sideVentilation: "manual-rollup",
-  doorEntry: "single-sliding",
-  selectedCrop: "tomato",
-  irrigationSystem: "drip",
+  frameMaterial: "steel-truss",
+  roofSheet: "gi-sheet",
+  sideWalls: "mesh-curtain",
+  entry: "door-footbath",
+  birdType: "broiler",
+  stockingDensity: null as number | null,
+  cageTiers: 3,
+  feedingSystem: "manual",
+  farmingModel: "independent",
+  beneficiaryCategory: "general",
   state: "Maharashtra",
-  district: "Pune",
+  district: "Nagpur",
 };
 type Setup = typeof BASE;
-
-/** Parts every crop must build (the part name is `<crop>-<part>`). */
-const CROP_PARTS: Record<(typeof CROPS)[number], string[]> = {
-  tomato: ["stems", "strings", "leaves", "fruit", "wires", "posts"],
-  capsicum: ["stems", "leaves", "fruit"],
-  cucumber: ["stems", "strings", "leaves", "fruit", "wires", "posts"],
-  lettuce: ["leaves"],
-  strawberry: ["leaves", "fruit", "flowers"],
-  gerbera: ["leaves", "stalks", "petals", "centres"],
-};
-
-/** Parts every irrigation system must build (the part name is `<system>-<part>`). */
-const IRRIGATION_PARTS: Record<(typeof IRRIGATION)[number], string[]> = {
-  drip: ["pipes", "emitters", "drops"],
-  sprinkler: ["pipes", "heads", "spray"],
-  fogger: ["pipes", "nozzles", "plumes", "mist"],
-  "hydroponic-nft": ["pipes", "legs", "channel-floors", "channel-walls", "water"],
-};
+/** A controlled tunnel shed: closed walls, pads and fans. */
+const CONTROLLED: Partial<Setup> = { housingSystem: "environment-controlled", sideWalls: "closed-tunnel", width: 12, eavesHeight: 2.6, ridgeHeight: 4 };
+/** A backyard shed for improved desi birds: bamboo frame and a fenced run. */
+const BACKYARD: Partial<Setup> = { housingSystem: "backyard", birdType: "desi", frameMaterial: "bamboo-wood" };
 
 interface SceneInfo {
   root: Record<string, unknown> | null;
   groups: Record<string, number>;
   instanced: Record<string, number>;
-  /** `woven` marks a net whose see-through comes from an alpha map (its weave) on top of the opacity. */
-  meshes: Record<string, { type: string; color: string; opacity: number; woven: boolean }>;
-  /** Largest pitch (rotation about X) among louver slats; slats must tilt about their long axis instead. */
-  louverPitch: number;
-  louverSlats: number;
 }
 
 function shareUrl(overrides: Partial<Setup>) {
@@ -81,8 +63,8 @@ function trackConsoleErrors(page: Page) {
   return errors;
 }
 
-type View = "inside" | "top" | "irrigation" | "door" | "vents" | "climate";
-const VIEW_KEY: Record<View, string> = { inside: "5", top: "4", irrigation: "8", door: "6", vents: "7", climate: "9" };
+type View = "inside" | "top" | "feeding" | "entry" | "walls" | "fans";
+const VIEW_KEY: Record<View, string> = { inside: "5", top: "4", feeding: "8", entry: "6", walls: "7", fans: "9" };
 
 async function openScene(page: Page, overrides: Partial<Setup> = {}, view?: View) {
   await page.goto(shareUrl(overrides));
@@ -92,7 +74,7 @@ async function openScene(page: Page, overrides: Partial<Setup> = {}, view?: View
   await page.waitForFunction(
     () => {
       const scene = (window as unknown as { __farmScene: { getObjectByName(name: string): unknown } }).__farmScene;
-      return Boolean(scene.getObjectByName("interior"));
+      return Boolean(scene.getObjectByName("birds-flock"));
     },
     undefined,
     { timeout: 30_000 }
@@ -112,29 +94,16 @@ async function inspect(page: Page): Promise<SceneInfo> {
       userData: Record<string, unknown>;
       isInstancedMesh?: boolean;
       count?: number;
-      isMesh?: boolean;
-      rotation?: { x: number };
-      material?: { type: string; color?: { getHexString(): string }; opacity: number; alphaMap?: unknown };
       traverse(callback: (child: Obj) => void): void;
     };
     const scene = (window as unknown as { __farmScene: Obj }).__farmScene;
-    const info: SceneInfo = { root: null, groups: {}, instanced: {}, meshes: {}, louverPitch: 0, louverSlats: 0 };
+    const info: SceneInfo = { root: null, groups: {}, instanced: {} };
     scene.traverse((object) => {
+      // Parts animating out carry a "leaving:" prefix; only the live model counts.
+      if (object.name.startsWith("leaving:")) return;
       if (object.name === "farm-model") info.root = object.userData;
-      if (object.name === "louver-slat") {
-        info.louverSlats += 1;
-        info.louverPitch = Math.max(info.louverPitch, Math.abs(object.rotation?.x ?? 0));
-      }
       if (object.name) info.groups[object.name] = (info.groups[object.name] ?? 0) + 1;
       if (object.isInstancedMesh && object.name) info.instanced[object.name] = object.count ?? 0;
-      if (object.isMesh && object.name && object.material && !Array.isArray(object.material)) {
-        info.meshes[object.name] = {
-          type: object.material.type,
-          color: object.material.color ? object.material.color.getHexString() : "",
-          opacity: object.material.opacity,
-          woven: Boolean(object.material.alphaMap),
-        };
-      }
     });
     return info;
   });
@@ -204,6 +173,16 @@ async function snap(page: Page, testInfo: TestInfo, name: string): Promise<Buffe
   return buffer;
 }
 
+/** Every pair of shots must be visibly different (identical renders score about 0). */
+async function allDifferent(page: Page, shots: Record<string, Buffer>, threshold: number) {
+  const names = Object.keys(shots);
+  for (let i = 0; i < names.length; i += 1) {
+    for (let j = i + 1; j < names.length; j += 1) {
+      expect(await pixelDifference(page, shots[names[i]], shots[names[j]]), `${names[i]} vs ${names[j]} look different`).toBeGreaterThan(threshold);
+    }
+  }
+}
+
 // Tagged @scene: a long sweep on software WebGL, run by its own CI workflow (scene-e2e.yml), not on every push.
 test.describe("3D models for every option", { tag: "@scene" }, () => {
   test.beforeEach(async ({ page }) => {
@@ -212,201 +191,155 @@ test.describe("3D models for every option", { tag: "@scene" }, () => {
     await signUp(page);
   });
 
-  test("each crop builds its own distinct model", async ({ page }, testInfo) => {
+  test("each bird builds its own flock: litter for floor birds, A-type cages for layers", async ({ page }, testInfo) => {
     test.setTimeout(420_000);
     const errors = trackPageErrors(page);
     const consoleErrors = trackConsoleErrors(page);
     const shots: Record<string, Buffer> = {};
 
-    for (const crop of CROPS) {
-      await openScene(page, { selectedCrop: crop }, "inside");
+    for (const bird of BIRDS) {
+      const overrides: Partial<Setup> = { birdType: bird, feedingSystem: bird === "layer-cage" ? "trough" : "manual" };
+      await openScene(page, overrides, "inside");
       const scene = await inspect(page);
 
-      expect(scene.root?.crop, `${crop}: root crop`).toBe(crop);
-      expect(scene.groups[`crop-${crop}`], `${crop}: crop group`).toBe(1);
-      for (const other of CROPS.filter((c) => c !== crop)) expect(scene.groups[`crop-${other}`], `${crop}: no ${other}`).toBeUndefined();
-      for (const part of CROP_PARTS[crop]) {
-        expect(scene.instanced[`${crop}-${part}`] ?? 0, `${crop}-${part} instances`).toBeGreaterThan(0);
-      }
-      expect(scene.groups["growing-beds"], `${crop}: soil beds`).toBe(1);
-
-      shots[crop] = await snap(page, testInfo, `crop-${crop}-inside`);
-      expect(await contrast(page, shots[crop]), `${crop}: image is not blank`).toBeGreaterThan(8);
-    }
-
-    // No two crops may look alike.
-    for (let i = 0; i < CROPS.length; i += 1) {
-      for (let j = i + 1; j < CROPS.length; j += 1) {
-        const difference = await pixelDifference(page, shots[CROPS[i]], shots[CROPS[j]]);
-        expect(difference, `${CROPS[i]} vs ${CROPS[j]} look different`).toBeGreaterThan(1.5);
-      }
-    }
-    expect(errors).toEqual([]);
-    expect(consoleErrors).toEqual([]);
-  });
-
-  test("each irrigation system builds its own distinct model", async ({ page }, testInfo) => {
-    test.setTimeout(420_000);
-    const errors = trackPageErrors(page);
-    const consoleErrors = trackConsoleErrors(page);
-    const shots: Record<string, Buffer> = {};
-
-    for (const system of IRRIGATION) {
-      await openScene(page, { irrigationSystem: system, selectedCrop: system === "hydroponic-nft" ? "lettuce" : "tomato" }, "irrigation");
-      const scene = await inspect(page);
-
-      expect(scene.root?.irrigation, `${system}: root irrigation`).toBe(system);
-      expect(scene.groups[`irrigation-${system}`], `${system}: group`).toBe(1);
-      for (const other of IRRIGATION.filter((s) => s !== system)) expect(scene.groups[`irrigation-${other}`], `${system}: no ${other}`).toBeUndefined();
-      expect(scene.groups[`pump-house-${system}`], `${system}: pump house`).toBe(1);
-      for (const part of IRRIGATION_PARTS[system]) {
-        expect(scene.instanced[`${system}-${part}`] ?? 0, `${system}-${part} instances`).toBeGreaterThan(0);
-      }
-
-      if (system === "hydroponic-nft") {
-        // Plants sit in net pots on raised tables, not in soil beds.
-        expect(scene.groups["growing-beds"], "no soil beds on NFT tables").toBeUndefined();
-        expect(scene.instanced["lettuce-net-pots"] ?? 0).toBeGreaterThan(0);
+      expect(scene.root?.bird, `${bird}: root bird`).toBe(bird);
+      expect(scene.instanced["birds-bodies"] ?? 0, `${bird}: birds`).toBeGreaterThan(0);
+      expect(scene.instanced["birds-bodies"], `${bird}: one detail per bird`).toBe(scene.instanced["birds-details"]);
+      expect(scene.root?.birdsShown, `${bird}: the flock drawn`).toBe(scene.instanced["birds-bodies"]);
+      if (bird === "layer-cage") {
+        expect(scene.groups["cages-rows"], "cage rows").toBe(1);
+        expect(scene.instanced["cages-boxes"] ?? 0).toBeGreaterThan(0);
+        expect(scene.groups["litter"], "no litter under cages").toBeUndefined();
       } else {
-        expect(scene.groups["growing-beds"], `${system}: soil beds`).toBe(1);
+        expect(scene.groups["litter"], `${bird}: litter`).toBe(1);
+        expect(scene.groups["cages-rows"], `${bird}: no cages`).toBeUndefined();
       }
 
-      shots[system] = await snap(page, testInfo, `irrigation-${system}-view`);
-      expect(await contrast(page, shots[system]), `${system}: image is not blank`).toBeGreaterThan(8);
+      shots[bird] = await snap(page, testInfo, `bird-${bird}-inside`);
+      expect(await contrast(page, shots[bird]), `${bird}: image is not blank`).toBeGreaterThan(8);
     }
-
-    for (let i = 0; i < IRRIGATION.length; i += 1) {
-      for (let j = i + 1; j < IRRIGATION.length; j += 1) {
-        const difference = await pixelDifference(page, shots[IRRIGATION[i]], shots[IRRIGATION[j]]);
-        expect(difference, `${IRRIGATION[i]} vs ${IRRIGATION[j]} look different`).toBeGreaterThan(1.5);
-      }
-    }
+    await allDifferent(page, shots, 1);
     expect(errors).toEqual([]);
     expect(consoleErrors).toEqual([]);
   });
 
-  test("the water in every irrigation system is animated", async ({ page }, testInfo) => {
-    test.setTimeout(300_000);
-    for (const system of IRRIGATION) {
-      await openScene(page, { irrigationSystem: system, selectedCrop: system === "hydroponic-nft" ? "lettuce" : "tomato" }, "irrigation");
-      const first = await snap(page, testInfo, `motion-${system}-a`);
-      await page.waitForTimeout(900);
-      const second = await snap(page, testInfo, `motion-${system}-b`);
-      expect(await pixelDifference(page, first, second), `${system}: frames differ over time`).toBeGreaterThan(0.05);
-    }
-  });
-
-  test("every structure type and roof shape builds", async ({ page }, testInfo) => {
+  test("every shed type and roof shape builds", async ({ page }, testInfo) => {
     test.setTimeout(480_000);
     const errors = trackPageErrors(page);
     const consoleErrors = trackConsoleErrors(page);
-    const shots: Buffer[] = [];
+    const shots: Record<string, Buffer> = {};
+    const housings = { "open-sided": {}, "environment-controlled": CONTROLLED, backyard: BACKYARD } as const;
 
-    for (const type of STRUCTURES) {
+    for (const [housing, setup] of Object.entries(housings)) {
       for (const roof of ROOFS) {
-        const overrides: Partial<Setup> = { greenhouseType: type, roofType: roof };
-        if (roof === "flat") overrides.ridgeHeight = BASE.gutterHeight;
-        if (type === "shade-net") Object.assign(overrides, { coverMaterial: "shade-net", sideVentilation: "none", doorEntry: "curtain" });
-        await openScene(page, overrides);
+        await openScene(page, { ...setup, roofType: roof });
         const scene = await inspect(page);
 
-        expect(scene.root, `${type}/${roof}: root`).toMatchObject({ structureType: type, roof });
-        if (type === "shade-net") {
-          expect(scene.groups["shade-net-structure"], `${type}/${roof}: shade net`).toBe(1);
-          expect(scene.groups["roof-cover"], `${type}/${roof}: no film roof`).toBeUndefined();
-        } else {
-          expect(scene.groups["roof-cover"], `${type}/${roof}: roof cover`).toBe(1);
-          expect(scene.groups["side-wall-cover"], `${type}/${roof}: side walls`).toBe(1);
-          expect(scene.groups["end-wall-cover"], `${type}/${roof}: end walls`).toBe(1);
-        }
-        if (type === "climate-controlled") expect(scene.groups["climate-equipment"], `${type}/${roof}: fans and pads`).toBe(1);
-        else expect(scene.groups["climate-equipment"], `${type}/${roof}: no fans`).toBeUndefined();
+        expect(scene.root, `${housing}/${roof}: root`).toMatchObject({ housing, roof });
+        expect(scene.groups["roof-model"], `${housing}/${roof}: roof`).toBe(1);
+        expect(scene.groups["roof-vent"], `${housing}/${roof}: monitor vent`).toBe(roof === "monitor" ? 1 : undefined);
+        expect(scene.groups["roof-ridge"], `${housing}/${roof}: ridge cap`).toBe(roof === "lean-to" ? undefined : 1);
+        expect(scene.groups["walls-model"], `${housing}/${roof}: walls`).toBe(1);
+        const controlled = housing === "environment-controlled";
+        expect(scene.groups["tunnel-equipment"], `${housing}/${roof}: pads and fans`).toBe(controlled ? 1 : undefined);
+        expect(scene.groups["walls-solid"], `${housing}/${roof}: closed walls`).toBe(controlled ? 1 : undefined);
+        expect(scene.groups["walls-run"], `${housing}/${roof}: fenced run`).toBe(housing === "backyard" ? 1 : undefined);
+        expect(scene.instanced["frame-posts"] ?? 0, `${housing}/${roof}: posts`).toBeGreaterThan(0);
 
-        shots.push(await snap(page, testInfo, `structure-${type}-${roof}`));
+        shots[`${housing}-${roof}`] = await snap(page, testInfo, `shed-${housing}-${roof}`);
       }
     }
-    // Nine different buildings: every pair must be visibly different. The canvas fills the whole window now,
-    // so the same change touches about half the share of pixels it used to (identical renders score about 0).
-    for (let i = 0; i < shots.length; i += 1) {
-      for (let j = i + 1; j < shots.length; j += 1) {
-        expect(await pixelDifference(page, shots[i], shots[j]), `structure shots ${i} vs ${j}`).toBeGreaterThan(0.15);
-      }
+    await allDifferent(page, shots, 0.15);
+    expect(errors).toEqual([]);
+    expect(consoleErrors).toEqual([]);
+  });
+
+  test("every frame and roof sheet builds and looks its own", async ({ page }, testInfo) => {
+    test.setTimeout(420_000);
+    const errors = trackPageErrors(page);
+    const consoleErrors = trackConsoleErrors(page);
+    const frames: Record<string, Buffer> = {};
+    const sheets: Record<string, Buffer> = {};
+
+    for (const [frame, setup] of [["steel-truss", {}], ["rcc-pillars", {}], ["bamboo-wood", BACKYARD]] as const) {
+      await openScene(page, { ...setup, frameMaterial: frame }, "inside");
+      const scene = await inspect(page);
+      expect(scene.root?.frame).toBe(frame);
+      expect(scene.instanced["frame-members"] ?? 0, `${frame}: members`).toBeGreaterThan(0);
+      frames[frame] = await snap(page, testInfo, `frame-${frame}`);
+    }
+    await allDifferent(page, frames, 0.3);
+
+    for (const [sheet, setup] of [...SHEETS.map((value) => [value, {}] as const), ["thatch", BACKYARD] as const]) {
+      await openScene(page, { ...setup, roofSheet: sheet });
+      const scene = await inspect(page);
+      expect(scene.root?.roofSheet).toBe(sheet);
+      expect(scene.groups["roof-sheet"], `${sheet}: sheets`).toBe(1);
+      sheets[sheet] = await snap(page, testInfo, `sheet-${sheet}`);
+    }
+    await allDifferent(page, sheets, 0.15);
+    expect(errors).toEqual([]);
+    expect(consoleErrors).toEqual([]);
+  });
+
+  test("every side wall and entry option builds", async ({ page }, testInfo) => {
+    test.setTimeout(420_000);
+    const errors = trackPageErrors(page);
+    const consoleErrors = trackConsoleErrors(page);
+
+    for (const walls of WALLS) {
+      await openScene(page, { sideWalls: walls }, "walls");
+      const scene = await inspect(page);
+      expect(scene.root?.sideWalls).toBe(walls);
+      expect(scene.groups["walls-low"], `${walls}: low wall`).toBe(1);
+      expect(scene.groups["walls-mesh"], `${walls}: mesh`).toBe(1);
+      expect(scene.groups["walls-curtains"], `${walls}: curtains`).toBe(1);
+      expect(scene.groups["walls-winch"], `${walls}: winch`).toBe(walls === "mesh-auto-curtain" ? 1 : undefined);
+      await snap(page, testInfo, `walls-${walls}`);
+    }
+
+    for (const entry of ENTRIES) {
+      await openScene(page, { entry }, "entry");
+      const scene = await inspect(page);
+      expect(scene.root?.entry).toBe(entry);
+      expect(scene.groups["entry-door"], `${entry}: door`).toBe(1);
+      expect(scene.groups["entry-footbath"], `${entry}: footbath`).toBe(entry === "single-door" ? undefined : 1);
+      expect(scene.groups["entry-anteroom"], `${entry}: anteroom`).toBe(entry === "anteroom" ? 1 : undefined);
+      await snap(page, testInfo, `entry-${entry}`);
     }
     expect(errors).toEqual([]);
     expect(consoleErrors).toEqual([]);
   });
 
-  test("every cover material and frame material builds", async ({ page }, testInfo) => {
+  test("every feeding system builds its own fittings", async ({ page }, testInfo) => {
     test.setTimeout(420_000);
     const errors = trackPageErrors(page);
     const consoleErrors = trackConsoleErrors(page);
-    const materialShots: Buffer[] = [];
-    const roofColors = new Set<string>();
+    const shots: Record<string, Buffer> = {};
+    const setups = [
+      ["manual", {}],
+      ["semi-auto", {}],
+      ["automatic", {}],
+      ["trough", { birdType: "layer-cage" }],
+      ["automatic-cages", { birdType: "layer-cage" }],
+    ] as const;
 
-    for (const cover of COVERS) {
-      await openScene(page, { coverMaterial: cover });
+    for (const [name, setup] of setups) {
+      const feeding = name === "automatic-cages" ? "automatic" : name;
+      await openScene(page, { ...setup, feedingSystem: feeding }, "feeding");
       const scene = await inspect(page);
-      expect(scene.root?.cover).toBe(cover);
-      const roof = scene.meshes["roof-cover-film"];
-      expect(roof, `${cover}: roof mesh`).toBeDefined();
-      // Film and glass are physically based (transmission); nets are plain translucent standard materials.
-      expect(roof.type, `${cover}: material`).toBe(cover === "uv-polyfilm" || cover === "glass" ? "MeshPhysicalMaterial" : "MeshStandardMaterial");
-      // A woven net's alpha map lets at most half of its opacity through on average.
-      expect(roof.woven ? roof.opacity * 0.5 : roof.opacity, `${cover}: see-through`).toBeLessThan(0.7);
-      roofColors.add(roof.color);
-      await snap(page, testInfo, `cover-${cover}`);
-    }
-    expect(roofColors.size, "each cover has its own colour").toBe(COVERS.length);
-
-    for (const material of MATERIALS) {
-      await openScene(page, { structureMaterial: material }, "inside");
-      const scene = await inspect(page);
-      expect(scene.root?.structure).toBe(material);
-      materialShots.push(await snap(page, testInfo, `frame-${material}`));
-    }
-    for (let i = 0; i < materialShots.length; i += 1) {
-      for (let j = i + 1; j < materialShots.length; j += 1) {
-        expect(await pixelDifference(page, materialShots[i], materialShots[j]), `frame ${i} vs ${j}`).toBeGreaterThan(0.3);
-      }
-    }
-    expect(errors).toEqual([]);
-    expect(consoleErrors).toEqual([]);
-  });
-
-  test("every side ventilation and door option builds", async ({ page }, testInfo) => {
-    test.setTimeout(420_000);
-    const errors = trackPageErrors(page);
-    const consoleErrors = trackConsoleErrors(page);
-
-    for (const vent of VENTS) {
-      await openScene(page, { sideVentilation: vent }, "vents");
-      const scene = await inspect(page);
-      expect(scene.root?.sideVentilation).toBe(vent);
-      for (const other of VENTS) {
-        const present = scene.groups[`vents-${other}`];
-        if (other === vent && vent !== "none") expect(present, `vent ${vent}`).toBe(1);
-        else expect(present, `vent ${vent}: no ${other}`).toBeUndefined();
-      }
-      if (vent === "louver") {
-        expect(scene.louverSlats, "louver slats").toBeGreaterThan(8);
-        expect(scene.louverPitch, "slats tilt about their long axis, never along it").toBeLessThan(0.01);
+      expect(scene.root?.feeding).toBe(feeding);
+      expect(scene.groups["feeding-model"], `${name}: fittings`).toBe(1);
+      if (name === "manual") {
+        expect(scene.instanced["feeding-plastic"] ?? 0, "round feeders").toBeGreaterThan(0);
+        expect(scene.instanced["feeding-drinkers"] ?? 0, "bell drinkers").toBeGreaterThan(0);
       } else {
-        expect(scene.louverSlats, `${vent}: no louver slats`).toBe(0);
+        expect(scene.instanced["feeding-lines"] ?? 0, `${name}: lines or troughs`).toBeGreaterThan(0);
       }
-      await snap(page, testInfo, `vent-${vent}`);
+      expect(scene.groups["feeding-silo"], `${name}: silo`).toBe(feeding === "automatic" ? 1 : undefined);
+      shots[name] = await snap(page, testInfo, `feeding-${name}`);
     }
-
-    for (const door of DOORS) {
-      await openScene(page, { doorEntry: door }, "door");
-      const scene = await inspect(page);
-      expect(scene.root?.door).toBe(door);
-      for (const other of DOORS) {
-        const present = scene.groups[`door-${other}`];
-        if (other === door) expect(present, `door ${door}`).toBe(1);
-        else expect(present, `door ${door}: no ${other}`).toBeUndefined();
-      }
-      await snap(page, testInfo, `door-${door}`);
-    }
+    await allDifferent(page, shots, 0.3);
     expect(errors).toEqual([]);
     expect(consoleErrors).toEqual([]);
   });
@@ -415,7 +348,7 @@ test.describe("3D models for every option", { tag: "@scene" }, () => {
     test.setTimeout(240_000);
     const errors = trackPageErrors(page);
     const consoleErrors = trackConsoleErrors(page);
-    await openScene(page, { selectedCrop: "tomato", irrigationSystem: "drip" });
+    await openScene(page);
 
     // The sidebar tab for the part, then the option's card.
     const choose = async (tab: string, option: RegExp) => {
@@ -423,56 +356,54 @@ test.describe("3D models for every option", { tag: "@scene" }, () => {
       await page.getByTestId("part-editor").getByRole("radio", { name: option }).click();
     };
 
-    await choose("Crop", /Gerbera/);
-    await expect(page.getByTestId("scene-canvas")).toHaveAttribute("data-crop", "gerbera");
+    await choose("Birds", /Layers in cages/);
+    await expect(page.getByTestId("scene-canvas")).toHaveAttribute("data-bird", "layer-cage");
     await page.waitForFunction(() => {
       const scene = (window as unknown as { __farmScene: { getObjectByName(name: string): unknown } }).__farmScene;
-      return Boolean(scene.getObjectByName("crop-gerbera"));
+      return Boolean(scene.getObjectByName("cages-rows"));
     });
 
-    await choose("Irrigation", /Hydroponic/);
-    await expect(page.getByTestId("scene-canvas")).toHaveAttribute("data-irrigation", "hydroponic-nft");
+    await choose("Feeding", /Automatic lines/);
+    await expect(page.getByTestId("scene-canvas")).toHaveAttribute("data-feeding", "automatic");
     await page.waitForFunction(() => {
       const scene = (window as unknown as { __farmScene: { getObjectByName(name: string): unknown } }).__farmScene;
-      return Boolean(scene.getObjectByName("irrigation-hydroponic-nft"));
+      return Boolean(scene.getObjectByName("feeding-silo"));
     });
 
     const scene = await inspect(page);
-    expect(scene.groups["crop-tomato"]).toBeUndefined();
-    expect(scene.groups["irrigation-drip"]).toBeUndefined();
-    expect(scene.instanced["gerbera-petals"]).toBeGreaterThan(0);
-    expect(scene.instanced["hydroponic-nft-water"]).toBeGreaterThan(0);
+    expect(scene.groups["litter"]).toBeUndefined();
+    expect(scene.instanced["cages-boxes"]).toBeGreaterThan(0);
     await page.keyboard.press("5");
     await page.waitForTimeout(1500);
-    await snap(page, testInfo, "controls-gerbera-nft");
+    await snap(page, testInfo, "controls-layer-cages-automatic");
 
     expect(errors).toEqual([]);
     expect(consoleErrors).toEqual([]);
   });
 
-  test("climate-controlled equipment builds with the right options", async ({ page }, testInfo) => {
+  test("a controlled shed shows its tunnel fans; an open shed has none", async ({ page }, testInfo) => {
     test.setTimeout(240_000);
     const errors = trackPageErrors(page);
     const consoleErrors = trackConsoleErrors(page);
 
-    await openScene(page, { greenhouseType: "climate-controlled" }, "climate");
+    await openScene(page, CONTROLLED, "fans");
     const scene = await inspect(page);
-    expect(scene.groups["climate-equipment"], "fans and cooling pads").toBe(1);
-    const closeUp = await snap(page, testInfo, "climate-controlled-equipment");
+    expect(scene.groups["tunnel-fans"], "fans").toBe(1);
+    expect(scene.groups["tunnel-pads"], "cooling pads").toBe(1);
+    const closeUp = await snap(page, testInfo, "tunnel-fans");
     expect(await contrast(page, closeUp), "close-up is not blank").toBeGreaterThan(8);
 
-    // A naturally ventilated house has none of it, and the Climate shortcut stays inactive.
-    await openScene(page, { greenhouseType: "naturally-ventilated" });
-    expect((await inspect(page)).groups["climate-equipment"]).toBeUndefined();
+    await openScene(page);
+    expect((await inspect(page)).groups["tunnel-equipment"]).toBeUndefined();
     expect(errors).toEqual([]);
     expect(consoleErrors).toEqual([]);
   });
 
-  test("every quality level renders without errors, with more detail on higher levels", async ({ page }) => {
+  test("every quality level renders without errors, with more birds on higher levels", async ({ page }) => {
     test.setTimeout(420_000);
     const errors = trackPageErrors(page);
     const consoleErrors = trackConsoleErrors(page);
-    const plants: Record<string, number> = {};
+    const drawn: Record<string, number> = {};
     // The shared beforeEach script resets the quality on every load; this one runs after it and wins.
     await page.addInitScript(() => {
       const wanted = window.sessionStorage.getItem("testQuality");
@@ -481,29 +412,23 @@ test.describe("3D models for every option", { tag: "@scene" }, () => {
 
     for (const quality of ["lite", "balanced", "high"] as const) {
       await page.evaluate((q) => window.sessionStorage.setItem("testQuality", q), quality);
-      for (const [crop, system] of [["tomato", "fogger"], ["gerbera", "sprinkler"], ["lettuce", "hydroponic-nft"]] as const) {
-        await openScene(page, { selectedCrop: crop, irrigationSystem: system });
-        const scene = await inspect(page);
-        expect(scene.root?.quality, `${quality}: root quality`).toBe(quality);
-        expect(scene.groups[`crop-${crop}`], `${quality}/${crop}`).toBe(1);
-        expect(scene.groups[`irrigation-${system}`], `${quality}/${system}`).toBe(1);
-        if (crop === "tomato") {
-          plants[quality] = Object.entries(scene.instanced)
-            .filter(([name]) => name.startsWith("tomato-"))
-            .reduce((sum, [, count]) => sum + count, 0);
-        }
-      }
+      // 40 x 10 m holds about 4,300 broilers: more than any quality draws.
+      await openScene(page, { length: 40, width: 10 });
+      const scene = await inspect(page);
+      expect(scene.root?.quality, `${quality}: root quality`).toBe(quality);
+      expect(scene.root?.birdsTotal as number).toBeGreaterThan(4000);
+      drawn[quality] = scene.instanced["birds-bodies"] ?? 0;
     }
-    expect(plants.balanced, "balanced draws more than lite").toBeGreaterThan(plants.lite);
-    expect(plants.high, "high draws more than balanced").toBeGreaterThan(plants.balanced);
+    expect(drawn.balanced, "balanced draws more than lite").toBeGreaterThan(drawn.lite);
+    expect(drawn.high, "high draws more than balanced").toBeGreaterThan(drawn.balanced);
     expect(errors).toEqual([]);
     expect(consoleErrors).toEqual([]);
   });
 
   test("an accessible description names what is on screen", async ({ page }) => {
-    await openScene(page, { selectedCrop: "strawberry", irrigationSystem: "sprinkler" });
+    await openScene(page, { birdType: "layer-floor" });
     const label = await page.getByTestId("scene-canvas").getAttribute("aria-label");
-    expect(label).toMatch(/30 by 10 metre naturally ventilated/);
-    expect(label).toMatch(/growing strawberry with sprinkler irrigation/);
+    expect(label).toMatch(/14 × 7 m poultry shed: Open-sided/);
+    expect(label).toMatch(/Layers on litter birds, Manual feeding/);
   });
 });

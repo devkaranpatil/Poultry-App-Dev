@@ -185,7 +185,7 @@ test.describe("editing the model in 3D", () => {
     // The door sits in the middle of the front wall; a click that lands on it selects it.
     await page.keyboard.press("6");
     await page.waitForTimeout(1200);
-    const door = await screenPosition(page, "door-panels", true);
+    const door = await screenPosition(page, "entry-door", true);
     await page.mouse.click(door.x, door.y);
     await expect(page.getByTestId("part-editor")).toHaveAttribute("data-part", "entry");
   });
@@ -206,7 +206,7 @@ test.describe("editing the model in 3D", () => {
     const [side, view] = [(await sidebar.boundingBox())!, (await canvas.boundingBox())!];
     expect(side.x).toBeGreaterThanOrEqual(view.x + view.width - 1); // beside the model, not over it
     // Choosing a part on the model (here through the editor hook) opens its tab.
-    await page.evaluate(() => (window as unknown as { __farmEditor: { select: (part: string) => void } }).__farmEditor.select("door"));
+    await page.evaluate(() => (window as unknown as { __farmEditor: { select: (part: string) => void } }).__farmEditor.select("entry"));
     await expect(page.getByTestId("part-editor")).toHaveAttribute("data-part", "entry");
     await expect(sidebar.getByRole("button", { name: "Entry", exact: true })).toHaveAttribute("aria-pressed", "true");
   });

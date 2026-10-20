@@ -3,7 +3,7 @@ import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Html, AdaptiveDpr } from '@react-three/drei';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
-import { FarmConfig, SetupSectionProgress } from '@/components/farm/scene/legacyConfig';
+import { optionKey, type FarmConfig, type SetupSectionProgress } from '@/types/farm';
 import { useI18n } from '@/context/I18nContext';
 import { useTheme } from 'next-themes';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -12,12 +12,13 @@ import { registerModelSnapshot } from '@/lib/modelSnapshot';
 import { hasSoftwareWebGL } from '@/lib/renderCapability';
 import { createOrientationChannel, type OrientationChannel } from '@/lib/orientationChannel';
 import {
-  OPTION_LABEL_KEYS,
   PART_ORDER,
   cycleOptionPatch,
   handlesForPart,
   partForObject,
+  partLabelKey,
   type EditablePart,
+  type FocusTarget,
   type ResizeKey,
 } from '@/lib/sceneEdit';
 import { isTypingTarget, resolveViewportKey, type ViewName } from '@/lib/viewportKeys';
@@ -53,11 +54,10 @@ import type { Vec3 } from '@/lib/viewMath';
 import type { CameraPreset, CameraRequest } from './CameraController';
 import { EditHandles, type DragState } from './scene/EditHandles';
 import { SelectionOutline } from './scene/SelectionOutline';
-import { RoofPie } from './scene/RoofPie';
 import { OrientationReporter, ViewGizmo } from './ViewGizmo';
 import { PropertiesPanel } from './PropertiesPanel';
 import { ModeSwitch, NavigationTools, UndoRedo } from './ViewportTools';
-import { PartIcon } from './OptionThumb';
+import { ShedTabIcon } from './ShedControls';
 
 /** What a G or S transform needs from the view: the house centre on screen, and metres per pixel there. */
 interface ModalProjector {
@@ -158,7 +158,6 @@ interface MiddlePanelProps {
 type BuildStage = 1 | 2 | 3 | 4 | 5 | 6;
 type RenderQuality = 'high' | 'balanced' | 'lite';
 type QualityMode = 'auto' | RenderQuality;
-type FocusTarget = 'door' | 'vents' | 'irrigation' | 'climate';
 
 const MIN_CAMERA_DISTANCE = 2;
 
@@ -216,7 +215,6 @@ interface SceneProps {
   quality: RenderQuality;
   cameraRequest: CameraRequest | null;
   focusHighlight: FocusTarget | null;
-  onFocusRequest: (target: FocusTarget) => void;
   isDark: boolean;
   editing: boolean;
   selected: EditablePart | null;
@@ -227,8 +225,6 @@ interface SceneProps {
   onFrame: (part: EditablePart) => void;
   onConfigChange?: (patch: Partial<FarmConfig>) => void;
   handleLabels: Record<ResizeKey, string>;
-  roofLabels: Record<string, string>;
-  roofTitle: string;
   touch: boolean;
   reducedMotion: boolean;
   onDragChange: (state: DragState | null) => void;
@@ -247,7 +243,6 @@ function Scene({
   quality,
   cameraRequest,
   focusHighlight,
-  onFocusRequest,
   isDark,
   editing,
   selected,
@@ -258,8 +253,6 @@ function Scene({
   onFrame,
   onConfigChange,
   handleLabels,
-  roofLabels,
-  roofTitle,
   touch,
   reducedMotion,
   onDragChange,
@@ -279,7 +272,7 @@ function Scene({
     () => ({ minDistance: MIN_CAMERA_DISTANCE, maxDistance: reach.maxDistance }),
     [reach.maxDistance]
   );
-  const revision = `${config.length}|${config.width}|${config.gutterHeight}|${config.ridgeHeight}|${config.roofType}|${config.greenhouseType}|${config.sideVentilation}|${config.doorEntry}|${config.selectedCrop}|${config.irrigationSystem}|${config.coverMaterial}|${config.structureMaterial}|${buildStage}`;
+  const revision = `${config.length}|${config.width}|${config.eavesHeight}|${config.ridgeHeight}|${config.housingSystem}|${config.roofType}|${config.frameMaterial}|${config.roofSheet}|${config.sideWalls}|${config.entry}|${config.birdType}|${config.cageTiers}|${config.feedingSystem}|${config.stockingDensity}|${buildStage}`;
 
   useEffect(() => {
     gl.domElement.style.cursor = editing && hovered ? 'pointer' : '';
@@ -326,7 +319,7 @@ function Scene({
         height={config.ridgeHeight}
       />
 
-      {/* The greenhouse. Clicking a part selects it, double-clicking frames it. */}
+      {/* The shed. Clicking a part selects it, double-clicking frames it. */}
       <group
         onClick={(event) => {
           // A finger wobbles more than a mouse: allow more travel before a tap counts as a drag.
@@ -361,7 +354,6 @@ function Scene({
           buildStage={buildStage}
           quality={quality}
           focusHighlight={focusHighlight}
-          onFocusRequest={onFocusRequest}
           guides={guides}
         />
       </group>
@@ -381,9 +373,6 @@ function Scene({
           onDragEnd={onDragEnd}
         />
       ) : null}
-      {editing && onConfigChange && selected === 'roof' ? (
-        <RoofPie config={config} onChange={onConfigChange} labels={roofLabels} title={roofTitle} touch={touch} />
-      ) : null}
       <ProjectionTestHook />
     </>
   );
@@ -397,17 +386,17 @@ const VIEW_PRESET: Record<ViewName, CameraPreset> = {
   'other-side': 'other-side',
   top: 'top',
   inside: 'inside',
-  'focus-door': 'focus-door',
-  'focus-vents': 'focus-vents',
-  'focus-irrigation': 'focus-irrigation',
-  'focus-climate': 'focus-climate',
+  'focus-entry': 'focus-entry',
+  'focus-walls': 'focus-walls',
+  'focus-feeding': 'focus-feeding',
+  'focus-fans': 'focus-fans',
 };
 
 const FOCUS_OF: Partial<Record<CameraPreset, FocusTarget>> = {
-  'focus-door': 'door',
-  'focus-vents': 'vents',
-  'focus-irrigation': 'irrigation',
-  'focus-climate': 'climate',
+  'focus-entry': 'entry',
+  'focus-walls': 'walls',
+  'focus-feeding': 'feeding',
+  'focus-fans': 'fans',
 };
 
 type CameraRequestInput = CameraRequest extends infer R ? (R extends CameraRequest ? Omit<R, 'id'> : never) : never;
@@ -461,7 +450,7 @@ export function MiddlePanel({
     return stored === 'high' || stored === 'balanced' || stored === 'lite' || stored === 'auto' ? stored : 'auto';
   });
   const area = config.length * config.width;
-  const volume = area * ((config.gutterHeight + config.ridgeHeight) / 2);
+  const volume = area * ((config.eavesHeight + config.ridgeHeight) / 2);
   const softwareWebGL = hasSoftwareWebGL();
   const autoQuality: RenderQuality = (() => {
     if (typeof window === 'undefined') return 'balanced';
@@ -485,41 +474,15 @@ export function MiddlePanel({
   // Software WebGL shades every pixel on the CPU: on Auto, a quarter of the pixels keeps the page responsive.
   // A quality the user picked is respected.
   const dprRange: [number, number] = softwareWebGL && qualityMode === 'auto' ? [0.5, 0.5] : [1, resolvedDpr];
-  const hasBase = sectionProgress?.baseDimensions ?? (config.length > 0 && config.width > 0);
-  const hasHeights =
-    sectionProgress?.heights ??
-    (config.gutterHeight > 0 &&
-      config.ridgeHeight > 0 &&
-      (config.roofType === 'flat'
-        ? Math.abs(config.ridgeHeight - config.gutterHeight) < 0.001
-        : config.ridgeHeight > config.gutterHeight));
-  const hasTypeAndRoof = sectionProgress?.typeAndRoof ?? Boolean(config.greenhouseType && config.roofType);
-  const hasMaterials = sectionProgress?.materials ?? Boolean(config.structureMaterial && config.coverMaterial);
-  const hasAccess = sectionProgress?.access ?? Boolean(config.sideVentilation && config.doorEntry);
-  // The location only matters for the money steps, so it never holds back the model: crops and
-  // irrigation show as soon as they are chosen.
-  const hasCultivation = sectionProgress?.cultivation ?? Boolean(config.selectedCrop && config.irrigationSystem);
-  const targetBuildStage: BuildStage = !hasBase
-    ? 1
-    : !hasHeights
-      ? 1
-      : !(hasTypeAndRoof && hasMaterials)
-        ? 2
-        : !hasAccess
-          ? 3
-          : !hasCultivation
-            ? 4
-            : 6;
-  const focusLabel =
-    focusHighlight === 'door'
-      ? t('middle.focusDoor')
-      : focusHighlight === 'vents'
-        ? t('middle.focusVents')
-        : focusHighlight === 'irrigation'
-          ? t('middle.focusIrrigation')
-          : focusHighlight === 'climate'
-            ? t('middle.focusClimate')
-            : null;
+  const hasSize =
+    sectionProgress?.size ??
+    (config.length > 0 && config.width > 0 && config.eavesHeight > 0 && config.ridgeHeight > config.eavesHeight);
+  const hasShed = sectionProgress?.shed ?? true;
+  // The location only matters for the money steps, so it never holds back the model: the birds show as soon as
+  // they are chosen.
+  const hasBirds = sectionProgress?.birds ?? true;
+  const targetBuildStage: BuildStage = !hasSize ? 1 : !hasShed ? 3 : !hasBirds ? 5 : 6;
+  const focusLabel = focusHighlight ? t(`middle.focus.${focusHighlight}`) : null;
 
   const canEdit = isReady && Boolean(onConfigChange);
   const editing = canEdit && editMode && buildStage >= 2;
@@ -539,16 +502,11 @@ export function MiddlePanel({
     [requestCamera]
   );
 
-  const handleFocusRequest = useCallback(
-    (target: FocusTarget) => goToView(`focus-${target}` as ViewName),
-    [goToView]
-  );
-
   const selectPart = useCallback(
     (part: EditablePart | null) => {
       setSelectedPart(part);
       // A phone has no room to hunt for grips: a part with grips is framed so they are all on screen.
-      if (part && isMobile && handlesForPart(part, keyState.current.config).length > 0) requestCamera({ kind: 'frame', part });
+      if (part && isMobile && handlesForPart(part).length > 0) requestCamera({ kind: 'frame', part });
     },
     [isMobile, requestCamera, setSelectedPart]
   );
@@ -631,7 +589,7 @@ export function MiddlePanel({
       const { config: current, selectedPart: part, history: edits } = keyState.current;
       const projector = projectorRef.current;
       if (!projector) return false;
-      const state = startModal(kind, part, current, pointerRef.current, projector.centre(current.gutterHeight), projector.metresPerPixel());
+      const state = startModal(kind, part, current, pointerRef.current, projector.centre(current.eavesHeight), projector.metresPerPixel());
       if (!state) return false;
       edits.beginGroup();
       updateModal(state);
@@ -689,7 +647,7 @@ export function MiddlePanel({
         updateModal(modalKey(modal, event.key));
         return;
       }
-      const canTransform = state.editing && Boolean(state.onConfigChange) && modalAxes(state.selectedPart, state.config).length > 0;
+      const canTransform = state.editing && Boolean(state.onConfigChange) && modalAxes(state.selectedPart).length > 0;
       const action = resolveViewportKey(event, { canTransform });
       if (!action) return;
       // A menu, dialog or popover with focus keeps its own keys.
@@ -698,8 +656,8 @@ export function MiddlePanel({
 
       switch (action.type) {
         case 'view': {
-          if (action.view === 'focus-vents' && state.config.sideVentilation === 'none') return;
-          if (action.view === 'focus-climate' && state.config.greenhouseType !== 'climate-controlled') return;
+          if (action.view === 'focus-walls' && state.config.sideWalls === 'closed-tunnel') return;
+          if (action.view === 'focus-fans' && state.config.sideWalls !== 'closed-tunnel') return;
           event.preventDefault();
           goToView(action.view);
           return;
@@ -784,7 +742,7 @@ export function MiddlePanel({
         selectPart(part);
       },
       getSelected: () => keyState.current.selectedPart,
-      getHandles: () => handlesForPart(keyState.current.editing ? keyState.current.selectedPart : null, keyState.current.config),
+      getHandles: () => handlesForPart(keyState.current.editing ? keyState.current.selectedPart : null),
       isEditing: () => keyState.current.editing,
       undo: () => keyState.current.history.undo(),
       redo: () => keyState.current.history.redo(),
@@ -806,16 +764,11 @@ export function MiddlePanel({
   const handleLabels: Record<ResizeKey, string> = {
     length: t('left.length'),
     width: t('left.width'),
-    gutterHeight: t('left.gutter'),
+    eavesHeight: t('left.eaves'),
     ridgeHeight: t('left.ridge'),
   };
-  const roofLabels = {
-    flat: t(OPTION_LABEL_KEYS.flat),
-    gable: t(OPTION_LABEL_KEYS.gable),
-    gothic: t(OPTION_LABEL_KEYS.gothic),
-  };
-  const partName = selectedPart ? t(`edit.part.${selectedPart}`) : '';
-  const hasGrips = handlesForPart(selectedPart, config).length > 0;
+  const partName = selectedPart ? t(partLabelKey(selectedPart)) : '';
+  const hasGrips = handlesForPart(selectedPart).length > 0;
   const statusText = !canEdit
     ? t('middle.dragHint')
     : !editMode
@@ -824,14 +777,14 @@ export function MiddlePanel({
         ? isMobile
           ? t('viewport.status.idleTouch')
           : t('viewport.status.idle')
-        : selectedPart === 'roof'
+        : selectedPart === 'roof' || selectedPart === 'roofSheet'
           ? t('viewport.status.roof')
           : hasGrips
             ? t('viewport.status.grips')
             : t('viewport.status.options');
   const frameLabel = selectedPart ? t('viewport.frameSelected') : t('viewport.frameAll');
   const guides = useMemo<ResizeKey[]>(
-    () => (editing ? handlesForPart(selectedPart, config).filter((key): key is ResizeKey => key !== 'corner') : []),
+    () => (editing ? handlesForPart(selectedPart).filter((key): key is ResizeKey => key !== 'corner') : []),
     [editing, selectedPart, config]
   );
   const rightGutter = 12;
@@ -848,18 +801,18 @@ export function MiddlePanel({
             aria-label={t('middle.sceneDescription', {
               length: config.length,
               width: config.width,
-              type: config.greenhouseType.replace(/-/g, ' '),
-              roof: config.roofType,
-              structure: config.structureMaterial.replace(/-/g, ' '),
-              cover: config.coverMaterial.replace(/-/g, ' '),
-              crop: config.selectedCrop,
-              irrigation: config.irrigationSystem.replace(/-/g, ' '),
+              housing: t(optionKey('housing', config.housingSystem)),
+              roof: t(optionKey('roof', config.roofType)),
+              sheet: t(optionKey('roofSheet', config.roofSheet)),
+              walls: t(optionKey('sideWalls', config.sideWalls)),
+              bird: t(optionKey('bird', config.birdType)),
+              feeding: t(optionKey('feeding', config.feedingSystem)),
             })}
             data-testid="scene-canvas"
             data-build-stage={buildStage}
             data-quality={quality}
-            data-crop={config.selectedCrop}
-            data-irrigation={config.irrigationSystem}
+            data-bird={config.birdType}
+            data-feeding={config.feedingSystem}
             data-selected={selectedPart ?? ''}
             data-mode={editMode ? 'edit' : 'view'}
           >
@@ -892,7 +845,6 @@ export function MiddlePanel({
                   quality={quality}
                   cameraRequest={cameraRequest}
                   focusHighlight={focusHighlight}
-                  onFocusRequest={handleFocusRequest}
                   isDark={isDark}
                   editing={editing}
                   selected={editing ? selectedPart : null}
@@ -903,8 +855,6 @@ export function MiddlePanel({
                   onFrame={(part) => frameSelection(part)}
                   onConfigChange={onConfigChange}
                   handleLabels={handleLabels}
-                  roofLabels={roofLabels}
-                  roofTitle={t('viewport.pie')}
                   touch={isMobile}
                   reducedMotion={reducedMotion}
                   onDragChange={setDragState}
@@ -1006,8 +956,8 @@ export function MiddlePanel({
               onFrame={() => frameSelection()}
               onReset={() => goToView('auto')}
               onView={goToView}
-              hasVents={config.sideVentilation !== 'none'}
-              hasClimate={config.greenhouseType === 'climate-controlled'}
+              hasWalls={config.sideWalls !== 'closed-tunnel'}
+              hasFans={config.sideWalls === 'closed-tunnel'}
               helpOpen={helpOpen}
               onHelpOpenChange={setHelpOpen}
               frameLabel={frameLabel}
@@ -1030,7 +980,7 @@ export function MiddlePanel({
                   className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-orange-500 py-1 pl-2 pr-1 text-xs font-medium text-white shadow-elevated animate-in fade-in-0 zoom-in-95 duration-150"
                   data-testid="selection-label"
                 >
-                  <PartIcon part={selectedPart} className="h-3.5 w-3.5" />
+                  <ShedTabIcon tab={selectedPart} className="h-3.5 w-3.5" />
                   {t('viewport.selected', { part: partName })}
                   <button
                     type="button"

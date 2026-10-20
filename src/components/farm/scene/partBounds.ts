@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import type { FarmConfig } from '@/components/farm/scene/legacyConfig';
+import type { FarmConfig } from '@/types/farm';
 import { MODEL_ROOT_NAME, objectBelongsToPart, type EditablePart } from '@/lib/sceneEdit';
 
-type Dimensions = Pick<FarmConfig, 'length' | 'width' | 'gutterHeight' | 'ridgeHeight'>;
+type Dimensions = Pick<FarmConfig, 'length' | 'width' | 'eavesHeight' | 'ridgeHeight'>;
 
 /** The box the house itself fills, from the config (the model may still be animating towards it). */
 export function houseBox(config: Dimensions, target = new THREE.Box3()): THREE.Box3 {
@@ -10,7 +10,7 @@ export function houseBox(config: Dimensions, target = new THREE.Box3()): THREE.B
   const halfLength = Math.max(config.length, 1) / 2;
   return target.set(
     new THREE.Vector3(-halfWidth, 0, -halfLength),
-    new THREE.Vector3(halfWidth, Math.max(config.ridgeHeight, config.gutterHeight, 1), halfLength)
+    new THREE.Vector3(halfWidth, Math.max(config.ridgeHeight, config.eavesHeight, 1), halfLength)
   );
 }
 
@@ -46,7 +46,7 @@ export function partBounds(scene: THREE.Object3D, part: EditablePart, config: Di
   }
   if (target.isEmpty() || !Number.isFinite(target.min.x) || !Number.isFinite(target.max.x)) {
     houseBox(config, target);
-    if (part === 'roof' && config.ridgeHeight > config.gutterHeight) target.min.y = config.gutterHeight;
+    if (part === 'roof' && config.ridgeHeight > config.eavesHeight) target.min.y = config.eavesHeight;
   }
   return target;
 }

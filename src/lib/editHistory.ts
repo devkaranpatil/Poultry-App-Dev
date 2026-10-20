@@ -1,4 +1,4 @@
-import type { FarmConfig } from '@/components/farm/scene/legacyConfig';
+import type { FarmConfig } from '@/types/farm';
 
 export type ConfigPatch = Partial<FarmConfig>;
 
@@ -21,19 +21,22 @@ export interface HistoryState {
 export const HISTORY_KEYS: Array<keyof FarmConfig> = [
   'length',
   'width',
-  'gutterHeight',
+  'eavesHeight',
   'ridgeHeight',
-  'greenhouseType',
+  'housingSystem',
   'roofType',
-  'structureMaterial',
-  'coverMaterial',
-  'sideVentilation',
-  'doorEntry',
-  'selectedCrop',
-  'irrigationSystem',
+  'frameMaterial',
+  'roofSheet',
+  'sideWalls',
+  'entry',
+  'birdType',
+  'stockingDensity',
+  'cageTiers',
+  'feedingSystem',
+  'farmingModel',
 ];
 
-const DIMENSION_KEYS = new Set<keyof FarmConfig>(['length', 'width', 'gutterHeight', 'ridgeHeight']);
+const DIMENSION_KEYS = new Set<keyof FarmConfig>(['length', 'width', 'eavesHeight', 'ridgeHeight']);
 
 /** Slider and number changes this close together count as one step. */
 export const MERGE_WINDOW_MS = 800;

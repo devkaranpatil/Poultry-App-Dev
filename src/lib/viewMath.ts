@@ -4,8 +4,8 @@
  * orbit like Blender's numpad, the orientation gizmo, and where each named view puts the camera.
  */
 
-import type { FarmConfig } from '@/components/farm/scene/legacyConfig';
-import { antechamber } from '@/components/farm/scene/structureLayout';
+import type { FarmConfig } from '@/types/farm';
+import { anteroom, buildCageRows, entryDepth } from '@/components/farm/scene/shedLayout';
 
 export type Vec3 = [number, number, number];
 
@@ -180,9 +180,9 @@ export function segmentEntry(a: Vec3, b: Vec3, box: Box3): number | null {
 }
 
 /**
- * Moves the camera towards (factor < 1) or away from the target. With `keepOut` (the house), a
+ * Moves the camera towards (factor < 1) or away from the target. With `keepOut` (the shed), a
  * zoom in from outside towards a target that is also outside stops short of the cover instead of
- * passing through it; a target inside the house can still be zoomed into.
+ * passing through it; a target inside the shed can still be zoomed into.
  */
 export function zoomView(current: View, factor: number, limits = { minDistance: 2, maxDistance: 220 }, keepOut?: Box3): View {
   const offset = toSpherical(sub(current.position, current.target));
@@ -234,39 +234,63 @@ export type CameraPreset =
   | 'other-side'
   | 'top'
   | 'inside'
-  | 'focus-door'
-  | 'focus-vents'
-  | 'focus-irrigation'
-  | 'focus-climate';
+  | 'focus-entry'
+  | 'focus-walls'
+  | 'focus-feeding'
+  | 'focus-fans';
 
-export type HouseShape = Pick<FarmConfig, 'length' | 'width' | 'gutterHeight' | 'ridgeHeight' | 'greenhouseType' | 'doorEntry'>;
+export type HouseShape = Pick<FarmConfig, 'length' | 'width' | 'eavesHeight' | 'ridgeHeight' | 'housingSystem' | 'entry'> &
+  Partial<Pick<FarmConfig, 'birdType' | 'cageTiers'>>;
 
-/** Eye height of someone standing beside the house. */
+/**
+ * Where to stand across the width to look down the shed: off the centre line on the floor, and in an aisle between
+ * (or beside) the cage rows of a layer shed, so the camera is never inside a cage.
+ */
+function aisleX({ width, length, birdType, cageTiers }: HouseShape, fallback: number): number {
+  if (birdType !== 'layer-cage') return fallback;
+  const rows = buildCageRows(width, length, cageTiers ?? 3);
+  const edge = (i: number) => rows[i].x + rows[i].halfWidth;
+  if (rows.length > 1) return (edge(0) + rows[1].x - rows[1].halfWidth) / 2;
+  // One row: the aisle beside it, kept inside the walls of a shed too narrow for one.
+  return Math.min((edge(0) + width / 2) / 2, width / 2 - 0.15);
+}
+
+/** Eye height of someone standing beside the shed. */
 const EYE = 1.7;
 
-/** The house as a box (footprint up to the ridge), for keeping a zoom from passing through the cover. */
+/** Below this length a view down the shed would be closer than the orbit allows (2 m). */
+const SHORT_SHED = 6;
+
+/** From near the entry corner to the far corner of the floor: the inside views of a short shed. */
+function acrossInside(halfWidth: number, halfLength: number, y: number, targetY: number): View {
+  return { position: [halfWidth * 0.8, y, halfLength * 0.8], target: [-halfWidth * 0.8, targetY, -halfLength * 0.8] };
+}
+
+/** The shed as a box (footprint up to the ridge), for keeping a zoom from passing through the walls and roof. */
 export function houseBox({ length, width, ridgeHeight }: HouseShape): Box3 {
   return { min: [-width / 2, 0, -length / 2], max: [width / 2, ridgeHeight, length / 2] };
 }
 
-/** The opening view, tuned per house type. */
-function overview({ length, width, ridgeHeight, greenhouseType }: HouseShape): View {
-  if (greenhouseType === 'climate-controlled') {
-    return { position: [-width * 0.8, ridgeHeight * 1.8, length * 1.6], target: [0, ridgeHeight * 0.3, 0] };
-  }
-  if (greenhouseType === 'shade-net') {
-    return { position: [width * 1.5, ridgeHeight * 2.5, length * 0.8], target: [0, ridgeHeight * 0.5, 0] };
-  }
-  return { position: [width * 1.2, ridgeHeight * 2.2, length * 1.4], target: [0, ridgeHeight * 0.4, 0] };
+/**
+ * The opening view: from a front corner and above, so the entry, one open side and the birds inside all show. A
+ * long, narrow shed is seen more from its side. A controlled shed is seen from the other corner, past the pads.
+ */
+function overview({ length, width, ridgeHeight, housingSystem }: HouseShape): View {
+  const reach = Math.max(length, width * 2, 6);
+  const side = housingSystem === 'environment-controlled' ? -1 : 1;
+  return {
+    position: [side * (width * 0.9 + reach * 0.45), ridgeHeight * 1.6 + reach * 0.3, length * 0.5 + reach * 0.45],
+    target: [0, ridgeHeight * 0.3, 0],
+  };
 }
 
 /**
  * Where the camera goes for each named view. Coordinates follow the scene: x across the width, z
- * along the length with the entry end wall at +z, y up, the house centred on the origin. The focus
- * views stand outside the house (or, for irrigation, low in an aisle) so nothing blocks the part.
+ * along the length with the entry end wall at +z, y up, the shed centred on the origin. The focus
+ * views stand outside the shed (or, for feeding, low inside) so nothing blocks the part.
  */
 export function presetView(preset: CameraPreset, house: HouseShape): View {
-  const { length, width, ridgeHeight, gutterHeight } = house;
+  const { length, width, ridgeHeight, eavesHeight } = house;
   const maxSpan = Math.max(length, width);
   const halfWidth = width / 2;
   const halfLength = length / 2;
@@ -284,59 +308,65 @@ export function presetView(preset: CameraPreset, house: HouseShape): View {
       return { position: [-(width * 2.0 + length * 0.6), ridgeHeight * 1.35, 0], target: [0, ridgeHeight * 0.45, 0] };
     case 'top':
       return { position: [0.01, ridgeHeight + maxSpan * 2.4, 0.01], target: [0, ridgeHeight * 0.2, 0] };
-    // Standing just inside the entry, under the gutter, looking down the house. Both points stay
+    // Standing just inside the entry, under the eaves, looking down the shed. Both points stay
     // inside the footprint whatever the size, and at least 2 m apart (the orbit's minimum).
     case 'inside': {
-      const y = Math.min(gutterHeight - 0.35, Math.max(1.5, gutterHeight * 0.45));
+      const y = Math.min(eavesHeight - 0.35, Math.max(1.5, eavesHeight * 0.45));
+      // A shed too short to look down: corner to corner, the longest line inside it.
+      if (length < SHORT_SHED) return acrossInside(halfWidth, halfLength, y, Math.max(1, y - 0.5));
       const z = halfLength - clamp(length * 0.12, 0.8, 4);
-      // Off the centre line, which is a row of columns on a house with an even number of spans.
-      const x = Math.min(0.6, halfWidth * 0.2);
+      // Off the centre line, where the feeder lines and cage rows often run.
+      const x = aisleX(house, Math.min(0.6, halfWidth * 0.2));
       return {
         position: [x, y, z],
         target: [x, Math.max(1, y - 0.5), Math.min(z - 2, -halfLength * 0.6)],
       };
     }
     // Outside in front of the entry at eye height, a little to one side so the depth of the
-    // antechamber reads, and far enough back that the whole antechamber and its door are in view.
-    case 'focus-door': {
-      const room = antechamber(house.greenhouseType, house.doorEntry, gutterHeight);
-      const depth = room?.depth ?? 0;
-      const height = room?.height ?? 2.2;
-      const back = clamp(5.5 + gutterHeight * 0.35 + width * 0.02, 6.5, 11);
+    // anteroom reads, and far enough back that the whole anteroom, footbath and door are in view.
+    case 'focus-entry': {
+      const room = anteroom(house.entry, eavesHeight);
+      const depth = entryDepth(house.entry);
+      const height = room?.height ?? Math.min(2.2, eavesHeight);
+      const back = clamp(5.5 + eavesHeight * 0.35 + width * 0.02, 6.5, 11);
       return {
         position: [back * 0.3, EYE, halfLength + depth + back],
         target: [0, height * 0.5, halfLength + depth * 0.5],
       };
     }
     // A few bays of the long side wall, from outside and at an angle, ending at the front end
-    // where the crank, motor and control box are mounted.
-    case 'focus-vents': {
+    // where the curtain winch is mounted.
+    case 'focus-walls': {
       const stretch = Math.min(length, 14);
-      const back = clamp(stretch * 0.9 + gutterHeight * 0.5, 6, 16);
+      const back = clamp(stretch * 0.9 + eavesHeight * 0.5, 6, 16);
       const angle = 0.7;
-      const target: Vec3 = [halfWidth + 0.1, gutterHeight * 0.5, halfLength - stretch * 0.5];
+      const target: Vec3 = [halfWidth + 0.1, eavesHeight * 0.5, halfLength - stretch * 0.5];
       return {
-        position: [target[0] + back * Math.cos(angle), Math.max(EYE, gutterHeight * 0.75), target[2] + back * Math.sin(angle)],
+        position: [target[0] + back * Math.cos(angle), Math.max(EYE, eavesHeight * 0.75), target[2] + back * Math.sin(angle)],
         target,
       };
     }
-    // Low in the aisle, looking along the beds toward the back wall where the supply header runs, so the
-    // lateral lines, emitters, risers and nozzles of every irrigation system are in view.
-    case 'focus-irrigation':
+    // Low inside, looking along the feeder and drinker lines (or the cage aisle) toward the back wall.
+    case 'focus-feeding': {
+      const y = Math.max(1.1, eavesHeight * 0.3);
+      const low = Math.max(0.7, eavesHeight * 0.18);
+      if (length < SHORT_SHED) return acrossInside(halfWidth, halfLength, y, low);
+      const x = aisleX(house, -halfWidth * 0.18);
       return {
-        position: [-halfWidth * 0.18, Math.max(1.1, gutterHeight * 0.3), halfLength * 0.05],
-        target: [-halfWidth * 0.34, Math.max(0.7, gutterHeight * 0.18), -halfLength * 0.85],
+        position: [x, y, halfLength * 0.05],
+        target: [house.birdType === 'layer-cage' ? x : -halfWidth * 0.34, low, -halfLength * 0.85],
       };
-    // The cooling pad fills the back end wall; seen from outside behind it, at an angle, there is
-    // nothing (crop, beds) between the camera and the pad. A wide house shows its first 16 m.
-    case 'focus-climate': {
+    }
+    // The tunnel fans fill the back end wall; seen from outside behind it, at an angle. A wide shed shows
+    // its first 16 m.
+    case 'focus-fans': {
       const stretch = Math.min(width, 16);
-      const padTop = Math.max(1.2, Math.min(gutterHeight - 0.5, 2.45));
+      const fanTop = Math.min(1.63, eavesHeight - 0.1);
       const back = clamp(stretch * 0.9 + 2, 7, 18);
       const angle = 0.5;
-      const target: Vec3 = [-halfWidth + stretch * 0.5, (0.45 + padTop) / 2, -halfLength - 0.1];
+      const target: Vec3 = [-halfWidth + stretch * 0.5, fanTop / 2, -halfLength - 0.1];
       return {
-        position: [target[0] - back * Math.sin(angle), Math.max(EYE + 0.3, gutterHeight * 0.6), target[2] - back * Math.cos(angle)],
+        position: [target[0] - back * Math.sin(angle), Math.max(EYE + 0.3, eavesHeight * 0.6), target[2] - back * Math.cos(angle)],
         target,
       };
     }

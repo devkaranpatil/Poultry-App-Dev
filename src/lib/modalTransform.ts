@@ -1,4 +1,4 @@
-import { DIMENSION_LIMITS, type FarmConfig } from '@/components/farm/scene/legacyConfig';
+import { DIMENSION_LIMITS, type FarmConfig } from '@/types/farm';
 import { MIN_RISE, SNAP_STEP, dragReadout, handlesForPart, resizePatch, type EditablePart, type ResizeKey } from '@/lib/sceneEdit';
 
 /**
@@ -7,7 +7,7 @@ import { MIN_RISE, SNAP_STEP, dragReadout, handlesForPart, resizePatch, type Edi
  * each step; Enter or a left click confirms, Esc or a right click puts the starting sizes back.
  *
  * Axes follow the house, not the world: X is the width (across the spans), Y the length (the long
- * axis, Blender's Y) and Z the height (gutter, with the ridge keeping its rise).
+ * axis, Blender's Y) and Z the height (eaves, with the ridge keeping its rise).
  */
 
 export type ModalKind = 'grab' | 'scale';
@@ -20,7 +20,7 @@ export interface ScreenPoint {
   y: number;
 }
 
-export type ModalDimensions = Pick<FarmConfig, 'length' | 'width' | 'gutterHeight' | 'ridgeHeight'>;
+export type ModalDimensions = Pick<FarmConfig, 'length' | 'width' | 'eavesHeight' | 'ridgeHeight'>;
 
 export interface ModalState {
   kind: ModalKind;
@@ -42,26 +42,26 @@ export interface ModalState {
 }
 
 /** The dimension each axis drives. */
-export const AXIS_DIMENSION: Record<ModalAxis, ResizeKey> = { x: 'width', y: 'length', z: 'gutterHeight' };
+export const AXIS_DIMENSION: Record<ModalAxis, ResizeKey> = { x: 'width', y: 'length', z: 'eavesHeight' };
 
 /** Pointer travel for grab when the view gives no better figure. */
 export const DEFAULT_METRES_PER_PIXEL = 0.05;
 /** Scale needs a sensible lever: a start this close to the centre would make the factor jump. */
 const MIN_LEVER = 10;
 
-const DIMENSION_KEYS: ResizeKey[] = ['length', 'width', 'gutterHeight', 'ridgeHeight'];
+const DIMENSION_KEYS: ResizeKey[] = ['length', 'width', 'eavesHeight', 'ridgeHeight'];
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 const round = (value: number) => Number(value.toFixed(2));
 const dimensionsOf = (config: FarmConfig): ModalDimensions => ({
   length: config.length,
   width: config.width,
-  gutterHeight: config.gutterHeight,
+  eavesHeight: config.eavesHeight,
   ridgeHeight: config.ridgeHeight,
 });
 
 /** The axes a part's grips allow; empty for parts chosen from a list. */
-export function modalAxes(part: EditablePart | null, config: Pick<FarmConfig, 'roofType'>): ModalAxis[] {
-  const handles = handlesForPart(part, config);
+export function modalAxes(part: EditablePart | null): ModalAxis[] {
+  const handles = handlesForPart(part);
   return (['x', 'y', 'z'] as const).filter((axis) => handles.includes(AXIS_DIMENSION[axis]));
 }
 
@@ -74,7 +74,7 @@ export function startModal(
   centre: ScreenPoint,
   metresPerPixel = DEFAULT_METRES_PER_PIXEL
 ): ModalState | null {
-  const axes = modalAxes(part, config);
+  const axes = modalAxes(part);
   if (!part || axes.length === 0) return null;
   return {
     kind,
@@ -173,24 +173,23 @@ export function modalDelta(state: ModalState): number {
 }
 
 /**
- * Raises or lowers the house to a gutter height, keeping the roof's rise. The rise only shrinks
- * (never below MIN_RISE) when the ridge would pass its limit; a flat roof keeps ridge = gutter.
+ * Raises or lowers the shed to an eaves height, keeping the roof's rise. The rise only shrinks
+ * (never below MIN_RISE) when the ridge would pass its limit.
  */
-export function liftPatch(config: FarmConfig, rawGutter: number): Partial<ModalDimensions> {
-  if (!Number.isFinite(rawGutter)) return {};
-  if (config.roofType === 'flat') return resizePatch(config, 'gutterHeight', rawGutter);
-  const gutterLimits = DIMENSION_LIMITS.gutterHeight;
+export function liftPatch(config: FarmConfig, rawEaves: number): Partial<ModalDimensions> {
+  if (!Number.isFinite(rawEaves)) return {};
+  const eavesLimits = DIMENSION_LIMITS.eavesHeight;
   const ridgeLimits = DIMENSION_LIMITS.ridgeHeight;
-  const rise = Math.max(config.ridgeHeight - config.gutterHeight, MIN_RISE);
-  let gutterHeight = clamp(Math.round(rawGutter / SNAP_STEP.gutterHeight) * SNAP_STEP.gutterHeight, gutterLimits.min, gutterLimits.max);
-  const ridgeHeight = clamp(gutterHeight + rise, ridgeLimits.min, ridgeLimits.max);
-  gutterHeight = Math.min(gutterHeight, ridgeHeight - MIN_RISE);
-  return { gutterHeight: round(gutterHeight), ridgeHeight: round(ridgeHeight) };
+  const rise = Math.max(config.ridgeHeight - config.eavesHeight, MIN_RISE);
+  let eavesHeight = clamp(Math.round(rawEaves / SNAP_STEP.eavesHeight) * SNAP_STEP.eavesHeight, eavesLimits.min, eavesLimits.max);
+  const ridgeHeight = clamp(eavesHeight + rise, ridgeLimits.min, ridgeLimits.max);
+  eavesHeight = Math.min(eavesHeight, ridgeHeight - MIN_RISE);
+  return { eavesHeight: round(eavesHeight), ridgeHeight: round(ridgeHeight) };
 }
 
 /** The sizes for one dimension at a raw value, through the same snapping and limits as a drag. */
 function dimensionPatch(config: FarmConfig, key: ResizeKey, raw: number): Partial<ModalDimensions> {
-  return key === 'gutterHeight' ? liftPatch(config, raw) : resizePatch(config, key, raw);
+  return key === 'eavesHeight' ? liftPatch(config, raw) : resizePatch(config, key, raw);
 }
 
 /**
@@ -222,7 +221,7 @@ export function modalPatch(state: ModalState): ModalDimensions {
 
 /** The sizes worth showing for the current axis. */
 function shownDimensions(state: ModalState): ResizeKey[] {
-  if (state.axis === 'z') return state.start.roofType === 'flat' ? ['gutterHeight'] : ['gutterHeight', 'ridgeHeight'];
+  if (state.axis === 'z') return ['eavesHeight', 'ridgeHeight'];
   if (state.axis) return [AXIS_DIMENSION[state.axis]];
   return state.kind === 'scale' ? ['width', 'length'] : [];
 }
@@ -236,7 +235,7 @@ export const MODAL_LABEL_KEYS = {
   dimension: {
     length: 'viewport.modal.length',
     width: 'viewport.modal.width',
-    gutterHeight: 'viewport.modal.gutter',
+    eavesHeight: 'viewport.modal.eaves',
     ridgeHeight: 'viewport.modal.ridge',
   },
 } as const;

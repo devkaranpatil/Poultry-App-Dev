@@ -1,41 +1,37 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import * as THREE from 'three';
-import type { RenderQuality } from '@/components/farm/scene/cropLayout';
-import { createCoverMaterial, createInsectNetMaterial } from '@/components/farm/scene/structureMaterials';
+import type { RenderQuality } from '@/components/farm/scene/shedLayout';
+import { ROOF_SHEET_OPTIONS } from '@/types/farm';
+import { SHEET_LOOK, createMeshMaterial, createSheetMaterial } from '@/components/farm/scene/shedMaterials';
 
 const QUALITIES: RenderQuality[] = ['high', 'balanced', 'lite'];
 
-describe('cover materials', () => {
-  // jsdom has no 2D canvas; the net weave texture is then skipped, as it is on lite.
+describe('shed materials', () => {
+  // jsdom has no 2D canvas; the textures are then skipped, as they are on lite.
   beforeAll(() => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
   });
 
-  it('keeps glass, insect net and UV film apart at every quality', () => {
+  it('gives every roof sheet its own look', () => {
+    const colours = new Set(ROOF_SHEET_OPTIONS.map((option) => SHEET_LOOK[option.value].color));
+    expect(colours.size).toBe(ROOF_SHEET_OPTIONS.length);
+    // Metal sheets shine, fibre cement and thatch do not; PUF panels and thatch are thick.
+    expect(SHEET_LOOK['gi-sheet'].metalness).toBeGreaterThan(SHEET_LOOK['fibre-cement'].metalness);
+    expect(SHEET_LOOK.thatch.roughness).toBe(1);
+    expect(SHEET_LOOK['puf-panel'].thickness).toBeGreaterThan(SHEET_LOOK['gi-sheet'].thickness * 3);
     for (const quality of QUALITIES) {
-      const glass = createCoverMaterial('glass', quality) as THREE.MeshPhysicalMaterial;
-      const film = createCoverMaterial('uv-polyfilm', quality) as THREE.MeshPhysicalMaterial;
-      const net = createInsectNetMaterial(quality);
-      // Glass is the clearest and glossiest, film the most milky, the net a matte haze in between.
-      expect(glass.opacity, quality).toBeLessThan(0.2);
-      expect(film.opacity, quality).toBeGreaterThan(0.5);
-      expect(glass.roughness).toBeLessThan(film.roughness);
-      expect(net.roughness).toBe(1);
-      // Film has a green cast; the net is a neutral white-grey.
-      expect(film.color.g).toBeGreaterThan(film.color.r);
-      expect(Math.abs(net.color.r - net.color.g)).toBeLessThan(0.03);
-      [glass, film, net].forEach((material) => material.dispose());
+      const sheet = createSheetMaterial('gi-sheet', quality, 20, 4);
+      expect(sheet.transparent).toBe(false);
+      sheet.dispose();
     }
   });
 
-  it('only lets glass refract on high', () => {
+  it('draws the wire mesh as a see-through haze at every quality', () => {
     for (const quality of QUALITIES) {
-      const glass = createCoverMaterial('glass', quality) as THREE.MeshPhysicalMaterial;
-      const film = createCoverMaterial('uv-polyfilm', quality) as THREE.MeshPhysicalMaterial;
-      expect(glass.transmission > 0).toBe(quality === 'high');
-      expect(film.transmission).toBe(0);
-      glass.dispose();
-      film.dispose();
+      const mesh = createMeshMaterial(quality);
+      expect(mesh.transparent).toBe(true);
+      expect(mesh.depthWrite).toBe(false);
+      expect(mesh.opacity).toBeLessThan(1);
+      mesh.dispose();
     }
   });
 });

@@ -25,7 +25,7 @@ interface SceneEnvironmentProps {
 }
 
 /**
- * Everything around the greenhouse: sky, lights, fog, the ground and the living backdrop. The house
+ * Everything around the shed: sky, lights, fog, the ground and the living backdrop. The shed
  * itself is drawn by FarmModel; this sets the place it stands in. The sky (group `sky-<id>`)
  * sets the light; the landscape (group `environment-<id>`) the land.
  */

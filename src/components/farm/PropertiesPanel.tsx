@@ -1,24 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronDown, ChevronUp, Minus, PanelRightClose, Plus, SlidersHorizontal, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, PanelRightClose, SlidersHorizontal, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/context/I18nContext';
-import { DIMENSION_LIMITS, type FarmConfig } from '@/components/farm/scene/legacyConfig';
+import { DIMENSION_LIMITS, type FarmConfig } from '@/types/farm';
 import {
   CONFIG_FIELD,
+  OPTION_GROUP,
   PART_ORDER,
   PART_VALUES,
   SNAP_STEP,
-  coverSurface,
   isOptionLocked,
-  optionLabelKey,
   optionPatch,
+  partLabelKey,
   resizePatch,
+  roofSurface,
   type EditablePart,
-  type OptionPart,
   type ResizeKey,
 } from '@/lib/sceneEdit';
+import { flockSize } from '@/lib/flock';
+import { formatNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { OptionThumb, PartIcon } from './OptionThumb';
+import { OptionGrid, ShedTabIcon, SizeRow, Stat } from './ShedControls';
 
 interface PropertiesPanelProps {
   config: FarmConfig;
@@ -33,127 +35,46 @@ interface PropertiesPanelProps {
 const SIZE_ROWS: Array<{ key: ResizeKey; labelKey: string }> = [
   { key: 'length', labelKey: 'left.length' },
   { key: 'width', labelKey: 'left.width' },
-  { key: 'gutterHeight', labelKey: 'left.gutter' },
+  { key: 'eavesHeight', labelKey: 'left.eaves' },
   { key: 'ridgeHeight', labelKey: 'left.ridge' },
 ];
 
-/** A dimension with nudge buttons and a typed value; both go through the same snapping as dragging. */
-export function SizeRow({ config, rowKey, label, onChange }: { config: FarmConfig; rowKey: ResizeKey; label: string; onChange: (patch: Partial<FarmConfig>) => void }) {
-  const [draft, setDraft] = useState(String(config[rowKey]));
-  const disabled = rowKey === 'ridgeHeight' && config.roofType === 'flat';
+/** A size of the shed, through the same snapping and limits as dragging its grip. */
+function DimensionRow({ config, rowKey, label, onChange }: { config: FarmConfig; rowKey: ResizeKey; label: string; onChange: (patch: Partial<FarmConfig>) => void }) {
   const { min, max } = DIMENSION_LIMITS[rowKey];
-
-  // Follow changes that come from dragging a grip or from the setup form.
-  useEffect(() => setDraft(String(config[rowKey])), [config, rowKey]);
-
-  const commit = (raw: number) => {
-    const patch = resizePatch(config, rowKey, raw);
-    if (Object.keys(patch).length > 0) onChange(patch);
-    else setDraft(String(config[rowKey]));
-  };
-  const nudge = (direction: 1 | -1) => commit(config[rowKey] + direction * SNAP_STEP[rowKey]);
-
   return (
-    <div className="flex items-center justify-between gap-2">
-      <label htmlFor={`edit-size-${rowKey}`} className="min-w-0 truncate text-xs text-muted-foreground">
-        {label}
-      </label>
-      <div className="flex shrink-0 items-center gap-1">
-        <Button type="button" variant="ghost" size="icon" className="h-7 w-7" disabled={disabled || config[rowKey] <= min} onClick={() => nudge(-1)} aria-label={`${label} -`}>
-          <Minus className="h-3.5 w-3.5" />
-        </Button>
-        <input
-          id={`edit-size-${rowKey}`}
-          type="number"
-          inputMode="decimal"
-          className="h-7 w-14 rounded-md border border-input bg-background px-1.5 text-center font-mono text-xs tabular-nums disabled:opacity-50"
-          value={draft}
-          min={min}
-          max={max}
-          step={SNAP_STEP[rowKey]}
-          disabled={disabled}
-          onChange={(event) => setDraft(event.target.value)}
-          onBlur={() => {
-            const value = Number(draft);
-            if (draft.trim() !== '' && Number.isFinite(value)) commit(value);
-            else setDraft(String(config[rowKey]));
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') event.currentTarget.blur();
-          }}
-        />
-        <Button type="button" variant="ghost" size="icon" className="h-7 w-7" disabled={disabled || config[rowKey] >= max} onClick={() => nudge(1)} aria-label={`${label} +`}>
-          <Plus className="h-3.5 w-3.5" />
-        </Button>
-        <span className="w-3 text-[11px] text-muted-foreground">m</span>
-      </div>
-    </div>
+    <SizeRow
+      id={rowKey}
+      label={label}
+      value={config[rowKey]}
+      min={min}
+      max={max}
+      step={SNAP_STEP[rowKey]}
+      unit="m"
+      onCommit={(value) => {
+        const patch = resizePatch(config, rowKey, value);
+        if (Object.keys(patch).length > 0) onChange(patch);
+      }}
+    />
   );
 }
 
-export function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0 rounded-md bg-muted/60 px-2 py-1.5">
-      <div className="truncate text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="font-mono text-xs font-semibold tabular-nums text-foreground">{value}</div>
-    </div>
-  );
-}
-
-export function OptionGrid({ part, config, onChange, compact }: { part: OptionPart; config: FarmConfig; onChange: (patch: Partial<FarmConfig>) => void; compact: boolean }) {
-  const { t } = useI18n();
-  const field = CONFIG_FIELD[part];
-  return (
-    <div role="radiogroup" aria-label={t(`edit.part.${part}`)} className={cn('grid gap-1.5', compact ? 'grid-cols-4' : 'grid-cols-2')}>
-      {(PART_VALUES[part] as readonly string[]).map((value) => {
-        const selected = config[field] === value;
-        const locked = isOptionLocked(part, value, config);
-        const label = t(optionLabelKey(part, value));
-        return (
-          <button
-            key={value}
-            type="button"
-            role="radio"
-            aria-checked={selected}
-            aria-label={label}
-            disabled={locked}
-            onClick={() => onChange(optionPatch(part, value, config))}
-            className={cn(
-              'group flex min-w-0 flex-col items-center gap-1 rounded-lg border px-1.5 py-2 text-center text-[11px] font-medium leading-tight transition-all duration-150',
-              'disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              selected
-                ? 'border-primary bg-primary/10 text-foreground shadow-[inset_0_0_0_1px_hsl(var(--primary))]'
-                : 'border-border bg-card text-muted-foreground hover:-translate-y-px hover:border-foreground/30 hover:text-foreground'
-            )}
-          >
-            <span className={cn('transition-transform duration-150', selected ? 'scale-110 text-primary' : 'group-hover:scale-105')}>
-              <OptionThumb part={part} value={value} />
-            </span>
-            <span className="line-clamp-2 w-full">{label}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function PartBody({ part, config, onChange, compact }: { part: EditablePart; config: FarmConfig; onChange: PropertiesPanelProps['onChange']; compact: boolean }) {
+function PartBody({ part, config, onChange }: { part: EditablePart; config: FarmConfig; onChange: PropertiesPanelProps['onChange'] }) {
   const { t } = useI18n();
   const area = config.length * config.width;
-  const volume = area * ((config.gutterHeight + config.ridgeHeight) / 2);
-  const rise = Math.max(config.ridgeHeight - config.gutterHeight, 0);
-  const shadeLocked = config.greenhouseType === 'shade-net' && (part === 'cover' || part === 'vents' || part === 'door');
+  const rise = Math.max(config.ridgeHeight - config.eavesHeight, 0);
 
   if (part === 'size') {
+    const birds = flockSize({ ...config, housing: config.housingSystem }) ?? 0;
     return (
       <div className="space-y-2">
         <div className="grid grid-cols-2 gap-1.5">
           <Stat label={t('viewport.area')} value={`${area.toFixed(0)} m²`} />
-          <Stat label={t('viewport.volume')} value={`${volume.toFixed(0)} m³`} />
+          <Stat label={t('design.birds')} value={formatNumber(birds)} />
         </div>
         <div className="space-y-1">
           {SIZE_ROWS.map((row) => (
-            <SizeRow key={row.key} config={config} rowKey={row.key} label={t(row.labelKey)} onChange={onChange} />
+            <DimensionRow key={row.key} config={config} rowKey={row.key} label={t(row.labelKey)} onChange={onChange} />
           ))}
         </div>
         <p className="text-[11px] leading-snug text-muted-foreground">{t('viewport.dragHint')}</p>
@@ -161,29 +82,29 @@ function PartBody({ part, config, onChange, compact }: { part: EditablePart; con
     );
   }
 
+  const field = CONFIG_FIELD[part];
   return (
     <div className="space-y-2">
-      {part === 'roof' ? (
+      {part === 'roof' || part === 'roofSheet' ? (
         <div className="grid grid-cols-2 gap-1.5">
           <Stat label={t('viewport.rise')} value={`${rise.toFixed(1)} m`} />
-          <Stat label={t('left.ridge')} value={`${config.ridgeHeight} m`} />
+          <Stat label={t('viewport.roofSurface')} value={`≈ ${roofSurface(config).toFixed(0)} m²`} />
         </div>
       ) : null}
-      {part === 'cover' ? (
-        <div className="grid grid-cols-2 gap-1.5">
-          <Stat label={t('viewport.coverSurface')} value={`≈ ${coverSurface(config).toFixed(0)} m²`} />
-          <Stat label={t('viewport.area')} value={`${area.toFixed(0)} m²`} />
-        </div>
-      ) : null}
-      <OptionGrid part={part} config={config} onChange={onChange} compact={compact} />
+      <OptionGrid
+        group={OPTION_GROUP[part]}
+        label={t(partLabelKey(part))}
+        options={PART_VALUES[part]}
+        value={String(config[field])}
+        isDisabled={(value) => isOptionLocked(part, value, config)}
+        onChange={(value) => onChange(optionPatch(part, value, config))}
+      />
       {part === 'roof' ? (
         <div className="space-y-1 pt-1">
-          <SizeRow config={config} rowKey="gutterHeight" label={t('left.gutter')} onChange={onChange} />
-          <SizeRow config={config} rowKey="ridgeHeight" label={t('left.ridge')} onChange={onChange} />
+          <DimensionRow config={config} rowKey="eavesHeight" label={t('left.eaves')} onChange={onChange} />
+          <DimensionRow config={config} rowKey="ridgeHeight" label={t('left.ridge')} onChange={onChange} />
         </div>
       ) : null}
-      {shadeLocked ? <p className="text-[11px] leading-snug text-muted-foreground">{t('edit.shadeLocked')}</p> : null}
-      {!compact ? <p className="text-[11px] leading-snug text-muted-foreground">{t('viewport.chooseHint')}</p> : null}
     </div>
   );
 }
@@ -222,12 +143,12 @@ function useScrollEdges() {
 }
 
 /**
- * Blender's N-panel for the model: an outliner listing the parts and, below it, the properties of
- * the selected one. Sizes are changed by dragging the model itself; here they can also be typed.
+ * The parts of the shed and the properties of the selected one, over the model on a phone (on a larger screen the
+ * design sidebar does this job). Sizes are changed by dragging the model itself; here they can also be typed.
  *
- * On a phone (compact) it is a bottom sheet that keeps clear of the grips: a part picked on the
- * model shows as one slim bar with its name, and its options open on request. A part picked from
- * the list opens with its options, since choosing them is what the list is for.
+ * Compact, it is a bottom sheet that keeps clear of the grips: a part picked on the model shows as one slim bar
+ * with its name, and its options open on request. A part picked from the list opens with its options, since
+ * choosing them is what the list is for.
  */
 export function PropertiesPanel({ config, selected, onSelect, onChange, compact, open, onOpenChange }: PropertiesPanelProps) {
   const { t } = useI18n();
@@ -257,7 +178,7 @@ export function PropertiesPanel({ config, selected, onSelect, onChange, compact,
         data-testid="properties-toggle"
       >
         <SlidersHorizontal className="h-3.5 w-3.5" />
-        {selected ? t(`edit.part.${selected}`) : t('viewport.properties')}
+        {selected ? t(partLabelKey(selected)) : t('viewport.properties')}
       </Button>
     );
   }
@@ -265,9 +186,9 @@ export function PropertiesPanel({ config, selected, onSelect, onChange, compact,
   const heading = (part: EditablePart) => (
     <h3 className="flex min-w-0 items-center gap-1.5 text-sm font-semibold text-foreground">
       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-orange-500/15 text-orange-600 dark:text-orange-400">
-        <PartIcon part={part} className="h-3.5 w-3.5" />
+        <ShedTabIcon tab={part} className="h-3.5 w-3.5" />
       </span>
-      <span className="truncate">{t(`edit.part.${part}`)}</span>
+      <span className="truncate">{t(partLabelKey(part))}</span>
     </h3>
   );
 
@@ -368,10 +289,10 @@ export function PropertiesPanel({ config, selected, onSelect, onChange, compact,
                   compact ? 'items-center gap-1.5 px-2 py-1.5 text-left text-xs' : 'min-w-0 flex-col items-center gap-0.5 px-1 py-1 text-[10.5px] leading-tight',
                   active ? 'bg-orange-500 text-white' : 'text-foreground hover:bg-muted'
                 )}
-                title={compact ? undefined : t(`edit.part.${part}`)}
+                title={compact ? undefined : t(partLabelKey(part))}
               >
-                <PartIcon part={part} className="h-3.5 w-3.5 shrink-0" />
-                <span className="max-w-full truncate">{t(`edit.part.${part}`)}</span>
+                <ShedTabIcon tab={part} className="h-3.5 w-3.5 shrink-0" />
+                <span className="max-w-full truncate">{t(partLabelKey(part))}</span>
               </button>
             );
           })}
@@ -382,7 +303,7 @@ export function PropertiesPanel({ config, selected, onSelect, onChange, compact,
         <section
           key={selected}
           className="min-h-0 flex-1 overflow-y-auto p-2.5 animate-in fade-in-0 slide-in-from-top-1 duration-200"
-          aria-label={t(`edit.part.${selected}`)}
+          aria-label={t(partLabelKey(selected))}
           data-testid="part-editor"
           data-part={selected}
         >
@@ -392,7 +313,7 @@ export function PropertiesPanel({ config, selected, onSelect, onChange, compact,
               <X className="h-3.5 w-3.5" />
             </Button>
           </div>
-          <PartBody part={selected} config={config} onChange={onChange} compact={compact} />
+          <PartBody part={selected} config={config} onChange={onChange} />
         </section>
       ) : (
         <p className={cn('px-2.5 text-[11px] leading-snug text-muted-foreground', compact ? 'py-1.5' : 'py-2.5')}>{t('viewport.nothingSelected')}</p>

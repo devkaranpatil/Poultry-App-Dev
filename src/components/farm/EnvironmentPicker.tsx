@@ -51,7 +51,7 @@ interface EnvironmentPickerProps {
 }
 
 /**
- * Where the greenhouse stands: the landscape around it and the sky over it. Auto follows the
+ * Where the shed stands: the landscape around it and the sky over it. Auto follows the
  * location (each state, and some districts, has its own); any other pick stays until changed.
  */
 export function EnvironmentPicker({ choice, environment, sky, state, district, onChoiceChange, onSkyChange }: EnvironmentPickerProps) {

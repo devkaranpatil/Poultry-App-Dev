@@ -21,8 +21,8 @@ import {
   type Vec3,
   type View,
 } from '@/lib/viewMath';
-import { antechamber } from '@/components/farm/scene/structureLayout';
-import { DEFAULT_CONFIG, DIMENSION_LIMITS, type DoorEntry } from '@/components/farm/scene/legacyConfig';
+import { anteroom, buildCageRows, entryDepth } from '@/components/farm/scene/shedLayout';
+import { DEFAULT_CONFIG, DIMENSION_LIMITS, ENTRY_OPTIONS } from '@/types/farm';
 import { ORBIT_STEP, isTypingTarget, resolveViewportKey } from '@/lib/viewportKeys';
 
 const close = (a: Vec3, b: Vec3, digits = 5) => a.forEach((value, i) => expect(value).toBeCloseTo(b[i], digits));
@@ -128,7 +128,7 @@ describe('framing and orbiting', () => {
 describe('keyboard map', () => {
   it('keeps the top-row digit views', () => {
     expect(resolveViewportKey({ key: '1', code: 'Digit1' })).toEqual({ type: 'view', view: 'auto' });
-    expect(resolveViewportKey({ key: '6', code: 'Digit6' })).toEqual({ type: 'view', view: 'focus-door' });
+    expect(resolveViewportKey({ key: '6', code: 'Digit6' })).toEqual({ type: 'view', view: 'focus-entry' });
   });
 
   it('follows Blender on the numeric keypad', () => {
@@ -165,20 +165,20 @@ describe('keyboard map', () => {
 });
 
 describe('named views', () => {
-  const house = (patch: Partial<HouseShape> = {}): HouseShape => ({ ...DEFAULT_CONFIG, greenhouseType: 'naturally-ventilated', ...patch });
+  const house = (patch: Partial<HouseShape> = {}): HouseShape => ({ ...DEFAULT_CONFIG, ...patch });
   const within = (point: Vec3, h: HouseShape) =>
-    Math.abs(point[0]) < h.width / 2 && Math.abs(point[2]) < h.length / 2 && point[1] > 0 && point[1] < h.gutterHeight;
+    Math.abs(point[0]) < h.width / 2 && Math.abs(point[2]) < h.length / 2 && point[1] > 0 && point[1] < h.eavesHeight;
   const sizes: Array<Partial<HouseShape>> = [];
-  for (const width of [DIMENSION_LIMITS.width.min, 10, 24, 100]) {
-    for (const length of [DIMENSION_LIMITS.length.min, 30, 200]) {
-      for (const gutterHeight of [DIMENSION_LIMITS.gutterHeight.min, 4, DIMENSION_LIMITS.gutterHeight.max]) {
-        sizes.push({ width, length, gutterHeight, ridgeHeight: gutterHeight + 2 });
+  for (const width of [DIMENSION_LIMITS.width.min, 7, 12, DIMENSION_LIMITS.width.max]) {
+    for (const length of [DIMENSION_LIMITS.length.min, 30, DIMENSION_LIMITS.length.max]) {
+      for (const eavesHeight of [DIMENSION_LIMITS.eavesHeight.min, 2.1, DIMENSION_LIMITS.eavesHeight.max]) {
+        sizes.push({ width, length, eavesHeight, ridgeHeight: eavesHeight + 1.4 });
       }
     }
   }
 
   it('keeps every view within the orbit distance limits', () => {
-    const presets = ['auto', 'front', 'side', 'top', 'inside', 'focus-door', 'focus-vents', 'focus-irrigation', 'focus-climate'] as const;
+    const presets = ['auto', 'front', 'side', 'top', 'inside', 'focus-entry', 'focus-walls', 'focus-feeding', 'focus-fans'] as const;
     for (const size of sizes) {
       for (const preset of presets) {
         const h = house(size);
@@ -198,21 +198,20 @@ describe('named views', () => {
       expect(within(view.position, h)).toBe(true);
       expect(within(view.target, h)).toBe(true);
     }
-    const wide = house({ width: 24, length: 30 });
+    const wide = house({ width: 18, length: 30 });
     expect(within(presetView('inside', wide).position, wide)).toBe(true);
   });
 
   it('stands outside in front of the entry at eye height for the door view', () => {
-    const doors: DoorEntry[] = ['single-sliding', 'double-sliding', 'roll-up', 'curtain'];
     for (const size of sizes) {
-      for (const doorEntry of doors) {
-        const h = house({ ...size, doorEntry });
-        const room = antechamber(h.greenhouseType, doorEntry, h.gutterHeight);
-        const front = h.length / 2 + (room?.depth ?? 0);
-        const { position, target } = presetView('focus-door', h);
-        // In front of the antechamber, below its roof, far enough back to see all of it.
+      for (const { value: entry } of ENTRY_OPTIONS) {
+        const h = house({ ...size, entry });
+        const room = anteroom(entry, h.eavesHeight);
+        const front = h.length / 2 + entryDepth(entry);
+        const { position, target } = presetView('focus-entry', h);
+        // In front of the anteroom and footbath, at eye height, far enough back to see all of it.
         expect(position[2]).toBeGreaterThan(front + 5);
-        expect(position[1]).toBeLessThan(room?.height ?? 2.2);
+        expect(position[1]).toBeLessThan(Math.max(room?.height ?? 0, 2.2));
         expect(position[1]).toBeGreaterThan(1.2);
         expect(Math.abs(target[0])).toBeLessThan(0.5);
         expect(target[2]).toBeGreaterThanOrEqual(h.length / 2);
@@ -221,10 +220,24 @@ describe('named views', () => {
     }
   });
 
-  it('looks at the side wall from outside, at an angle, for the vents', () => {
+  it('stands in an aisle of a cage shed, never inside a cage row', () => {
+    for (const cageTiers of [2, 3, 4] as const) {
+      for (const width of [7, 12, 18]) {
+        const h = house({ width, length: 30, birdType: 'layer-cage', cageTiers });
+        const rows = buildCageRows(width, 30, cageTiers);
+        for (const preset of ['inside', 'focus-feeding'] as const) {
+          const x = presetView(preset, h).position[0];
+          for (const row of rows) expect(Math.abs(x - row.x), `${preset} ${width} m ${cageTiers} tiers`).toBeGreaterThan(row.halfWidth);
+          expect(Math.abs(x)).toBeLessThan(width / 2);
+        }
+      }
+    }
+  });
+
+  it('looks at the side wall from outside, at an angle, for the curtains', () => {
     for (const size of sizes) {
       const h = house(size);
-      const { position, target } = presetView('focus-vents', h);
+      const { position, target } = presetView('focus-walls', h);
       expect(position[0]).toBeGreaterThan(h.width / 2 + 3);
       expect(Math.abs(target[0] - h.width / 2)).toBeLessThan(0.5);
       // Not square on: the view runs along the wall too.
@@ -232,10 +245,10 @@ describe('named views', () => {
     }
   });
 
-  it('sees the pad wall from outside the back end for the climate view', () => {
+  it('sees the fan wall from outside the back end for the fans view', () => {
     for (const size of sizes) {
-      const h = house({ ...size, greenhouseType: 'climate-controlled' });
-      const { position, target } = presetView('focus-climate', h);
+      const h = house({ ...size, housingSystem: 'environment-controlled' });
+      const { position, target } = presetView('focus-fans', h);
       expect(position[2]).toBeLessThan(-h.length / 2 - 3);
       expect(target[2]).toBeLessThanOrEqual(-h.length / 2);
       expect(Math.abs(target[0])).toBeLessThan(h.width / 2);

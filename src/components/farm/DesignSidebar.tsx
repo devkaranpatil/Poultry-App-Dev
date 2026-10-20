@@ -36,6 +36,7 @@ import { useI18n } from '@/context/I18nContext';
 import { formatNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { OptionGrid, ShedTabIcon, SizeRow, Stat, type ShedTab } from './ShedControls';
+import { OPTION_GROUP, PART_VALUES, isOptionLocked, type OptionPart } from '@/lib/sceneEdit';
 
 /** A tab of the sidebar: one part of the shed, or where it will be built. */
 export type DesignTab = ShedTab;
@@ -422,33 +423,9 @@ export function DesignSidebar({
     );
   } else {
     // An option tab. Choices that do not fit the bird or the shed type are shown, but cannot be picked.
-    const housing = config.housingSystem;
-    const groups: Record<string, { group: string; values: readonly string[]; disabled?: (value: string) => boolean }> = {
-      housing: {
-        group: 'housing',
-        values: HOUSING_OPTIONS.map((o) => o.value),
-        disabled: (value) => !HOUSING_FOR_BIRD[config.birdType].includes(value as FarmConfig['housingSystem']),
-      },
-      roof: { group: 'roof', values: ROOF_OPTIONS.map((o) => o.value) },
-      frame: {
-        group: 'frame',
-        values: FRAME_OPTIONS.map((o) => o.value),
-        disabled: (value) => (value === 'bamboo-wood') !== (housing === 'backyard'),
-      },
-      roofSheet: { group: 'roofSheet', values: ROOF_SHEET_OPTIONS.map((o) => o.value), disabled: (value) => value === 'thatch' && housing !== 'backyard' },
-      sideWalls: {
-        group: 'sideWalls',
-        values: SIDE_WALL_OPTIONS.map((o) => o.value),
-        disabled: (value) => (value === 'closed-tunnel') !== (housing === 'environment-controlled'),
-      },
-      entry: { group: 'entry', values: ENTRY_OPTIONS.map((o) => o.value) },
-      feeding: {
-        group: 'feeding',
-        values: FEEDING_OPTIONS.map((o) => o.value),
-        disabled: (value) => !feedingFor(config.birdType).includes(value as FarmConfig['feedingSystem']),
-      },
-    };
-    const spec = groups[tab];
+    // The same rules the model's own option keys follow (src/lib/sceneEdit.ts).
+    const part = tab as OptionPart;
+    const spec = { group: OPTION_GROUP[part], values: PART_VALUES[part], disabled: (value: string) => isOptionLocked(part, value, config) };
     const field = TAB_FIELD[tab] as keyof FarmConfig;
     body = (
       <div className="space-y-3">
