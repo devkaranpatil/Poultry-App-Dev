@@ -174,21 +174,43 @@ describe('knowledge base', () => {
   it('is built from the official datasets and the planner itself', () => {
     const corpus = buildCorpus();
     const ids = new Set(corpus.documents.map((d: Chunk) => d.id));
-    for (const id of ['dataset-cost-norms', 'dataset-area-limits', 'dataset-published-yields', 'dataset-district-climate', 'planner-crops', 'planner-cost-model']) {
+    for (const id of [
+      'dataset-nabard-unit-costs',
+      'dataset-production-norms',
+      'dataset-scheme-rules',
+      'dataset-siting-rules',
+      'dataset-district-climate',
+      'planner-birds',
+      'planner-cost-model',
+      'planner-schemes',
+      'planner-siting',
+    ]) {
       expect(ids.has(id), id).toBe(true);
     }
-    const limit = corpus.chunks.find((c: Chunk) => c.docId === 'dataset-area-limits' && /4000/.test(c.text));
-    expect(limit?.text).toMatch(/2025-08-12/);
+    // No polyhouse passages are left in the tables and the planner's data (the docs may mention the shared database).
+    const generated = corpus.chunks.filter((c: Chunk) => c.kind !== 'document' && !c.docId.startsWith('planner-doc-'));
+    expect(generated.some((c: Chunk) => /polyhouse|greenhouse/i.test(c.text))).toBe(false);
+    const overview = corpus.chunks.find((c: Chunk) => c.docId === 'dataset-scheme-rules' && c.section === 'Subsidy overview');
+    expect(overview?.text).toMatch(/no central capital subsidy/);
+    const residential = corpus.chunks.find((c: Chunk) => c.docId === 'dataset-siting-rules' && /residential/i.test(c.text));
+    expect(residential?.text).toMatch(/500 m/);
     const climate = corpus.chunks.filter((c: Chunk) => c.docId === 'dataset-district-climate');
     expect(climate.length).toBeGreaterThan(400);
     expect(climate[0].tags.district).toBeTruthy();
+    expect(climate.some((c: Chunk) => /severe heat stress/.test(c.text))).toBe(true);
   });
 
-  it('describes the planner rates straight from the cost model, so it cannot drift', () => {
-    const rates = buildCorpus().chunks.find((c: Chunk) => c.docId === 'planner-cost-model' && c.section === 'Rates');
-    const { STRUCTURE_RATE_PER_SQM, LABOR_RATIO } = require('../../backend/data/pricing');
-    expect(rates.text).toContain(`galvanized iron ${STRUCTURE_RATE_PER_SQM.galvanized_iron}`);
-    expect(rates.text).toContain(`${LABOR_RATIO * 100} percent`);
+  it('describes the planner rates straight from the norms, so they cannot drift', () => {
+    const norms = require('../../shared/poultry-norms.json');
+    const passages = buildCorpus().chunks.filter((c: Chunk) => c.docId === 'planner-cost-model');
+    const shed = passages.find((c: Chunk) => c.section === 'shed (rs) per sqft');
+    expect(shed?.text).toContain(`broiler ${norms.costs.shedInrPerSqft.broiler.value}`);
+    expect(shed?.text).toContain('NABARD Unit Cost 2023-24');
+    // Rates without a published source say so.
+    const automatic = passages.find((c: Chunk) => c.section === 'equipment (rs) per bird');
+    expect(automatic?.text).toMatch(/automatic 150 \(automatic feed and nipple lines\), the planner's own assumption/);
+    const broiler = buildCorpus().chunks.find((c: Chunk) => c.docId === 'planner-birds' && c.tags.bird === 'broiler');
+    expect(broiler?.text).toContain(`${norms.birdTypes.broiler.sqftPerBird['open-sided']} sq ft per bird in an open-sided shed`);
   });
 
   it('searches by keyword straight away and becomes hybrid once passages are embedded', async () => {
@@ -265,8 +287,8 @@ describe('question handling', () => {
   });
 
   it('adds the words documents use for the words people use', () => {
-    const tokens = expandQueryTokens(tokenize('maximum subsidy for polyhouse'));
-    for (const word of ['max', 'assistance', 'greenhouse']) expect(tokens).toContain(word);
+    const tokens = expandQueryTokens(tokenize('maximum subsidy for chicken shed'));
+    for (const word of ['max', 'assistance', 'house', 'bird']) expect(tokens).toContain(tokenize(word)[0]);
   });
 });
 

@@ -14,8 +14,8 @@ const QUERY_EMBED_TIMEOUT_MS = 10_000;
 const RERANK_TIMEOUT_MS = 40_000;
 const RERANK_POOL = 10; // candidates the reranker reads per question (about half a second each on a laptop CPU)
 const SHOWN_CHARS = 650; // the part of each passage the reranker and the model read
-// Passages from one document in the final context. The planner's own pages (crop list, cost model) match many
-// crop questions on wording alone and would push out the crop guides that hold the actual answer.
+// Passages from one document in the final context. The planner's own pages (bird list, cost model) match many
+// questions on wording alone and would push out the guides that hold the actual answer.
 const maxPerDocument = (passage) => (passage.kind === "planner" ? 1 : 3);
 const EMBED_BATCH = 4; // small batches, so a user's question never waits long behind the background work
 const SAVE_EVERY = 40;
@@ -120,7 +120,7 @@ async function searchOne(query, { k, boosts }) {
   const useReranker = await engine.hasReranker().catch(() => false);
   const pool = useReranker ? Math.max(RERANK_POOL, k * 2) : k;
   // Five candidates per document for the reranker; measured on datasets/eval, three lost answers that sit in
-  // the fourth or fifth passage of a crop guide.
+  // the fourth or fifth passage of a guide.
   const hits = kb.retriever.search(query, { queryVector, boosts, k: pool, perDocument: useReranker ? 5 : 3 });
   let passages = hits.map((hit, index) => ({
     n: index + 1,
@@ -141,8 +141,8 @@ async function searchOne(query, { k, boosts }) {
   let reranked = false;
   if (useReranker && passages.length > 1) {
     try {
-      // Text only: adding titles made the planner's short crop pages ("Crops in the planner - Capsicum") outrank
-      // the crop guides (measured on datasets/eval).
+      // Text only: adding titles made the planner's short pages (in the polyhouse version, "Crops in the planner - Capsicum") outrank
+      // the guides (measured on datasets/eval).
       const relevance = await withTimeout(engine.rerank(query, passages.map((passage) => passage.text)), RERANK_TIMEOUT_MS);
       // Older documents lose half their relevance, so a current rule wins over a superseded one.
       const adjusted = passages.map((passage, i) => ({ ...passage, relevance: relevance[i] * (passage.status === "older" ? 0.5 : 1) }));

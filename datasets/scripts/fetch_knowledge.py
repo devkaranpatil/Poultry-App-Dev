@@ -24,7 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1] / "knowledge"
 RAW = ROOT / "raw"
 TEXT = ROOT / "text"
-USER_AGENT = "Mozilla/5.0 (PolyhousePlanner knowledge builder)"
+USER_AGENT = "Mozilla/5.0 (poultry planner knowledge builder)"
 
 
 def download(url: str, target: Path) -> None:

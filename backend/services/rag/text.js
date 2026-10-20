@@ -42,16 +42,29 @@ const QUERY_SYNONYMS = {
   maximum: ["max", "limit"],
   max: ["maximum", "limit"],
   minimum: ["min"],
-  subsidy: ["assistance", "grant"],
-  polyhouse: ["greenhouse", "poly"],
-  greenhouse: ["polyhouse"],
-  poly: ["polyhouse", "greenhouse"],
+  subsidy: ["assistance", "grant", "scheme"],
+  scheme: ["subsidy", "assistance"],
+  loan: ["credit", "bank", "finance"],
+  shed: ["house", "housing"],
+  house: ["shed"],
+  housing: ["shed", "house"],
+  chicken: ["bird", "poultry"],
+  hen: ["layer", "bird"],
+  bird: ["chicken", "poultry"],
+  chick: ["chicks", "brooding"],
+  egg: ["layer", "laying"],
+  meat: ["broiler"],
   temp: ["temperature"],
   price: ["cost", "rate"],
   cost: ["rate", "norm"],
-  yield: ["production"],
-  pest: ["insect"],
-  disease: ["pathogen"],
+  mortality: ["death", "loss"],
+  vaccine: ["vaccination", "immunisation"],
+  vaccination: ["vaccine", "schedule"],
+  disease: ["infection", "outbreak"],
+  hygiene: ["biosecurity", "disinfection"],
+  biosecurity: ["hygiene", "disinfection"],
+  feeder: ["feeding", "feed"],
+  drinker: ["water", "drinking"],
 };
 
 /** The question's tokens plus their synonyms, without duplicates. */
@@ -174,9 +187,15 @@ function focusPassage(text, query, maxChars = 650) {
   return `${first > 0 ? "…" : ""}${window}${last < sentences.length - 1 || window.length < length ? "…" : ""}`;
 }
 
-/** Restores the degree sign some pages lose ("25-300C" really reads "25-30 C"). */
+/** Restores the degree sign some pages lose ("25-300C" really reads "25-30 °C", "950F" reads "95 °F"). */
 function fixDegreeSigns(text) {
-  return text.replace(/\b(\d{2})0\s*-\s*(\d{2})0\s?C\b/g, "$1-$2 °C").replace(/\b(\d{2})0\s?C\b/g, "$1 °C");
+  return (
+    text
+      .replace(/\b(\d{2})0\s*-\s*(\d{2})0\s?([CF])\b/g, "$1-$2 °$3")
+      .replace(/\b(\d{2,3})0\s?([CF])\b/g, "$1 °$2")
+      // A weekly step ("reduced at the rate of 50F weekly") is a single digit: 5 °F.
+      .replace(/\b(rate of )(\d)0\s?([CF])\b/g, "$1$2 °$3")
+  );
 }
 
 module.exports = { chunkText, expandQueryTokens, fixDegreeSigns, focusPassage, splitQuestion, stem, tokenize, wordCount };
