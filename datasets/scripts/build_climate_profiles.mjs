@@ -4,8 +4,10 @@
 //
 //   node datasets/scripts/build_climate_profiles.mjs
 //
-// Per district: the mean temperature of the hottest month (the 24-hour mean, MERRA-2 T2M).
-// Per state: the mean of its districts' annual temperature, annual humidity and hottest-month mean.
+// Per district: the mean temperature of the hottest month (the 24-hour mean, MERRA-2 T2M), and the
+// twelve monthly means of T2M and RH2M (January first) for the poultry heat-stress index.
+// Per state: the mean of its districts' annual temperature, annual humidity, hottest-month mean and
+// monthly means.
 // T2M_MAX is deliberately not used: NASA defines it as the maximum HOURLY reading in the period,
 // an extreme (Shimla reads 43.9 C), which says nothing about a typical hot month.
 
@@ -22,6 +24,8 @@ const rows = parseCsv(fs.readFileSync(path.resolve(here, "../csv/district_climat
 const round1 = (n) => Math.round(n * 10) / 10;
 const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
+const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
 const byDistrict = new Map();
 for (const r of rows) {
   const key = `${r.state}|${r.district}`;
@@ -36,12 +40,18 @@ const stateAcc = new Map();
 for (const [key, { state, months, annual }] of [...byDistrict.entries()].sort()) {
   if (months.length !== 12 || !annual) continue; // incomplete districts are left out, not guessed
   const hottest = months.reduce((a, b) => (Number(b.t2m_mean_c) > Number(a.t2m_mean_c) ? b : a));
-  districts[key] = { hottestMonthMeanC: round1(Number(hottest.t2m_mean_c)), hottestMonth: hottest.month };
-  if (!stateAcc.has(state)) stateAcc.set(state, { temp: [], rh: [], hot: [] });
+  const ordered = MONTHS.map((month) => months.find((m) => m.month === month));
+  if (ordered.some((m) => !m)) continue;
+  const monthlyMeanC = ordered.map((m) => round1(Number(m.t2m_mean_c)));
+  const monthlyRhPct = ordered.map((m) => Math.round(Number(m.rh2m_pct)));
+  districts[key] = { hottestMonthMeanC: round1(Number(hottest.t2m_mean_c)), hottestMonth: hottest.month, monthlyMeanC, monthlyRhPct };
+  if (!stateAcc.has(state)) stateAcc.set(state, { temp: [], rh: [], hot: [], monthlyT: [], monthlyRh: [] });
   const acc = stateAcc.get(state);
   acc.temp.push(Number(annual.t2m_mean_c));
   acc.rh.push(Number(annual.rh2m_pct));
   acc.hot.push(Number(hottest.t2m_mean_c));
+  acc.monthlyT.push(monthlyMeanC);
+  acc.monthlyRh.push(monthlyRhPct);
 }
 
 const states = {};
@@ -51,6 +61,8 @@ for (const [state, acc] of [...stateAcc.entries()].sort()) {
     annualMeanTempC: round1(mean(acc.temp)),
     annualHumidityPct: Math.round(mean(acc.rh)),
     hottestMonthMeanC: round1(mean(acc.hot)),
+    monthlyMeanC: MONTHS.map((_, i) => round1(mean(acc.monthlyT.map((t) => t[i])))),
+    monthlyRhPct: MONTHS.map((_, i) => Math.round(mean(acc.monthlyRh.map((rh) => rh[i])))),
   };
 }
 
@@ -61,5 +73,7 @@ const out = {
   districts,
 };
 const target = path.resolve(here, "../../backend/data/climateProfiles.json");
-fs.writeFileSync(target, `${JSON.stringify(out, null, 1)}\n`);
+// Monthly arrays on one line each, so the file stays readable.
+const text = JSON.stringify(out, null, 1).replace(/\[\n([\s\d.,-]+?)\n\s*\]/g, (_, body) => `[${body.trim().split(/,\s*/).join(", ")}]`);
+fs.writeFileSync(target, `${text}\n`);
 console.log(`Wrote ${Object.keys(districts).length} districts and ${Object.keys(states).length} states to ${path.relative(process.cwd(), target)}`);

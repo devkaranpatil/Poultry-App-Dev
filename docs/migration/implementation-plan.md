@@ -128,6 +128,47 @@ Data first, with tests, before any screen changes.
 
 ## Phase 3: calculations (4 to 5 days)
 
+**Status: done 2026-10-20 on branch `phase-3-calculations`.** The new engines sit beside the polyhouse ones, so the screens keep working until Phase 4 moves them over and deletes the old code.
+
+What was built:
+- **Cost** (`backend/services/poultry/costModel.js`):
+  - Shed civil work per sq ft (NABARD 2023-24), scaled by the roof and wall envelope against the open shed NABARD prices.
+  - The difference for another roof sheet, automatic curtains, footbath and anteroom.
+  - Equipment per bird by feeding system, and electrical work at 3% of civil.
+  - For layers, the feed store, fencing and water supply per 5,000 birds.
+  - The first batch's working capital, as NABARD counts it.
+  - Unpriced choices are listed in `unsourcedRates`.
+- **NABARD reproduction:** all six Jharkhand units come out within 1.3% of NABARD's own figure (`node backend/scripts/auditCalculations.js`, which replaces the polyhouse audit). A test holds them to ±10%.
+- **Heat stress** (`heatStress.js`):
+  - THI from the district's monthly mean temperature and humidity, which `build_climate_profiles.mjs` now writes into `climateProfiles.json`.
+  - Weighted 0.85 for broilers and 0.6 for layers; above 30 is severe.
+  - It gives advice, not a surcharge.
+- **Production and returns** (`production.js`, with `src/lib/poultryFinance.ts` kept equal by a test):
+  - Broiler and desi batches, independent or contract.
+  - Layers as one flock from chick to cull (20 + 52 weeks + cleaning).
+  - Break-even price per kg or per egg, and the batch calendar.
+- **Calculator** (`calculator.js`, `POST /api/poultry/calculate`):
+  - Validation (`validators/poultryValidator.js`, `shared/poultry-limits.json`) with the shed-type rules.
+  - Flock, cost, the NABARD comparison, schemes, siting, climate, returns and calendar.
+- **Risk** (`services/risk/poultryRisk.js`, `POST /api/risk/poultry/simulate`):
+  - Draws mortality, FCR (or feed eaten for layers), sale price, feed price, build cost and an outbreak that loses a batch.
+  - Every simulated year goes through `production.js`.
+  - Under contract, price and feed risk fall to zero.
+- **Loan** (`src/lib/loan.ts`): `poultryLoanTerms()` from the NABARD model projects. Broiler: 75%, 12.5%, 7 years. Layer: 8 years with 1 year of grace. Desi: 90%, 12%, 5 years.
+- **New sourced figures** in `shared/poultry-norms.json`:
+  - IJAH 2025 broiler study: FCR 1.8, labour Rs 5.62 and other costs Rs 4.80 a bird, manure and bags.
+  - NABARD's desi sale price, Rs 150/kg.
+  - NECC egg rate, July 2026 (secondary).
+  - Planner assumptions, marked unverified: broiler sale Rs 100/kg, growing charge Rs 7/kg, roof sheets, curtains, footbath, anteroom, semi-automatic and automatic equipment, controlled-shed rate.
+- **Tests:** `src/test/poultry-calculations.test.ts` (30 tests). In all, 551 unit tests pass, along with lint, both typechecks and the build.
+
+What differs from the table below:
+- **Market prices:** today's data.gov.in feed (5,873 records, 116 commodities, 20.10.2026) has **no egg or poultry commodity**. So there is no commodity map. Poultry prices stay user inputs with published defaults, and the risk model's price spread is a labelled assumption.
+- **`whatIf.js`** moves with the AI routes in Phase 4 and 6, because it is wired into the chat. The poultry calculator it will call is ready.
+- **The layer cycle** keeps the grower phase in the same shed: one flock at a time, 518 days. NABARD's 1:2 system uses a separate grower house, which this planner does not price.
+- **`cageTiers`** shapes the 3D shed only. NABARD prices cages per bird, and the 0.85 sq ft per bird of its layer model already allows for the tiers.
+
+
 | File | Change |
 |---|---|
 | `backend/services/costModel.js` | Shed civil, roof sheet (envelope with a 1.07 m overhang), side walls and curtains, equipment per bird, cages per tier, fixed items, controlled-shed kit. Climate: suggestions instead of a flat surcharge. ±10% band kept |

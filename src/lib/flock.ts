@@ -13,20 +13,34 @@ export function sqftPerBird(birdType: BirdType, housing: HousingSystem): number 
   return bird && bird.housing.includes(housing) ? bird.sqftPerBird[housing] : null;
 }
 
+/** The user's own stocking density when given (sq ft per bird), else the norm; null for an unsupported bird and shed. */
+export function spaceFor(birdType: BirdType, housing: HousingSystem, stockingDensity?: number | null): number | null {
+  const norm = sqftPerBird(birdType, housing);
+  if (norm === null) return null;
+  const own = Number(stockingDensity);
+  return stockingDensity !== null && stockingDensity !== undefined && Number.isFinite(own) && own > 0 ? own : norm;
+}
+
 /**
  * How many birds a shed holds: floor area over the space each bird needs. The same arithmetic as
  * backend/services/flock.js (a test keeps the two equal).
  */
-export function flockSize(shed: { length: number; width: number; birdType: BirdType; housing: HousingSystem }): number | null {
-  const space = sqftPerBird(shed.birdType, shed.housing);
+export function flockSize(shed: {
+  length: number;
+  width: number;
+  birdType: BirdType;
+  housing: HousingSystem;
+  stockingDensity?: number | null;
+}): number | null {
+  const space = spaceFor(shed.birdType, shed.housing, shed.stockingDensity);
   if (space === null) return null;
   const areaSqft = Math.max(0, Number(shed.length) || 0) * Math.max(0, Number(shed.width) || 0) * SQFT_PER_SQM;
   return Math.floor(areaSqft / space + 1e-9);
 }
 
 /** The floor area in m2 a flock needs (the inverse, for "I want 5,000 birds"). */
-export function floorAreaFor(flock: { birds: number; birdType: BirdType; housing: HousingSystem }): number | null {
-  const space = sqftPerBird(flock.birdType, flock.housing);
+export function floorAreaFor(flock: { birds: number; birdType: BirdType; housing: HousingSystem; stockingDensity?: number | null }): number | null {
+  const space = spaceFor(flock.birdType, flock.housing, flock.stockingDensity);
   if (space === null) return null;
   return (Math.max(0, Number(flock.birds) || 0) * space) / SQFT_PER_SQM;
 }

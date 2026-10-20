@@ -139,8 +139,58 @@ const riskRequest = z.object({
     .prefault({}),
 });
 
+/* ------------------------------------ poultry ------------------------------------ */
+
+// Every editable planning assumption (backend/services/poultry/production.js). Unknown keys are dropped.
+const POULTRY_ASSUMPTION_FIELDS = [
+  "rearingDays", "cleaningDays", "mortalityPct", "saleWeightKg", "fcr", "labourInrPerBird", "otherCostInrPerBird",
+  "manureInrPerBird", "gunnyBagsInrPerBird", "insurancePctOfChickCost", "chickInr", "feedInrPerKg", "vaccineInrPerBird",
+  "saleInrPerKg", "growingChargeInrPerKg", "subsidyInr", "growerWeeks", "layingWeeks", "chicksPerLayerHoused",
+  "layingMortalityPct", "eggsPerHen", "growerFeedKgPerBird", "layingFeedKgPerBird", "growerManureKgPerWeek",
+  "layerManureKgPerWeek", "labourInrPerMonth", "labourBirdsPerWorker", "eggInr", "culledBirdInr", "manureInrPerTonne",
+];
+const PERCENT_FIELDS = ["mortalityPct", "layingMortalityPct", "insurancePctOfChickCost"];
+
+const poultryAssumptions = z
+  .object(
+    Object.fromEntries(
+      POULTRY_ASSUMPTION_FIELDS.map((field) => [
+        field,
+        (PERCENT_FIELDS.includes(field) ? finite.min(0).max(100) : finite.min(0).max(100_000_000)).optional(),
+      ])
+    )
+  )
+  .default({});
+
+const poultryCalculateRequest = z.object({
+  config: z.record(z.string(), z.unknown(), { error: "A shed configuration is required" }),
+  assumptions: poultryAssumptions,
+  bankFinanced: z.boolean().default(true),
+});
+
+const poultryRiskRequest = z.object({
+  config: z.record(z.string(), z.unknown(), { error: "A shed configuration is required" }),
+  assumptions: poultryAssumptions,
+  risk: z
+    .object({
+      outbreakChancePct: finite.min(0).max(50).optional(),
+      salePriceSigmaLog: finite.min(0).max(1).optional(),
+      feedPriceBandPct: finite.min(0).max(50).optional(),
+    })
+    .default({}),
+  options: z
+    .object({
+      years: z.number().int().min(1).max(15).default(5),
+      discountRatePct: finite.min(0).max(30).default(10),
+      trials: z.number().int().min(500).max(20_000).default(5000),
+      seed: z.number().int().min(0).max(2 ** 31 - 1).default(1),
+    })
+    .prefault({}),
+});
+
 module.exports = {
   CONFIG_TYPES,
+  POULTRY_ASSUMPTION_FIELDS,
   FINANCIAL_FIELDS,
   MAX_CHAT_TURNS,
   MAX_MESSAGE_CHARS,
@@ -150,6 +200,9 @@ module.exports = {
   financials,
   firstIssue,
   locale,
+  poultryAssumptions,
+  poultryCalculateRequest,
+  poultryRiskRequest,
   riskRequest,
   saveConfigurationBody,
 };

@@ -154,6 +154,7 @@ const POULTRY_TABLES = [
       ["laying_weeks", (r) => num(r.laying_weeks)],
       ["eggs_per_hen", (r) => num(r.eggs_per_hen)],
       ["laying_mortality_pct", (r) => num(r.laying_mortality_pct)],
+      ["fcr", (r) => num(r.fcr)],
       ["source_ids", (r) => r.source_ids],
     ],
   },

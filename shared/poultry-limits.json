@@ -1,0 +1,8 @@
+{
+  "length": { "min": 2, "max": 150 },
+  "width": { "min": 2, "max": 18 },
+  "eavesHeight": { "min": 1.5, "max": 3.5 },
+  "ridgeHeight": { "min": 2, "max": 6 },
+  "stockingDensity": { "min": 0.4, "max": 5 },
+  "openShedMaxWidth": 12
+}

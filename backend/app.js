@@ -3,6 +3,7 @@ const cors = require("cors");
 const path = require("path");
 
 const farmRoutes = require("./routes/farm");
+const poultryRoutes = require("./routes/poultry");
 const locationRoutes = require("./routes/location");
 const healthRoutes = require("./routes/health");
 const authRoutes = require("./routes/auth");
@@ -111,6 +112,7 @@ app.get("/api/meta", (req, res) => {
 app.use("/api/health", healthRoutes);
 app.use("/api/location", locationRoutes);
 app.use("/api/farm", farmRoutes);
+app.use("/api/poultry", poultryRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/configurations", configurationRoutes);
 app.use("/api/ai", aiRoutes);

@@ -201,4 +201,4 @@ function simulateRisk(input) {
   };
 }
 
-module.exports = { CULTIVABLE_AREA_SHARE, createRandom, simulateRisk, triangular, yieldRangeFrom };
+module.exports = { CULTIVABLE_AREA_SHARE, Z90, createRandom, histogram, quantile, simulateRisk, standardNormal, triangular, yieldRangeFrom };
