@@ -31,7 +31,8 @@ test.describe("dashboard", () => {
     const card = page.getByTestId("setup-card").filter({ hasText: "Dash 30x10" });
     await expect(card).toBeVisible();
     await expect(card.getByTestId("setup-cost")).toContainText("₹");
-    await expect(card).toContainText("30 × 10 m");
+    await expect(card).toContainText("14 × 7 m");
+    await expect(card).toContainText("Broiler · 1,054");
 
     await card.getByRole("button", { name: "Duplicate" }).click();
     const copy = page.getByTestId("setup-card").filter({ hasText: "Dash 30x10 copy" });
@@ -46,7 +47,7 @@ test.describe("dashboard", () => {
     await card.getByRole("button", { name: "Open" }).click();
     await expect(page).toHaveURL(/visualizer/);
     await expect(page.locator("header").getByText("Pune, Maharashtra")).toBeVisible();
-    await expect(page.getByTestId("model-dimensions")).toContainText("30 × 10");
+    await expect(page.getByTestId("model-dimensions")).toContainText("14 × 7");
   });
 
   test("the Dashboard link in the designer leads back, and the Design tab returns", async ({ page }) => {

@@ -13,7 +13,7 @@ test("mobile workspace switches between setup, 3D and the planning steps", async
   // The steps scroll along the top on a phone.
   await page.getByRole("tab", { name: "Cost", exact: true }).click();
   await expect(page.getByText("Up to date")).toBeVisible();
-  await expect(page.getByText("Project cost")).toBeVisible();
+  await expect(page.getByText("Build cost")).toBeVisible();
 
   await page.getByRole("tab", { name: "Design", exact: true }).click();
   await page.getByRole("radio", { name: "Setup" }).click();
