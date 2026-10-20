@@ -77,8 +77,6 @@ describe('reference datasets', () => {
   it('loads every official CSV into its table with matching row counts, and can be re-run', async () => {
     const first = await loadReferenceData(db.query);
     expect(first).toEqual({
-      cost_norms: 19,
-      midh_area_limits: 4,
       district_climate_monthly: 7020,
       district_climate_unresolved: 177,
       poultry_unit_costs: 6,
@@ -91,9 +89,12 @@ describe('reference datasets', () => {
     expect(Number(rows[0].n)).toBe(7020);
   }, 60_000);
 
-  it('loads only the poultry tables when asked, leaving the polyhouse tables alone', async () => {
-    await db.query("delete from cost_norms where structure_type = 'Fan & Pad system'");
+  it('never touches the polyhouse tables of the shared database, and can load only the poultry tables', async () => {
+    await db.query(
+      "insert into cost_norms (scheme, component, structure_type, cost_norm_inr, unit, source_document, source_url) values ('MIDH/NHB', 'c', 'polyhouse row', 844, 'per sq m', 'd', 'u')"
+    );
     const before = await db.query('select count(*) as n from cost_norms');
+    await loadReferenceData(db.query);
     const counts = await loadReferenceData(db.query, undefined, { only: 'poultry' });
     expect(Object.keys(counts)).toEqual(['poultry_unit_costs', 'poultry_production_norms', 'poultry_scheme_rules', 'poultry_siting_rules']);
     const after = await db.query('select count(*) as n from cost_norms');
@@ -103,13 +104,6 @@ describe('reference datasets', () => {
     expect(Number(rows[0].cap_inr)).toBe(2500000);
     await loadReferenceData(db.query); // restore the full set for the tests below
   }, 60_000);
-
-  it('keeps the NHB tubular naturally ventilated norm exactly as published', async () => {
-    const { rows } = await db.query(
-      "select cost_norm_inr, cost_norm_hilly_inr from cost_norms where structure_type = 'Naturally ventilated - Tubular structure'"
-    );
-    expect(rows.map((r: Record<string, unknown>) => [Number(r.cost_norm_inr), Number(r.cost_norm_hilly_inr)])).toEqual([[844, 970]]);
-  });
 
   it('has 540 districts x 13 month rows, each with a full set of core measurements', async () => {
     const { rows } = await db.query(

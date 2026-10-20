@@ -1,5 +1,5 @@
 /**
- * The landscape and sky drawn around the greenhouse. Each location has its own landscape (a Deccan
+ * The landscape and sky drawn around the shed. Each location has its own landscape (a Deccan
  * farm looks nothing like a Himalayan terrace or the Thar), chosen from the state and, where a
  * district differs from its state, the district. The grower can pick another one, or a different
  * sky, from the 3D view; the picks are remembered in the browser.

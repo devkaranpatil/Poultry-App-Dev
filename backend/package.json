@@ -2,7 +2,7 @@
   "name": "poultry-planner-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "Greenhouse backend API",
+  "description": "Poultry Planner backend API",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

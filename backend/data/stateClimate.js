@@ -1,6 +1,6 @@
 // backend/data/stateClimate.js
 //
-// Single source of per-state climate data for the greenhouse calculator.
+// Single source of per-state climate data for the farm calculation (climate card and heat stress).
 // Covers every state offered in shared/india-locations.json.
 //
 //   zone      - descriptive climate label shown to the user

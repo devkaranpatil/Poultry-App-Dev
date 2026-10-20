@@ -26,6 +26,9 @@ export default defineConfig({
         "src/components/farm/FarmModel.tsx",
         "src/components/farm/CameraController.tsx",
         "src/components/farm/MiddlePanel.tsx",
+        // The shed's meshes; their layout (scene/shedLayout.ts) is unit-tested, the drawing by e2e/scene-options.spec.ts.
+        "src/components/farm/scene/ShedStructure.tsx",
+        "src/components/farm/scene/ShedInterior.tsx",
       ],
       // Floors, not goals: CI fails if coverage regresses below these.
       thresholds: {
