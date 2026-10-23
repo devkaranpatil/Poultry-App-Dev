@@ -1,6 +1,6 @@
 # Project status and roadmap
 
-Last updated: 2026-10-20. Poultry Planner (working name) is a working prototype: every feature below runs end to end on
+Last updated: 2026-10-23. Poultry Planner (working name) is a working prototype: every feature below runs end to end on
 a laptop, against the Supabase database it shares with the polyhouse planner, with the AI on local open-source models.
 It was migrated from that polyhouse planner in seven phases (`docs/migration`); the polyhouse code is on the
 `polyhouse` git tag, and its own status history ends there.
@@ -50,14 +50,14 @@ It was migrated from that polyhouse planner in seven phases (`docs/migration`); 
 
 | Check | Command | Last result (2026-10-20) |
 |---|---|---|
-| Unit and integration tests | `npm test` | 454 passed |
+| Unit and integration tests | `npm test` | 459 passed (2026-10-23) |
 | Coverage floors | `npm run test:coverage` | statements 70.6%, branches 65.1%, functions 68.4%, lines 72.1% (floors 70/60/65/70) |
 | Lint and types | `npm run lint`, `npm run typecheck` | no errors (12 fast-refresh warnings) |
 | Production build | `npm run build` | passes |
 | Browser tests | `CI=true npm run test:e2e`, run one spec file at a time | 44 passed, 2 skipped (auth 11, dashboard 3, editor 11, interactions 6, layout 2, personas 3, scene 1, workspace 5, mobile 2) |
 | 3D sweep | `CI=true npm run test:e2e:scene` | 9 passed in 11.4 min on a laptop CPU: every bird, shed type and roof, frame and roof sheet, side walls and entry, feeding system, the controls, tunnel fans, quality levels and the accessible description |
 | Calculation audit | `node backend/scripts/auditCalculations.js` | the six NABARD 2023-24 units reproduced within 1.3% (see `docs/backend-architecture.md`) |
-| Assistant evaluation | `cd backend && npm run eval:assistant` | partial: 50 of the first 67 questions on Qwen3-4B; the full run is still to do (`docs/remaining/01-run-ai-evaluation.md`) |
+| Assistant evaluation | `cd backend && npm run eval:assistant` | 65 of 85 on Qwen3-4B before the fixes of 2026-10-23; the rerun on the fixed code is still to do (`docs/remaining/01-run-ai-evaluation.md`) |
 
 The browser tests are run one spec file at a time on the 16 GB laptop: one run of the whole suite was stopped for lack
 of memory. CI runs the whole suite in one go.
@@ -72,8 +72,9 @@ of memory. CI runs the whole suite in one go.
 - **NABARD unit costs for one state** (Jharkhand); banks use their own state's.
 - **State schemes:** only Maharashtra's, unverified.
 - **Heat stress on monthly means:** afternoons are hotter than the index.
-- **AI:** 40-90 s per answer on a laptop CPU; the evaluation found what-if answers quoting the "now" column, vaccine
-  ages taken from the layer schedule and a few figures taken from the wrong fact (`docs/remaining`, tasks 02-07).
+- **AI:** 40-90 s per answer on a laptop CPU. The faults the evaluation found (what-if answers quoting the "now"
+  column, tables lost from the knowledge base, figures taken from the wrong fact) are fixed in code but not yet
+  confirmed by a rerun (`docs/remaining`, tasks 01-07).
 - **Hindi and Marathi** poultry wording needs a native review.
 - **PDF reports are English only** (jsPDF cannot render Devanagari).
 - **The backend "API Studio"** (`backend/studio`, a developer page) still animates a polyhouse.
@@ -82,7 +83,7 @@ of memory. CI runs the whole suite in one go.
 
 ### Now
 
-1. Run the assistant evaluation to the end and fix what it found (`docs/remaining`, tasks 01-07).
+1. Rerun the assistant evaluation on the fixed code to confirm tasks 02-07 and 11 (`docs/remaining`, task 01).
 2. Apply the poultry migration to the live Supabase project and load the poultry tables.
 3. Check the unverified rates and the default prices with current quotes; native review of Hindi and Marathi.
 

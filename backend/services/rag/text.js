@@ -61,6 +61,8 @@ const QUERY_SYNONYMS = {
   vaccine: ["vaccination", "immunisation"],
   vaccination: ["vaccine", "schedule"],
   disease: ["infection", "outbreak"],
+  apart: ["separate", "quarantine"],
+  join: ["mixing"],
   hygiene: ["biosecurity", "disinfection"],
   biosecurity: ["hygiene", "disinfection"],
   feeder: ["feeding", "feed"],
@@ -101,15 +103,59 @@ function splitSentences(paragraph) {
   return paragraph.split(/(?<=[.!?])\s+/).filter(Boolean);
 }
 
+// Pages converted from HTML put each cell of a table in a paragraph of its own. Read one by one, every cell looks
+// like a heading and its text was lost (the broiler vaccination schedule was in no passage at all).
+const TABLE_MIN_CELLS = 4;
+const isCellLine = (line) => line.trim().length <= 60 && wordCount(line) <= 8;
+const isCellParagraph = (paragraph) => paragraph.split("\n").every(isCellLine);
+const isHeadingParagraph = (paragraph) => !paragraph.includes("\n") && looksLikeHeading(paragraph);
+
+/**
+ * The paragraphs with each run of table cells joined into one: "Vaccination schedule: Age | Vaccine | ...", in
+ * pieces of at most `maxWords` words. The run's first line, when it reads as a heading, stays its heading.
+ */
+function joinTables(paragraphs, maxWords) {
+  const out = [];
+  let index = 0;
+  while (index < paragraphs.length) {
+    let end = index;
+    while (end < paragraphs.length && isCellParagraph(paragraphs[end])) end += 1;
+    // The run's last line, before ordinary text, is that text's heading and not a cell.
+    if (end < paragraphs.length && end > index && isHeadingParagraph(paragraphs[end - 1])) end -= 1;
+    if (end - index < TABLE_MIN_CELLS) {
+      out.push(paragraphs[index]);
+      index += 1;
+      continue;
+    }
+    const cells = paragraphs.slice(index, end).flatMap((paragraph) => paragraph.split("\n"));
+    const heading = looksLikeHeading(cells[0]) ? cells.shift() : null;
+    let piece = [];
+    const flush = () => {
+      if (piece.length) out.push(heading ? `${heading}\n${heading}: ${piece.join(" | ")}` : piece.join(" | "));
+      piece = [];
+    };
+    for (const cell of cells) {
+      if (piece.length && wordCount([...piece, cell].join(" ")) > maxWords) flush();
+      piece.push(cell);
+    }
+    flush();
+    index = end;
+  }
+  return out;
+}
+
 /**
  * Cuts a document into passages of about `maxWords` words with `overlapWords` of overlap, keeping paragraph
  * boundaries where possible. Each passage remembers the closest heading above it.
  */
 function chunkText(text, { maxWords = 170, overlapWords = 30 } = {}) {
-  const paragraphs = String(text)
-    .split(/\n\s*\n/)
-    .map((p) => p.replace(/[ \t]+/g, " ").replace(/\n+/g, "\n").trim())
-    .filter(Boolean);
+  const paragraphs = joinTables(
+    String(text)
+      .split(/\n\s*\n/)
+      .map((p) => p.replace(/[ \t]+/g, " ").replace(/\n+/g, "\n").trim())
+      .filter(Boolean),
+    maxWords
+  );
 
   const units = []; // { text, section }
   let section = "";
@@ -158,6 +204,8 @@ function chunkText(text, { maxWords = 170, overlapWords = 30 } = {}) {
   return chunks.filter((chunk) => wordCount(chunk.text) >= 12);
 }
 
+const ASKS_FOR_AMOUNT = /\b(how (long|many|much|old|often|far|high|wide|deep)|when|what age|at what|which day|how soon)\b/i;
+
 /**
  * The part of a passage that answers the question, at most `maxChars` long. A passage can hold two topics
  * (leaf miner, then whitefly); showing only its first characters would hide the second. The window starts at
@@ -168,10 +216,13 @@ function focusPassage(text, query, maxChars = 650) {
   if (clean.length <= maxChars) return clean;
   const sentences = splitSentences(clean);
   const wanted = new Set(expandQueryTokens(tokenize(query)));
+  // A question asking for an amount is answered by a sentence with a number in it: between two sentences that
+  // match it equally, "keep new birds separate for at least 21 days" beats "isolation of new birds is necessary".
+  const wantsAmount = ASKS_FOR_AMOUNT.test(query);
   let best = 0;
   let bestScore = -1;
   sentences.forEach((sentence, index) => {
-    const score = new Set(tokenize(sentence).filter((token) => wanted.has(token))).size;
+    const score = new Set(tokenize(sentence).filter((token) => wanted.has(token))).size + (wantsAmount && /\d/.test(sentence) ? 0.5 : 0);
     if (score > bestScore) [best, bestScore] = [index, score];
   });
 
@@ -193,8 +244,8 @@ function fixDegreeSigns(text) {
     text
       .replace(/\b(\d{2})0\s*-\s*(\d{2})0\s?([CF])\b/g, "$1-$2 °$3")
       .replace(/\b(\d{2,3})0\s?([CF])\b/g, "$1 °$2")
-      // A weekly step ("reduced at the rate of 50F weekly") is a single digit: 5 °F.
-      .replace(/\b(rate of )(\d)0\s?([CF])\b/g, "$1$2 °$3")
+      // A weekly step ("reduced at the rate of 50F weekly", "reduce 50F every week") is a single digit: 5 °F.
+      .replace(/\b(rate of |reduce[ds]? (?:by )?)(\d)0\s?([CF])\b/g, "$1$2 °$3")
   );
 }
 

@@ -1,6 +1,6 @@
 # 03. An impossible change gets no limit
 
-**Status:** open. Found by the evaluation on 2026-10-20 (task 01).
+**Status:** fixed in code on 2026-10-23; to confirm with the eval questions under "Done when" (the rerun of task 01).
 
 ## The fault
 
@@ -20,6 +20,10 @@ nothing changes, `planScenario` returns null, and the model answers without the 
    added).
 2. Add a unit test: "make the shed 10 km long" with an extraction of `lengthM: 10000` keeps the length, and
    `planScenario` returns `{ error: "Length must be between 2 and 150 m" }`.
+
+## What was done (2026-10-23)
+
+groundExtraction accepts a length or width given in km or feet, and an area in sq ft, converted to metres, whether the model converted it (10000) or copied the bare number (10). "10 km long" now returns the planner error "Length must be between 2 and 150 m". Tests: src/test/what-if.test.ts.
 
 ## Done when
 

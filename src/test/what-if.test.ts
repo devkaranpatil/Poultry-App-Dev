@@ -90,8 +90,26 @@ describe('planning a what-if', () => {
   it('writes a prompt block with the figures in rupees', () => {
     const block = whatIf.scenarioBlock(plan({ saleInrPerKg: 120 }));
     expect(block).toContain('PLANNER WHAT-IF');
-    expect(block).toMatch(/Yearly profit: now Rs [\d,]+; with the change Rs [\d,]+/);
-    expect(block).toMatch(/Break-even price: now Rs [\d.]+ per kg/);
+    expect(block).toMatch(/Break-even price: Rs [\d.]+ per kg/);
+  });
+
+  it('lists the figures with the change first, apart from the figures now', () => {
+    const result = plan({ saleInrPerKg: 120 });
+    const block = whatIf.scenarioBlock(result);
+    const withChange = block.indexOf('WITH THE CHANGE:');
+    const now = block.indexOf('NOW (the project as it is):');
+    expect(withChange).toBeGreaterThan(-1);
+    expect(now).toBeGreaterThan(withChange);
+    const profit = (value: number) => `Yearly profit: Rs ${value.toLocaleString('en-IN')}`;
+    expect(block.slice(withChange, now)).toContain(profit(result.scenario.annualProfitInr));
+    expect(block.slice(now)).toContain(profit(result.baseline.annualProfitInr));
+  });
+
+  it('gives the planner limit for a shed 10 km long', () => {
+    for (const lengthM of [10000, 10]) {
+      const result = plan({ lengthM }, 'What if I make the shed 10 km long?');
+      expect(result).toEqual({ changes: [{ field: 'size', from: '20 x 5 m', to: '10000 x 5 m' }], error: 'Length must be between 2 and 150 m' });
+    }
   });
 });
 
@@ -120,6 +138,13 @@ describe("keeping only what the question asks (the model's extra fields are drop
   it('reads Devanagari digits and Indian thousands', () => {
     expect(whatIf.groundExtraction({ ...nothing, isWhatIf: true, saleInrPerKg: 120 }, 'अगर भाव १२० रुपये किलो हो तो?').saleInrPerKg).toBe(120);
     expect(whatIf.groundExtraction({ ...nothing, isWhatIf: true, birds: 5000 }, 'What if I keep 5,000 birds?').birds).toBe(5000);
+  });
+
+  it('reads a size given in km or feet as metres', () => {
+    expect(whatIf.groundExtraction({ ...nothing, isWhatIf: true, lengthM: 10000 }, 'What if I make the shed 10 km long?').lengthM).toBe(10000);
+    expect(whatIf.groundExtraction({ ...nothing, isWhatIf: true, widthM: 30 }, 'What if the shed is 30 feet wide?').widthM).toBe(9.14);
+    expect(whatIf.groundExtraction({ ...nothing, isWhatIf: true, areaSqm: 2000 }, 'What if the floor is 2,000 sq ft?').areaSqm).toBe(185.81);
+    expect(whatIf.groundExtraction({ ...nothing, isWhatIf: true, lengthM: 300 }, 'What if I make the shed 10 km long?').lengthM).toBeNull();
   });
 
   it('does not mistake semi-automatic feeders for automatic ones', () => {

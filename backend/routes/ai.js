@@ -79,14 +79,16 @@ function buildProjectFacts(config, result) {
       heatStressMonths: result.climate.heatStress?.severeMonths ?? [],
       advisories: result.climate.advisories,
     },
+    // Each name says what the figure covers: with a short name ("project") the model quoted NABARD's unit cost as
+    // the project's total.
     costInr: {
-      capital: result.cost.capitalCost,
+      buildAndEquipShed: result.cost.capitalCost,
       firstBatchWorkingCapital: result.cost.workingCapital.total,
-      project: result.cost.projectCost,
+      totalWithFirstBatch: result.cost.projectCost,
       financedByFarmer: result.financedCost,
-      civil: result.cost.civilCost,
+      civilWorks: result.cost.civilCost,
       equipment: result.cost.equipmentCost,
-      nabardNormForThisFlock: result.nabard?.normCostInr ?? null,
+      nabardUnitCostForThisFlock: result.nabard?.normCostInr ?? null,
     },
     // Every scheme checked, with its verdict; noneApplies means the bank loan carries the project.
     schemes: {
@@ -122,7 +124,7 @@ function systemInstruction(language) {
   return [
     `You are the ${APP_NAME} assistant: a poultry husbandry and agri-finance adviser for poultry farms (broilers, layers and improved desi birds) in India.`,
     "Rules:",
-    "1. Answer from the PROJECT FACTS and the numbered SOURCES below. Cite a source by its number, like [2], right after the claim it supports.",
+    "1. Answer from the PROJECT FACTS and the numbered SOURCES below. Cite a source by its number, like [2], right after the claim it supports. A general question (what a shed should be, how much space a broiler needs) is answered from the SOURCES first, and may then say how this project compares; a question about \"my\" shed, farm, flock or project is answered from the PROJECT FACTS.",
     "2. If the SOURCES do not contain the answer, say plainly that the knowledge base has no official source for it. Then give at most two sentences of general advice with no numbers, and never name varieties, brands, chemicals or products that are not in the SOURCES.",
     "3. Never invent subsidy amounts, eligibility rules, prices, temperatures, doses or production figures. Copy figures exactly as the facts or sources give them. If sources disagree, use the one marked CURRENT, not OLDER or SUPERSEDED, and say which you used. Subsidies come only from the schemes in the PROJECT FACTS with their status; when schemes.noneApplies is true, say plainly that no scheme applies and the bank loan carries the project. Never work out a subsidy as a share of the cost yourself.",
     "4. Money is in Indian rupees (₹); use lakh and crore where natural. For vaccines, medicines and disinfectants, give only the product and schedule written in the SOURCES and add that a veterinarian's advice must be followed.",
@@ -194,8 +196,22 @@ function projectBoosts(config) {
   ].filter(Boolean);
 }
 
+// The bird a question names. The guides for that bird rank a little higher, so a broiler question is not answered
+// from the long layer tables of the disease page; the boost is small, since large ones crowd out the right text.
+const BIRD_WORDS = {
+  broiler: /\bbroilers?\b|ब्रॉयलर/i,
+  layer: /\blayers?\b|\bhens?\b|\begg[\s-]*laying\b|लेयर/i,
+  desi: /\bdesi\b|देसी|vanaraja|kaveri|giriraja|gramapriya|kadaknath|backyard/i,
+};
+
+function questionBoosts(query) {
+  return Object.entries(BIRD_WORDS)
+    .filter(([, words]) => words.test(query))
+    .map(([bird]) => ({ tag: "birdKind", value: bird, factor: 1.15 }));
+}
+
 async function retrieve(query, config, k) {
-  return knowledge.search(query, { k, boosts: projectBoosts(config) });
+  return knowledge.search(query, { k, boosts: [...projectBoosts(config), ...questionBoosts(query)] });
 }
 
 /* ------------------------------ schemas -------------------------------- */

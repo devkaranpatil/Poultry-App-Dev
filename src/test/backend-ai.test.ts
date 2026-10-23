@@ -351,7 +351,7 @@ describe('AI chat', () => {
     const asked = chat?.turns[chat.turns.length - 1].content;
     expect(asked).toContain('PLANNER WHAT-IF');
     // 5,000 broilers at 1 sq ft each need 93 m of a 5 m wide shed, which holds 5,005.
-    expect(asked).toContain('Birds: now 1,076; with the change 5,005');
+    expect(asked).toMatch(/WITH THE CHANGE:\nBirds: 5,005[\s\S]*NOW \(the project as it is\):\nBirds: 1,076/);
 
     const { scenario } = JSON.parse(response.text.split('[[AI_SOURCES]]')[1]);
     expect(scenario.scenario.birds).toBe(5005);

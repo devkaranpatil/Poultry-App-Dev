@@ -4,7 +4,7 @@ What is left after the polyhouse to poultry migration (all seven phases are merg
 `phase-7`; the polyhouse code is on the `polyhouse` tag). One file per task. Each says what the task is, why it is
 open, what to do, and how to check it is done.
 
-Last updated: 2026-10-20.
+Last updated: 2026-10-23.
 
 ## The AI assistant
 
@@ -18,7 +18,7 @@ Last updated: 2026-10-20.
 | 06 | [Quarantine answered from the wrong rule](06-fix-quarantine-answer.md) | developer | small |
 | 07 | [General questions answered from the project](07-fix-general-questions.md) | developer | small |
 
-Do 01 first: its full result shows which of 02-07 matter most, and every fix is checked by rerunning its questions.
+The full run of 01 on the old code passed 65 of 85 (2026-10-23). Tasks 02-07 and 11 are fixed in code with unit tests; each is closed by rerunning 01 on the fixed code.
 
 ## Data and checks that need a person
 
