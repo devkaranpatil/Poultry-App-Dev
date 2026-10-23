@@ -1,6 +1,6 @@
 # 04. Project cost questions quote the wrong figure
 
-**Status:** open. Found by the evaluation on 2026-10-20 (task 01).
+**Status:** fixed in code on 2026-10-23; to confirm with the eval questions under "Done when" (the rerun of task 01).
 
 ## The fault
 
@@ -19,6 +19,10 @@ not say "including the first batch", so the model picks the other large number.
 1. Rename the facts so each says what it is: `buildAndEquipShed`, `firstBatchWorkingCapital`,
    `totalWithFirstBatch`, `nabardUnitCostForThisFlock` (keep the values).
 2. Update anything that reads those names (the tests of the AI route, and the what-if figures if they share them).
+
+## What was done (2026-10-23)
+
+The cost facts in buildProjectFacts are now buildAndEquipShed, firstBatchWorkingCapital, totalWithFirstBatch, financedByFarmer, civilWorks, equipment and nabardUnitCostForThisFlock. Nothing else read the old names.
 
 ## Done when
 

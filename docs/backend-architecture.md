@@ -189,18 +189,24 @@ tokens/s; Qwen3-4B ~30 and ~8.6. Ten threads was slower than eight. A repeated p
 Retrieval plus reranking adds 5 to 8 seconds.
 
 Measure any change to retrieval, prompts or the model with `cd backend && npm run eval:assistant` (real models, real
-routes; the report goes to `backend/.data/eval-*.txt`). Retrieval details that the eval showed matter: each passage is
-cut to the part that matches the question (`focusPassage`); the planner's own pages are limited to one passage per
-answer so they cannot crowd out the guides; a short follow-up is rewritten into a full question before searching; and a
-request for the instructions is answered without the model.
+routes; the report goes to `backend/.data/eval-*.txt`). Retrieval details that the eval showed matter: tables whose
+cells are paragraphs of their own (most TNAU pages and many PDFs) are joined into one passage under their heading
+(`chunkText`; read cell by cell they were taken for headings and lost, the broiler vaccination schedule among them);
+each passage is cut to the part that matches the question (`focusPassage`), preferring a sentence with a figure when
+the question asks how long, how many or when; a question naming a bird ranks that bird's guides a little higher
+(`birdKind` tags in `datasets/knowledge/manifest.json`, factor 1.15); the planner's own pages are limited to one passage
+per answer so they cannot crowd out the guides; a short follow-up is rewritten into a full question before searching;
+and a request for the instructions is answered without the model.
 
 "What if" questions are answered by the planner (`services/whatIf.js`). A cheap word check spots them; the model then
 fills a JSON schema with the change (flock size, shed size, bird, shed type, contract or independent, roof, sheet,
 feeding, state, prices and mortality) on the helper lane, so the chat's cached context survives, and that reading is
 checked against the question's own words (`groundExtraction`): an option counts only when the question names it, a
-number only when it appears in the question, and a value equal to today's is dropped. `runPoultryCalculation` produces
-the figures now and with the change; the prompt carries them as a PLANNER WHAT-IF block the model must quote, the
-figure guard treats them as known, and the chat shows them as a table.
+number only when it appears in the question (a size in km or feet counts in metres, so "10 km long" reaches the
+planner's length limit), and a value equal to today's is dropped. `runPoultryCalculation` produces the figures now and
+with the change; the prompt carries them as a PLANNER WHAT-IF block the model must quote, the figures with the change
+first and on their own (with both on one line the model quoted the "now" figure), the figure guard treats them as
+known, and the chat shows them as a table.
 
 ## Authentication (Supabase Auth)
 

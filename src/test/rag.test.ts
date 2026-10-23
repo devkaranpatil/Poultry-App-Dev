@@ -64,9 +64,22 @@ describe('chunking', () => {
     expect(chunks.every((c: Chunk) => c.text.split(/\s+/).length <= 140)).toBe(true);
   });
 
+  it('keeps a table whose cells are paragraphs of their own, under its heading', () => {
+    const lighting = 'Broilers get light for 23 hours a day and one hour of darkness, so that they do not panic in a power cut.';
+    const cells = ['Vaccination schedule', 'Age', 'Vaccine', 'Route', '14th day', 'IBD Vaccine', 'I/O or I/N', '21st day', 'RDV La Sota', 'Drinking water'];
+    const sexing = 'Males grow faster than females and need more floor space, so they are reared separately from day-old to sale.';
+    const chunks = chunkText([lighting, ...cells, 'Sex-separate rearing', sexing].join('\n\n'), { maxWords: 40, overlapWords: 0 });
+    const table = chunks.find((c: Chunk) => c.text.includes('IBD Vaccine'));
+    expect(table?.section).toBe('Vaccination schedule');
+    expect(table?.text).toContain('Vaccination schedule: Age | Vaccine | Route | 14th day | IBD Vaccine | I/O or I/N | 21st day | RDV La Sota | Drinking water');
+    // The heading of the text after the table stays a heading.
+    expect(chunks.find((c: Chunk) => c.text.includes('Males grow faster'))?.section).toBe('Sex-separate rearing');
+  });
+
   it('restores lost degree signs', () => {
     expect(fixDegreeSigns('day temperature of 25-300C and below 120C')).toBe('day temperature of 25-30 °C and below 12 °C');
     expect(fixDegreeSigns('about 100 plants')).toBe('about 100 plants');
+    expect(fixDegreeSigns('90 to 950F for the first week and then reduce 50F every week')).toBe('90 to 95 °F for the first week and then reduce 5 °F every week');
   });
 
   it('shows the part of a long passage that answers the question, not just its start', () => {
@@ -77,6 +90,12 @@ describe('chunking', () => {
     expect(shown.startsWith('…')).toBe(true);
     expect(shown.length).toBeLessThanOrEqual(300);
     expect(focusPassage('Short passage.', 'anything', 300)).toBe('Short passage.');
+  });
+
+  it('shows the sentence with the figure when the question asks how long', () => {
+    const filler = 'Every shed should have its own equipment and its own workers, and visitors should stay outside. '.repeat(4);
+    const passage = `Isolation and quarantine of new birds is necessary in a separate place. ${filler}New birds should be kept separate from old stock for at least 21 days before mixing.`;
+    expect(focusPassage(passage, 'For how long should new birds be kept apart?', 200)).toContain('at least 21 days');
   });
 });
 

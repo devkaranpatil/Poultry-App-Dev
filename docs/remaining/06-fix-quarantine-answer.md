@@ -1,6 +1,6 @@
 # 06. Quarantine answered from the wrong rule
 
-**Status:** open. Found by the evaluation on 2026-10-20 (task 01).
+**Status:** fixed in code on 2026-10-23; to confirm with the eval questions under "Done when" (the rerun of task 01).
 
 ## The fault
 
@@ -22,6 +22,10 @@ question. The DAHD passage's matching sentence is about materials, and it ranks 
    "quarantine" and "isolation".
 3. If it was in the context, the prompt can ask the model to prefer the passage that is about birds over one about
    materials; or the eval question can be made more specific.
+
+## What was done (2026-10-23)
+
+The DAHD passage with "at least 21 days" ranked first, but the 650 characters shown to the model stopped before that sentence. QUERY_SYNONYMS maps "apart" to separate and quarantine and "join" to mixing, and focusPassage prefers a sentence with a figure when the question asks how long, how many or when. The 21-day rule is in the DAHD rules, not the TNAU page.
 
 ## Done when
 

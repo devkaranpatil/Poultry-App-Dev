@@ -127,6 +127,16 @@ def tidy(text: str) -> str:
     return re.sub(r"\n{3,}", "\n\n", text).strip() + "\n"
 
 
+def trim(text: str, source: dict) -> str:
+    """Keeps the article: from the source's `textStart` up to its `textEnd`, when the manifest gives them."""
+    start, end = source.get("textStart"), source.get("textEnd")
+    if start and start in text:
+        text = text[text.index(start):]
+    if end and end in text:
+        text = text[: text.index(end)].rstrip() + "\n"
+    return text
+
+
 def main() -> None:
     refresh = "--refresh" in sys.argv
     manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
@@ -144,7 +154,7 @@ def main() -> None:
                 print(f"  FAILED: {err}")
                 continue
         text = pdf_to_text(raw_path, source.get("layout", False)) if extension == "pdf" else html_to_text(raw_path)
-        text = tidy(text)
+        text = trim(tidy(text), source)
         (TEXT / f"{source['id']}.txt").write_text(text, encoding="utf-8")
         print(f"  {source['id']}: {len(text.split()):,} words")
 

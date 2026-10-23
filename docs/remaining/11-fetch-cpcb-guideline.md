@@ -1,6 +1,6 @@
 # 11. Fetch the CPCB guideline text
 
-**Status:** open. The page timed out on 2026-10-20.
+**Status:** fixed in code on 2026-10-23; to confirm with the eval questions under "Done when" (the rerun of task 01).
 
 ## Why it is open
 
@@ -15,6 +15,10 @@ water) are already in `datasets/csv/poultry_siting_rules.csv`, so the app and th
 2. If the page stays down, find the CPCB PDF itself (CPCB circulated the revised guidelines to the state boards in
    January 2022) and change the source's `url` and `format: "pdf"` in the manifest.
 3. Remove the matching line from the manifest's `gaps`.
+
+## What was done (2026-10-23)
+
+The page answered on 2026-10-23. fetch_knowledge.py now trims a page to the manifest fields textStart and textEnd, so the site menus are left out (274 words). The page is a summary of the NGT orders (consent above 5,000 birds); the siting distances are not in it. The manifest gap now says that the CPCB PDF itself is missing. /api/ai/status lists 34 documents.
 
 ## Done when
 

@@ -1,6 +1,6 @@
 # 07. General questions answered from the project
 
-**Status:** open. Found by the evaluation on 2026-10-20 (task 01).
+**Status:** fixed in code on 2026-10-23; to confirm with the eval questions under "Done when" (the rerun of task 01).
 
 ## The fault
 
@@ -20,6 +20,10 @@ compares; a question about "my shed", "my farm" or "my project" is answered from
 
 The system message must stay identical for a project so the runtime can reuse its cache (see the assistant-findings
 memory): change the rule text once, not per question.
+
+## What was done (2026-10-23)
+
+Rule 1 of the instructions in backend/routes/ai.js now says a general question is answered from the SOURCES first, and a question about my shed, farm, flock or project from the PROJECT FACTS. The text is fixed, so the system message stays the same for a project.
 
 ## Done when
 

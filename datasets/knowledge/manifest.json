@@ -40,6 +40,7 @@
     },
     {
       "id": "nabard-broiler-model",
+      "tags": { "birdKind": "broiler" },
       "title": "NABARD model bankable project: broiler farming",
       "publisher": "NABARD (copy hosted by TNAU Agritech)",
       "url": "https://agritech.tnau.ac.in/banking/nabard_pdf/Animal%20husbandry/3.Poultry_Broiler_Farming.pdf",
@@ -52,6 +53,7 @@
     },
     {
       "id": "nabard-layer-model",
+      "tags": { "birdKind": "layer" },
       "title": "NABARD model bankable project: commercial layer farming",
       "publisher": "NABARD (copy hosted by TNAU Agritech)",
       "url": "https://agritech.tnau.ac.in/banking/nabard_pdf/Animal%20husbandry/4.Poultry_Layer.pdf",
@@ -64,6 +66,7 @@
     },
     {
       "id": "nabard-indigenous-model",
+      "tags": { "birdKind": "desi" },
       "title": "NABARD model project: indigenous (desi) poultry farming",
       "publisher": "NABARD",
       "url": "https://www.nabard.org/auth/writereaddata/ModelBankProject/0604183125Model-_Indigenous_Poultry_Farming_English.pdf",
@@ -76,6 +79,7 @@
     },
     {
       "id": "ncdc-broiler-dpr",
+      "tags": { "birdKind": "broiler" },
       "title": "NCDC sample detailed project report: broiler farming",
       "publisher": "National Cooperative Development Corporation",
       "url": "https://www.ncdc.in/documents/downloads/191804052020.Sample_DPR_Broiler-Farming.pdf",
@@ -95,10 +99,13 @@
       "status": "current",
       "priority": 1.05,
       "scope": "India",
-      "note": "Consent above 5,000 birds and siting distances, enforced by NGT orders of 2020 and 2021. The page summarises the guideline; the full text is the CPCB PDF."
+      "note": "Consent above 5,000 birds and siting distances, enforced by NGT orders of 2020 and 2021. The page summarises the guideline; the full text is the CPCB PDF.",
+      "textStart": "Environmental guidelines for poultry farms",
+      "textEnd": "Tags:"
     },
     {
       "id": "dahd-biosecurity-2015",
+      "fixDegreeSigns": true,
       "title": "General guidelines on biosecurity in poultry farms (revised August 2015)",
       "publisher": "Department of Animal Husbandry, Dairying and Fisheries (released through PIB)",
       "url": "https://archive.pib.gov.in/documents/rlink/2015/sep/p201591804.pdf",
@@ -121,6 +128,7 @@
     },
     {
       "id": "tnau-broiler-management",
+      "tags": { "birdKind": "broiler" },
       "title": "TNAU Agritech poultry expert system: broiler management",
       "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
       "url": "https://agritech.tnau.ac.in/expert_system/poultry/Broiler%20Management.html",
@@ -132,6 +140,7 @@
     },
     {
       "id": "tnau-layer-management",
+      "tags": { "birdKind": "layer" },
       "title": "TNAU Agritech poultry expert system: layer management",
       "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
       "url": "https://agritech.tnau.ac.in/expert_system/poultry/Layer%20Management.html",
@@ -143,6 +152,7 @@
     },
     {
       "id": "tnau-grower-management",
+      "tags": { "birdKind": "layer" },
       "title": "TNAU Agritech poultry expert system: grower management",
       "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
       "url": "https://agritech.tnau.ac.in/expert_system/poultry/Grower%20Management.html",
@@ -154,6 +164,7 @@
     },
     {
       "id": "tnau-brooding",
+      "fixDegreeSigns": true,
       "title": "TNAU Agritech poultry expert system: brooding of chicks",
       "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
       "url": "https://agritech.tnau.ac.in/expert_system/poultry/brooding%20of%20chicks.html",
@@ -198,6 +209,7 @@
     },
     {
       "id": "tnau-disease",
+      "fixDegreeSigns": true,
       "title": "TNAU Agritech poultry expert system: disease control and vaccination",
       "publisher": "Tamil Nadu Agricultural University (TNAU Agritech Portal)",
       "url": "https://agritech.tnau.ac.in/expert_system/poultry/Disease%20Control%20And%20Management.html",
@@ -220,6 +232,7 @@
     },
     {
       "id": "vikaspedia-broiler",
+      "tags": { "birdKind": "broiler" },
       "title": "Vikaspedia: broiler production",
       "publisher": "Vikaspedia (Government of India, MeitY / C-DAC)",
       "url": "https://en.vikaspedia.in/viewcontent/agriculture/poultry/breeds-of-poultry/broiler-production?lgn=en",
@@ -232,6 +245,7 @@
     },
     {
       "id": "vikaspedia-layer",
+      "tags": { "birdKind": "layer" },
       "title": "Vikaspedia: poultry layer farming",
       "publisher": "Vikaspedia (Government of India, MeitY / C-DAC)",
       "url": "https://en.vikaspedia.in/viewcontent/agriculture/poultry/breeds-of-poultry/poultry-layer-farming?lgn=en",
@@ -248,6 +262,6 @@
     "IS 2732:1985 (poultry housing) is not freely available; its figures come through the TNAU expert system.",
     "No official source gives daily market prices for broilers or eggs; the planner's prices are assumptions the farmer can change.",
     "Medicine and vaccine doses are for a veterinarian; the sources give schedules, not prescriptions.",
-    "The CPCB guideline page (India Environment Portal) timed out on 2026-10-20 and is not in the text index; its consent threshold and siting distances are in the planner's siting table (datasets/csv/poultry_siting_rules.csv)."
+    "The CPCB guideline itself (the PDF circulated to the state boards) is not in the knowledge base, only the India Environment Portal summary of the NGT orders; its siting distances are in the planner's siting table (datasets/csv/poultry_siting_rules.csv)."
   ]
 }

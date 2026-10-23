@@ -87,9 +87,33 @@ const numbersIn = (text) =>
     )
   );
 
+// Sizes the question gives in another unit, as metres (or square metres): "10 km long" is a length of 10,000 m.
+const SIZE_UNITS = [
+  { pattern: /(\d+(?:\.\d+)?)\s*(?:sq\.?\s*(?:ft|feet)|square\s*(?:feet|foot))\b/gi, fields: ["areaSqm"], factor: 0.092903 },
+  { pattern: /(\d+(?:\.\d+)?)\s*(?:km|kilomet(?:er|re)s?)\b/gi, fields: ["lengthM", "widthM"], factor: 1000 },
+  { pattern: /(?<!sq\.?\s*|square\s*)(\d+(?:\.\d+)?)\s*(?:ft|feet|foot)\b/gi, fields: ["lengthM", "widthM"], factor: 0.3048 },
+];
+const nearly = (a, b) => Math.abs(a - b) <= Math.max(0.01, Math.abs(b) * 0.01);
+
+/** The size in metres a field's value stands for, when the question gives that size in another unit; else null. */
+function sizeInOtherUnit(field, value, question) {
+  const text = String(question).replace(/(\d),(\d)/g, "$1$2");
+  for (const unit of SIZE_UNITS) {
+    if (!unit.fields.includes(field)) continue;
+    for (const match of text.matchAll(unit.pattern)) {
+      const given = Number(match[1]);
+      const metres = Math.round(given * unit.factor * 100) / 100;
+      // The model converted the unit (10,000 for "10 km"), or copied the number without it (10).
+      if (nearly(value, metres) || value === given) return metres;
+    }
+  }
+  return null;
+}
+
 /**
  * Keeps only what the question really says: an option counts when the question names it (and is added when the
- * model missed the only option named for that field), a number counts when it appears in the question.
+ * model missed the only option named for that field), a number counts when it appears in the question, and a size
+ * given in km or feet counts in metres.
  * @param {object} extracted  the model's reading
  * @param {string} question   the question, with Hindi and Marathi farming words already in English
  */
@@ -102,7 +126,13 @@ function groundExtraction(extracted, question) {
     if ((!chosen || chosen === UNCHANGED || !named.includes(chosen)) && named.length === 1) grounded[field] = named[0];
   }
   const numbers = numbersIn(question);
-  for (const field of ["birds", "lengthM", "widthM", "areaSqm", ...ASSUMPTION_FIELDS]) {
+  for (const field of ["lengthM", "widthM", "areaSqm"]) {
+    if (typeof grounded[field] !== "number") continue;
+    const metres = sizeInOtherUnit(field, grounded[field], question);
+    if (metres !== null) grounded[field] = metres;
+    else if (!numbers.has(grounded[field])) grounded[field] = null;
+  }
+  for (const field of ["birds", ...ASSUMPTION_FIELDS]) {
     if (typeof grounded[field] === "number" && !numbers.has(grounded[field])) grounded[field] = null;
   }
   return grounded;
@@ -227,25 +257,33 @@ const years = (value) => (value === null ? "no payback" : `${value} years`);
 const breakEven = (figure) =>
   figure.breakEvenPrice === null ? "not available" : `Rs ${figure.breakEvenPrice} ${figure.product === "eggs" ? "per egg" : "per kg"}`;
 
-/** The prompt block the model must quote from. */
+const figureLines = (figure) => [
+  `Birds: ${figure.birds.toLocaleString("en-IN")}`,
+  `Build cost: ${inr(figure.capitalCostInr)}`,
+  `Cost financed (with the first batch): ${inr(figure.financedCostInr)}`,
+  `Subsidy counted: ${inr(figure.subsidyInr)}`,
+  `Net investment: ${inr(figure.netInvestmentInr)}`,
+  `Yearly profit: ${inr(figure.annualProfitInr)}`,
+  `Payback: ${years(figure.paybackYears)}`,
+  `Break-even price: ${breakEven(figure)}`,
+];
+
+/**
+ * The prompt block the model must quote from. The figures with the change come first and on their own: with both
+ * values on one line, a small model copied the first one ("now") as the answer.
+ */
 function scenarioBlock(plan) {
   const changeText = plan.changes.map((change) => `${change.field}: ${change.from ?? "not set"} -> ${change.to}`).join("; ");
   if (plan.error) {
     return `PLANNER WHAT-IF: the planner cannot calculate this change (${changeText}): ${plan.error}. Say so and do not estimate figures.`;
   }
-  const rows = [
-    ["Birds", plan.baseline.birds.toLocaleString("en-IN"), plan.scenario.birds.toLocaleString("en-IN")],
-    ["Build cost", inr(plan.baseline.capitalCostInr), inr(plan.scenario.capitalCostInr)],
-    ["Cost financed (with the first batch)", inr(plan.baseline.financedCostInr), inr(plan.scenario.financedCostInr)],
-    ["Subsidy counted", inr(plan.baseline.subsidyInr), inr(plan.scenario.subsidyInr)],
-    ["Net investment", inr(plan.baseline.netInvestmentInr), inr(plan.scenario.netInvestmentInr)],
-    ["Yearly profit", inr(plan.baseline.annualProfitInr), inr(plan.scenario.annualProfitInr)],
-    ["Payback", years(plan.baseline.paybackYears), years(plan.scenario.paybackYears)],
-    ["Break-even price", breakEven(plan.baseline), breakEven(plan.scenario)],
-  ];
   return [
     `PLANNER WHAT-IF (calculated by the planner; quote these figures exactly and do not calculate your own). Change: ${changeText}.`,
-    ...rows.map(([label, now, next]) => `${label}: now ${now}; with the change ${next}`),
+    "Answer with the WITH THE CHANGE figures; mention the NOW figures only to compare.",
+    "WITH THE CHANGE:",
+    ...figureLines(plan.scenario),
+    "NOW (the project as it is):",
+    ...figureLines(plan.baseline),
     plan.note ? `Note: ${plan.note}` : null,
   ]
     .filter(Boolean)

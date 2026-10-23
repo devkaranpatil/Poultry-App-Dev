@@ -1,6 +1,6 @@
 # 05. Broiler vaccine ages come from the layer schedule
 
-**Status:** open. Found by the evaluation on 2026-10-20 (task 01).
+**Status:** fixed in code on 2026-10-23; to confirm with the eval questions under "Done when" (the rerun of task 01).
 
 ## The fault
 
@@ -24,6 +24,10 @@ favour passages about the bird asked about.
    tagged with it, as is already done for the project's district. Keep the boost small (the findings memory warns that
    large priority multipliers crowd out the right text).
 3. Measure with the fact questions before and after, not only the vaccine ones.
+
+## What was done (2026-10-23)
+
+The cause was not ranking: the broiler table was in no passage. chunkText (backend/services/rag/text.js) took each table cell, a paragraph of its own, for a heading and dropped it; about 150 tables in 19 documents were lost. Runs of four or more short paragraphs are now joined into one passage under their heading ("Vaccination schedule: Age | Vaccine | ..."). The bird boost was added too: birdKind tags in datasets/knowledge/manifest.json and a factor of 1.15 in routes/ai.js. Note that the TNAU disease page has its own broiler table (IBD at 12-14 days, the LaSota booster on day 28), so a LaSota answer of 28 days is from a real source.
 
 ## Done when
 

@@ -1,6 +1,6 @@
 # 02. What-if answers quote the wrong column
 
-**Status:** open. Found by the evaluation on 2026-10-20 (task 01).
+**Status:** fixed in code on 2026-10-23; to confirm with the eval questions under "Done when" (the rerun of task 01).
 
 ## The fault
 
@@ -23,6 +23,10 @@ and `whatif-price-110` (payback missing).
    Or a two-column table the model can copy row by row.
 2. Add to the rule in the block: "Answer with the WITH THE CHANGE figures; mention NOW only to compare."
 3. Keep `src/test/what-if.test.ts` passing, and update its expected text.
+
+## What was done (2026-10-23)
+
+scenarioBlock in backend/services/whatIf.js now writes a WITH THE CHANGE block, then a NOW block, with the rule "Answer with the WITH THE CHANGE figures; mention the NOW figures only to compare." Tests: src/test/what-if.test.ts, src/test/backend-ai.test.ts.
 
 ## Done when
 
