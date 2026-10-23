@@ -46,6 +46,31 @@ It was migrated from that polyhouse planner in seven phases (`docs/migration`); 
 | 6 AI knowledge | poultry manifest and corpus, poultry search words, backend architecture rewritten, 85-question evaluation set | `phase-6` |
 | 7 Finish | leftovers deleted (polyhouse CSVs, crop library, pricing constants, polyhouse labels), docs, coverage, full checks | `phase-7` |
 
+## After the migration
+
+What is still open is in `docs/remaining`, one file per task.
+
+### 2026-10-23: the assistant evaluation and its fixes (branch `ai-eval-fixes`)
+
+**The evaluation, run in full on the code before the fixes:** 65 of 85 (fact 29/38, project 9/12, what-if 7/11,
+edge 12/15, language 3/4, http 5/5). The report is `backend/.data/eval-2026-10-23T02-20-31-275Z.txt`.
+
+**What was fixed, each with unit tests** (details in `docs/remaining` 01-07 and 11):
+
+| Fault | Fix | Where |
+|---|---|---|
+| What-if answers quoted the "now" figures | the figures with the change come first, in their own block, with a rule to answer from them | `services/whatIf.js` (`scenarioBlock`) |
+| "10 km long" got general advice | sizes in km, feet or sq ft count in metres, so the planner's limit is reached | `services/whatIf.js` (`groundExtraction`) |
+| NABARD's unit cost quoted as the project's total | the cost facts are named for what they cover (`totalWithFirstBatch`, ...) | `routes/ai.js` (`buildProjectFacts`) |
+| Broiler vaccine ages from the layer table | the broiler table was in no passage: table cells, one per paragraph, were taken for headings and dropped (about 150 tables in 19 documents); they are now joined under their heading. A question naming a bird ranks its guides a little higher | `services/rag/text.js` (`chunkText`), `routes/ai.js`, `birdKind` tags in the manifest |
+| Quarantine of 10 days instead of 21 | the 21-day sentence was cut from the shown text; synonyms for "kept apart" and "join", and a sentence with a figure is preferred for "how long" | `services/rag/text.js` (`focusPassage`) |
+| General questions answered with the project's figures; CPCB distances applied to a small farm | rule 1: general questions from the sources, "my farm" questions from the project facts | `routes/ai.js` |
+| "Lower the heat 50 °F each week" | the lost degree signs ("reduce 50F" is 5 °F) are repaired in three more documents | `services/rag/text.js`, manifest |
+| CPCB page missing | fetched and trimmed to the article; 34 documents | `fetch_knowledge.py` (`textStart`, `textEnd`) |
+
+**Checks:** 459 unit tests pass, typecheck and lint have no errors. The rerun of the evaluation on the fixed code was
+stopped by the laptop running out of memory before its first answer, so the fixes are not yet confirmed (task 01).
+
 ## How it is verified
 
 | Check | Command | Last result (2026-10-20) |
