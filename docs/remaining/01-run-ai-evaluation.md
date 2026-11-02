@@ -1,7 +1,46 @@
 # 01. Run the assistant evaluation to the end
 
-**Status:** the full run is done on the code before the fixes (65 of 85, 2026-10-23). The rerun on the fixed code
-(tasks 02-07 and 11) is still to do: it was stopped by the laptop running out of memory before its first answer.
+**Status:** the rerun on the fixed code is done: **78 of 85** on a GPU (2026-11-02), up from 65. Five of its seven
+failures are fixed the same day and need a rerun of just those questions; two are open (below).
+
+## Rerun on the fixed code (Qwen3-4B, 20 of 36 layers on a GPU, 2026-11-02)
+
+**78 of 85 passed.** Run in two parts (the first was stopped for lack of memory after 57 questions). Report of the
+second part: `backend/.data/eval-2026-11-02T10-51-30-365Z.txt` on the GPU machine.
+
+| Kind | Passed | Failed |
+|---|---|---|
+| fact | 35 / 38 | space-controlled, litter-max, brooding-reduce |
+| project | 11 / 12 | project-siting |
+| what-if | 9 / 11 | whatif-5000, whatif-puf |
+| edge | 15 / 15 | |
+| language | 3 / 4 | hi-broiler-space |
+| http | 5 / 5 | |
+
+Tasks 02-07 and 11 are closed by it: every question they were for now passes, except `whatif-5000` and `whatif-puf`,
+whose new causes are below.
+
+- `whatif-puf` answered in 19 s: the planner was never asked. "How much would the shed cost with a PUF panel roof?"
+  matched none of the what-if words. Fixed: "would ... cost/earn/make/pay/profit" now counts (`looksLikeWhatIf`).
+- `whatif-5000`: the answer did not say 5,010, the birds the longer shed holds. Fixed: the planner block says the
+  number asked for and the number the shed holds, and to give both.
+- `project-siting`: fixed by naming the facts `siting.rulesForThisFarm` and adding `siting.notForThisFarm` (the CPCB
+  rules apply only above 5,000 birds).
+- `brooding-reduce` (no "70"): the Vikaspedia line reads "reduced at the rate of 5 °F weekly until 70 °F in 6th
+  week" after the repair, but TNAU says "until it reaches the room temperature", and a keyword search finds TNAU first.
+  Both are right, so the question now also accepts "room temperature".
+- `hi-broiler-space` (said 2 sq ft): "डीप लिटर" and "जगह" were not in the glossary swapped into English before the
+  question is translated (`FARMING_TERMS`); now "deep litter" and "space" (also "बिछावन", Marathi "जागा"). Not a bare
+  "लिटर", which is also a litre. A search on the swapped question finds the 1 sq ft passages (`planner-birds`,
+  `tnau-broiler-management`); the 2 sq ft is probably the layer figure in `tnau-housing` next to it.
+- Open, to be read in the report before anything is changed (the answers are only in the report on the GPU machine):
+  - `space-controlled` (no "0.7"): the keyword search ranks `dataset-production-norms#2` ("broiler in a
+    environment-controlled shed: floor space 0.7 sq ft") second, so the passage is found; read what the answer said.
+  - `litter-max` (no 8-12 inch range): the keyword search ranks first a `tnau-housing` passage that has the range;
+    read the answer.
+
+Rerun the changed ones with
+`npm run eval:assistant -- --only=whatif-puf,whatif-5000,project-siting,brooding-reduce,hi-broiler-space`.
 
 ## Full result before the fixes (Qwen3-4B, 2026-10-23)
 
@@ -53,6 +92,7 @@ What the failures were, and what was changed for them (all on 2026-10-23, with u
 
 ## Done when
 
-- A run on the fixed code ends with a `# score` line for all 85 questions, and passes at least the 65 above.
-- The score is recorded in `docs/project-status.md` (the "Assistant evaluation" row) and in the assistant-findings
-  memory, and tasks 02-07 and 11 are closed or reopened by it.
+- ~~A run on the fixed code ends with a `# score` line for all 85 questions, and passes at least the 65 above.~~ 78 of
+  85 (2026-11-02), recorded in `docs/project-status.md`.
+- The five questions fixed on 2026-11-02 pass on a rerun, and the two open answers are read and either fixed or
+  accepted.

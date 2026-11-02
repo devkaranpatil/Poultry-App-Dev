@@ -1,6 +1,6 @@
 # 02. What-if answers quote the wrong column
 
-**Status:** fixed in code on 2026-10-23; to confirm with the eval questions under "Done when" (the rerun of task 01).
+**Status:** three of five confirmed in the rerun of task 01 (2026-11-02). `whatif-puf` and `whatif-5000` failed for new reasons (the planner was not asked; the 5,010 birds were left out); both are fixed in code on 2026-11-02 and wait for a rerun of those two questions (task 01).
 
 ## The fault
 

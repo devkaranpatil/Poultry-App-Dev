@@ -1,6 +1,6 @@
 # 06. Quarantine answered from the wrong rule
 
-**Status:** fixed in code on 2026-10-23; to confirm with the eval questions under "Done when" (the rerun of task 01).
+**Status:** done. Fixed in code on 2026-10-23; every question under "Done when" passed in the rerun of task 01 (78 of 85, 2026-11-02).
 
 ## The fault
 

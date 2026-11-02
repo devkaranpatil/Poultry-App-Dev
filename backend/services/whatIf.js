@@ -10,7 +10,7 @@ const { NORMS } = require("../data/poultry/norms");
 
 // A cheap first check, so ordinary questions never pay for the extraction step.
 const WHAT_IF_HINT =
-  /\b(what if|what happens|suppose|supposing|instead|switch(?:ed|ing)? to|change|if i|if we|bigger|smaller|larger|double|half|increase|decrease|reduce|raise|lower|compare|would it|how much (?:more|less))\b|अगर|यदि|बदल|जर\s|त्याऐवजी/i;
+  /\b(what if|what happens|suppose|supposing|instead|switch(?:ed|ing)? to|change|if i|if we|bigger|smaller|larger|double|half|increase|decrease|reduce|raise|lower|compare|would it|how much (?:more|less))\b|\bwould\b[^.?]*\b(?:cost|earn|make|pay|profit)\b|अगर|यदि|बदल|जर\s|त्याऐवजी/i;
 
 const looksLikeWhatIf = (text) => WHAT_IF_HINT.test(String(text || ""));
 
@@ -241,15 +241,21 @@ function planScenario({ rawConfig, assumptions, extracted: modelReading, questio
     }
   }
   if (changes.length === 0) return null;
-  const note = familyChanged
-    ? "The bird or the farming model changes, so its production figures and prices start from the planner's defaults for it."
-    : null;
 
   const baseline = runCalculation(rawConfig, assumptions || undefined);
   const scenario = runCalculation(config, next);
   if (baseline.errors) return null;
   if (scenario.errors) return { changes, error: Object.values(scenario.errors)[0] };
-  return { changes, baseline: figures(baseline.result), scenario: figures(scenario.result), note };
+  const notes = [];
+  if (familyChanged) notes.push("The bird or the farming model changes, so its production figures and prices start from the planner's defaults for it.");
+  // The shed grows in half metres, so it holds a few more birds than asked; the model kept repeating the number asked.
+  const birds = scenario.result.flock.birds;
+  if (positive(extracted.birds) && birds !== extracted.birds) {
+    notes.push(
+      `${extracted.birds.toLocaleString("en-IN")} birds were asked for; the shed made for them (${config.length} x ${config.width} m) holds ${birds.toLocaleString("en-IN")}. Give both numbers.`
+    );
+  }
+  return { changes, baseline: figures(baseline.result), scenario: figures(scenario.result), note: notes.join(" ") || null };
 }
 
 const inr = (value) => (value === null ? "not available" : `Rs ${Math.round(value).toLocaleString("en-IN")}`);

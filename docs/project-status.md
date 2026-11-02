@@ -1,6 +1,6 @@
 # Project status and roadmap
 
-Last updated: 2026-10-23. Poultry Planner (working name) is a working prototype: every feature below runs end to end on
+Last updated: 2026-11-02. Poultry Planner (working name) is a working prototype: every feature below runs end to end on
 a laptop, against the Supabase database it shares with the polyhouse planner, with the AI on local open-source models.
 It was migrated from that polyhouse planner in seven phases (`docs/migration`); the polyhouse code is on the
 `polyhouse` git tag, and its own status history ends there.
@@ -68,21 +68,43 @@ edge 12/15, language 3/4, http 5/5). The report is `backend/.data/eval-2026-10-2
 | "Lower the heat 50 °F each week" | the lost degree signs ("reduce 50F" is 5 °F) are repaired in three more documents | `services/rag/text.js`, manifest |
 | CPCB page missing | fetched and trimmed to the article; 34 documents | `fetch_knowledge.py` (`textStart`, `textEnd`) |
 
-**Checks:** 459 unit tests pass, typecheck and lint have no errors. The rerun of the evaluation on the fixed code was
-stopped by the laptop running out of memory before its first answer, so the fixes are not yet confirmed (task 01).
+**Checks:** 459 unit tests pass, typecheck and lint have no errors.
+
+### 2026-11-02: the rerun on the fixed code, on a GPU
+
+**78 of 85 (92%)**, up from 65: fact 35/38 (29), project 11/12 (9), what-if 9/11 (7), edge 15/15 (12), language 3/4
+(3), http 5/5. Qwen3-4B with 20 of its 36 layers on the GPU and a 4,096-token context; most answers took 20-30 s and
+what-if answers 70-135 s. The run was in two parts (the first was stopped for lack of memory after 57 questions; same
+questions and settings, model reloaded). Report of the second part: `backend/.data/eval-2026-11-02T10-51-30-365Z.txt`
+on the machine that ran it; the first part is only in that run's log.
+
+The seven failures, and what was done the same day:
+
+| Question | What the answer lacked | Done |
+|---|---|---|
+| whatif-puf | Rs 5.3 lakh; answered in 19 s, so the planner was never asked | "how much would the shed cost with ..." now counts as a what-if (`looksLikeWhatIf`) |
+| whatif-5000 | the 5,010 birds the longer shed holds | the planner block says the number asked for and the number the shed holds, and to give both (`planScenario` note) |
+| project-siting | the rules that bind a 1,054-bird farm | the facts list the rules for this farm and say the CPCB rules do not apply at 5,000 birds or fewer (`buildProjectFacts`, `siting`) |
+| brooding-reduce | "70" (°F) | the text is right after the repair; TNAU says "until it reaches the room temperature", which is also right, so the question now accepts it |
+| litter-max | the 8-12 inch depth | open: a keyword search finds a `tnau-housing` passage with the range first; read the answer in the GPU report |
+| space-controlled | 0.7 sq ft per bird | open: a keyword search finds the norms passage second; read the answer in the GPU report |
+| hi-broiler-space | 1 sq ft (Hindi) | "डीप लिटर" and "जगह" are now swapped for "deep litter" and "space" before the question is translated (`FARMING_TERMS`) |
+
+The code fixes have unit tests; none is yet confirmed by the model (rerun only those questions with
+`npm run eval:assistant -- --only=whatif-puf,whatif-5000,project-siting,brooding-reduce,hi-broiler-space`).
 
 ## How it is verified
 
 | Check | Command | Last result (2026-10-20) |
 |---|---|---|
-| Unit and integration tests | `npm test` | 459 passed (2026-10-23) |
+| Unit and integration tests | `npm test` | 460 passed (2026-11-02) |
 | Coverage floors | `npm run test:coverage` | statements 70.6%, branches 65.1%, functions 68.4%, lines 72.1% (floors 70/60/65/70) |
 | Lint and types | `npm run lint`, `npm run typecheck` | no errors (12 fast-refresh warnings) |
 | Production build | `npm run build` | passes |
 | Browser tests | `CI=true npm run test:e2e`, run one spec file at a time | 44 passed, 2 skipped (auth 11, dashboard 3, editor 11, interactions 6, layout 2, personas 3, scene 1, workspace 5, mobile 2) |
 | 3D sweep | `CI=true npm run test:e2e:scene` | 9 passed in 11.4 min on a laptop CPU: every bird, shed type and roof, frame and roof sheet, side walls and entry, feeding system, the controls, tunnel fans, quality levels and the accessible description |
 | Calculation audit | `node backend/scripts/auditCalculations.js` | the six NABARD 2023-24 units reproduced within 1.3% (see `docs/backend-architecture.md`) |
-| Assistant evaluation | `cd backend && npm run eval:assistant` | 65 of 85 on Qwen3-4B before the fixes of 2026-10-23; the rerun on the fixed code is still to do (`docs/remaining/01-run-ai-evaluation.md`) |
+| Assistant evaluation | `cd backend && npm run eval:assistant` | 78 of 85 on Qwen3-4B on a GPU (2026-11-02), up from 65 before the fixes of 2026-10-23 |
 
 The browser tests are run one spec file at a time on the 16 GB laptop: one run of the whole suite was stopped for lack
 of memory. CI runs the whole suite in one go.
@@ -97,9 +119,9 @@ of memory. CI runs the whole suite in one go.
 - **NABARD unit costs for one state** (Jharkhand); banks use their own state's.
 - **State schemes:** only Maharashtra's, unverified.
 - **Heat stress on monthly means:** afternoons are hotter than the index.
-- **AI:** 40-90 s per answer on a laptop CPU. The faults the evaluation found (what-if answers quoting the "now"
-  column, tables lost from the knowledge base, figures taken from the wrong fact) are fixed in code but not yet
-  confirmed by a rerun (`docs/remaining`, tasks 01-07).
+- **AI:** 40-90 s per answer on a laptop CPU, 20-30 s with part of the model on a GPU (what-if answers 70-135 s).
+  The evaluation passes 78 of 85; five of the seven failures are fixed but not yet rerun, two are open
+  (`docs/remaining/01-run-ai-evaluation.md`).
 - **Hindi and Marathi** poultry wording needs a native review.
 - **PDF reports are English only** (jsPDF cannot render Devanagari).
 - **The backend "API Studio"** (`backend/studio`, a developer page) still animates a polyhouse.
@@ -108,7 +130,7 @@ of memory. CI runs the whole suite in one go.
 
 ### Now
 
-1. Rerun the assistant evaluation on the fixed code to confirm tasks 02-07 and 11 (`docs/remaining`, task 01).
+1. Rerun the five questions fixed on 2026-11-02, and read the two open answers in the GPU report (`docs/remaining`, task 01).
 2. Apply the poultry migration to the live Supabase project and load the poultry tables.
 3. Check the unverified rates and the default prices with current quotes; native review of Hindi and Marathi.
 

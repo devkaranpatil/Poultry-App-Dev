@@ -130,10 +130,10 @@
    "question": "How fast should the brooding temperature be lowered each week, and down to what?",
    "mustMatch": [
     "\\b5\\s?°?\\s?F|5 degrees|5°",
-    "70"
+    "70|room temperature"
    ],
    "mustNotMatch": [],
-   "source": "vikaspedia-broiler: reduced 5 °F weekly until 70 °F in the 6th week"
+   "source": "vikaspedia-broiler: reduced 5 °F weekly until 70 °F in the 6th week; tnau-brooding: reduce 5 °F every week until it reaches the room temperature"
   },
   {
    "id": "vacc-marek",

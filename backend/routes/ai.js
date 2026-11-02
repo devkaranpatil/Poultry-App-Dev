@@ -16,6 +16,7 @@ const { ModelBusyError } = require("../services/llm/engine");
 const knowledge = require("../services/rag");
 const schemas = require("../validators/requestSchemas");
 const whatIfService = require("../services/whatIf");
+const { CPCB_THRESHOLD_BIRDS } = require("../data/poultry/siting");
 
 const router = express.Router();
 
@@ -101,7 +102,15 @@ function buildProjectFacts(config, result) {
         reasons: scheme.reasons,
       })),
     },
-    sitingRules: result.siting.map((rule) => rule.description + (rule.distanceM ? ` (${rule.distanceM} m)` : "")),
+    // The rules that bind this farm, and the CPCB ones that do not: shown only the first, the model listed the CPCB
+    // distances from the SOURCES for a 1,054-bird farm.
+    siting: {
+      rulesForThisFarm: result.siting.map((rule) => rule.description + (rule.distanceM ? ` (at least ${rule.distanceM} m)` : "")),
+      notForThisFarm:
+        result.flock.birds > CPCB_THRESHOLD_BIRDS
+          ? null
+          : `The CPCB siting distances and the pollution control consent apply only above ${CPCB_THRESHOLD_BIRDS.toLocaleString("en-IN")} birds, so not to this farm of ${result.flock.birds.toLocaleString("en-IN")}.`,
+    },
     yearlyFigures: {
       batchesPerYear: Math.round(r.cyclesPerYear * 10) / 10,
       birdsSold: round(r.birdsSoldPerYear),
@@ -416,6 +425,8 @@ const FARMING_TERMS = [
   ["सब्सिडी", "subsidy"], ["सबसिडी", "subsidy"], ["कर्ज", "loan"], ["ऋण", "loan"], ["गर्मी", "heat"], ["उष्णता", "heat"],
   ["तापमान", "temperature"], ["रोग", "disease"], ["लागत", "cost"], ["खर्च", "cost"], ["जिला", "district"], ["जिल्हा", "district"],
   ["मौसम", "weather"], ["हवामान", "climate"], ["सरकार", "government"], ["पानी", "water"], ["पाणी", "water"],
+  // Not a bare "लिटर", which is also a litre of water.
+  ["डीप लिटर", "deep litter"], ["डीप-लिटर", "deep litter"], ["बिछावन", "litter"], ["जगह", "space"], ["जागा", "space"],
 ];
 
 function withEnglishFarmingTerms(text) {
