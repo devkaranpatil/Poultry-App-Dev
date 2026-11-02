@@ -4,13 +4,13 @@ What is left after the polyhouse to poultry migration (all seven phases are merg
 `phase-7`; the polyhouse code is on the `polyhouse` tag). One file per task. Each says what the task is, why it is
 open, what to do, and how to check it is done.
 
-Last updated: 2026-10-23.
+Last updated: 2026-11-02.
 
 ## The AI assistant
 
 | # | Task | Who | Size |
 |---|---|---|---|
-| 01 | [Run the assistant evaluation to the end](01-run-ai-evaluation.md) | developer | about 1.5 hours of machine time |
+| 01 | [Run the assistant evaluation to the end](01-run-ai-evaluation.md) (78 of 85; five fixed, to rerun; two open) | developer | small |
 | 02 | [What-if answers quote the wrong column](02-fix-what-if-answers.md) | developer | small |
 | 03 | [An impossible change gets no limit](03-fix-impossible-change.md) | developer | small |
 | 04 | [Project cost questions quote the wrong figure](04-fix-project-cost-figures.md) | developer | small |
@@ -18,7 +18,7 @@ Last updated: 2026-10-23.
 | 06 | [Quarantine answered from the wrong rule](06-fix-quarantine-answer.md) | developer | small |
 | 07 | [General questions answered from the project](07-fix-general-questions.md) | developer | small |
 
-The full run of 01 on the old code passed 65 of 85 (2026-10-23). Tasks 02-07 and 11 are fixed in code with unit tests; each is closed by rerunning 01 on the fixed code.
+The full run of 01 passed 65 of 85 on the old code (2026-10-23) and 78 of 85 on the fixed code (2026-11-02, on a GPU). That rerun closes tasks 02-07 and 11; the seven questions it still failed are listed in 01.
 
 ## Data and checks that need a person
 

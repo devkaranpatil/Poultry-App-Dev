@@ -26,6 +26,7 @@ describe('spotting a what-if question', () => {
     ['What if I keep 5,000 broilers?', true],
     ['How much more would a controlled shed cost?', true],
     ['Suppose the price is Rs 110 a kilo', true],
+    ['How much would the shed cost with a PUF panel roof?', true],
     ['अगर मैं लेयर रखूं तो?', true],
     ['What temperature do chicks need in the first week?', false],
     ['When should broilers be vaccinated against Ranikhet?', false],
@@ -42,6 +43,8 @@ describe('planning a what-if', () => {
     expect(result.baseline.birds).toBe(1076);
     expect(result.scenario.birds).toBe(5005);
     expect(result.scenario.capitalCostInr).toBeGreaterThan(result.baseline.capitalCostInr * 4);
+    expect(result.note).toBe('5,000 birds were asked for; the shed made for them (93 x 5 m) holds 5,005. Give both numbers.');
+    expect(whatIf.scenarioBlock(result)).toContain('holds 5,005');
   });
 
   it('applies a new price to the returns only', () => {

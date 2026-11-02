@@ -172,6 +172,9 @@ describe('AI advisor', () => {
     expect(call.system).toContain('"birds":1076');
     expect(call.system).toContain('"saleInrPerKg":110');
     expect(call.system).toContain('"heatStressMonths":["APR","MAY","JUN"]');
+    // A 1,076-bird farm: NABARD's distance and registration bind it, the CPCB rules do not.
+    expect(call.system).toContain('"rulesForThisFarm":["Distance from existing poultry farms or complexes (at least 1000 m)","Registration with the state animal husbandry department"]');
+    expect(call.system).toContain('apply only above 5,000 birds, so not to this farm of 1,076');
     expect(call.system).toContain('poultry');
     expect(call.turns[0].content).toContain('SOURCES (cite as');
     expect(call.schema).toBeTruthy();
@@ -453,6 +456,9 @@ describe('AI input hygiene', () => {
     expect(aiTestables.withEnglishFarmingTerms('ब्रॉयलर का तापमान')).toBe('broiler का temperature');
     expect(aiTestables.withEnglishFarmingTerms('कुक्कुटपालनावर अनुदान किती?')).toContain('poultry farming');
     expect(aiTestables.withEnglishFarmingTerms('गावरान कोंबडी')).toBe('desi chicken');
+    // The hi-broiler-space question of the evaluation.
+    expect(aiTestables.withEnglishFarmingTerms('डीप लिटर पर एक ब्रॉयलर को कितनी जगह चाहिए?')).toBe('deep litter पर एक broiler को कितनी space चाहिए?');
+    expect(aiTestables.withEnglishFarmingTerms('रोज कितने लिटर पानी?')).toBe('रोज कितने लिटर water ?');
   });
 
   it('drops malformed planning assumptions instead of passing them to the model', () => {
