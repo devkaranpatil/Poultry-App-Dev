@@ -218,6 +218,12 @@ export interface ShedCost {
 export interface NabardComparison {
   state: string;
   year: string;
+  /** The unit's shed and farming model as NABARD names it ("Deep litter, contract farming"). */
+  system: string;
+  /** The project's state has no NABARD units yet; another state's stand in. */
+  otherState: boolean;
+  /** A contract unit (no chicks or feed): only the capital cost is compared. */
+  capitalOnly: boolean;
   unitBirds: number;
   unitCostInr: number;
   perBirdInr: number;

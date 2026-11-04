@@ -39,6 +39,18 @@
       "note": "Bank unit costs for broiler and layer units. Other states publish their own; the figures differ."
     },
     {
+      "id": "nabard-unit-cost-2025-maharashtra",
+      "title": "NABARD unit costs 2025-26 (Maharashtra Regional Office, SLUCC 21 March 2025), including poultry",
+      "publisher": "NABARD",
+      "url": "https://www.nabard.org/auth/writereaddata/tender/pub_2105250400341558.pdf",
+      "format": "pdf",
+      "layout": true,
+      "status": "current",
+      "priority": 1.05,
+      "scope": "Maharashtra (NABARD unit costs are set per state)",
+      "note": "Broiler (own and contract, open and controlled), layer cage and Kaveri units. Used by the Cost step's NABARD card for Maharashtra projects."
+    },
+    {
       "id": "nabard-broiler-model",
       "tags": { "birdKind": "broiler" },
       "title": "NABARD model bankable project: broiler farming",

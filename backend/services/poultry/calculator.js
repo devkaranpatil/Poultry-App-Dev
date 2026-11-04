@@ -94,7 +94,15 @@ function buildPoultryResult(config, assumptions = {}, { bankFinanced = true } = 
     },
     cost,
     financedCost,
-    nabard: nabardComparison({ birdType: config.birdType, housingSystem: config.housingSystem, flockSize: birds, projectCost: cost.projectCost }),
+    nabard: nabardComparison({
+      birdType: config.birdType,
+      housingSystem: config.housingSystem,
+      farmingModel: planning.farmingModel,
+      stateName: config.stateName,
+      flockSize: birds,
+      projectCost: cost.projectCost,
+      capitalCost: cost.capitalCost,
+    }),
     schemes,
     siting: sitingRulesFor(birds, { bankFinanced }),
     climate: {

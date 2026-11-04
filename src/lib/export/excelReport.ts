@@ -117,7 +117,10 @@ export async function buildExcelWorkbook(data: ReportData): Promise<Workbook> {
     costSheet.getCell(`A${projectRow + 2}`).value = `NABARD unit cost (${n.state} ${n.year}) for this flock`;
     costSheet.getCell(`B${projectRow + 2}`).value = n.normCostInr;
     costSheet.getCell(`B${projectRow + 2}`).numFmt = INR_FORMAT;
-    costSheet.getCell(`A${projectRow + 3}`).value = `${n.source.document}: ${n.unitBirds} birds for Rs ${n.unitCostInr}`;
+    costSheet.getCell(`A${projectRow + 3}`).value =
+      `${n.source.document}: ${n.system}, ${n.unitBirds} birds for Rs ${n.unitCostInr}` +
+      (n.capitalOnly ? '. A contract unit: compare it with the capital cost.' : '') +
+      (n.otherState ? `. No units for this state yet; ${n.state}'s are used.` : '');
     costSheet.getCell(`A${projectRow + 3}`).font = { italic: true, color: { argb: MUTED } };
   }
   const financedRef = `Cost!$B$${contract ? capitalRow : projectRow}`;

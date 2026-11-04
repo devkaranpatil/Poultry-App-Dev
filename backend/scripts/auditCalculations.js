@@ -48,8 +48,11 @@ function nabardShed(birdType, birds) {
 }
 
 // ---------------------------------------------------------------- A. NABARD reproduction
+// The units whose inputs NABARD_SQFT_PER_BIRD and NABARD_PRICES describe; other states price their own way.
+const AUDITED = { state: "Jharkhand", year: "2023-24" };
+
 function auditNabardUnits() {
-  return loadNabardUnits().map((unit) => {
+  return loadNabardUnits().filter((unit) => unit.state === AUDITED.state && unit.year === AUDITED.year).map((unit) => {
     const { cost } = calculateShedCost(nabardShed(unit.birdType, unit.birds), unit.birds, NABARD_PRICES[unit.birdType]);
     const off = cost.projectCost / unit.unitCostInr - 1;
     return {

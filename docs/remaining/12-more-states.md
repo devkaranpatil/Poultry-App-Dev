@@ -1,6 +1,6 @@
 # 12. NABARD unit costs and schemes for more states
 
-**Status:** open.
+**Status:** partly done (2026-11-04). Maharashtra unit costs (NABARD 2025-26, SLUCC 21 March 2025) are transcribed, checked against the source PDF, used by `nabardComparison` (own state first, else Jharkhand) and listed in the knowledge manifest. Still open: the Maharashtra scheme's official Government Resolution, and every other state.
 
 ## Why it is open
 

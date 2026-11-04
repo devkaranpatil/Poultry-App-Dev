@@ -326,9 +326,11 @@ export async function buildPdfReport(data: ReportData): Promise<JsPdf> {
   if (result.nabard) {
     const n = result.nabard;
     paragraph(
-      `NABARD unit cost (${n.state} ${n.year}): ${money(n.unitCostInr)} for ${formatNumber(n.unitBirds)} birds, ${money(n.perBirdInr)} a bird, ` +
-        `${money(n.normCostInr)} for this flock. Your project cost: ${money(n.ownCostInr)}. Cost a bank or scheme recognises: ${money(n.recognisedCostInr)}.` +
-        (n.note ? ' NABARD prices open-sided units; a controlled shed is expected to cost more.' : ''),
+      `NABARD unit cost (${n.state} ${n.year}, ${n.system}): ${money(n.unitCostInr)} for ${formatNumber(n.unitBirds)} birds, ${money(n.perBirdInr)} a bird, ` +
+        `${money(n.normCostInr)} for this flock. Your ${n.capitalOnly ? 'capital' : 'project'} cost: ${money(n.ownCostInr)}. Cost a bank or scheme recognises: ${money(n.recognisedCostInr)}.` +
+        (n.note ? ' NABARD prices open-sided units; a controlled shed is expected to cost more.' : '') +
+        (n.capitalOnly ? ' This is a contract unit, without the chicks and feed the company brings, so it is compared with the capital cost.' : '') +
+        (n.otherState ? ` NABARD units for this state are not in the planner yet; ${n.state}'s are used.` : ''),
       9
     );
   }
