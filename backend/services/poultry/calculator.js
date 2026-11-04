@@ -80,6 +80,7 @@ function buildPoultryResult(config, assumptions = {}, { bankFinanced = true } = 
     category: config.beneficiaryCategory,
     // Schemes support capital cost only: no working capital or land.
     capitalCostInr: cost.capitalCost,
+    flockSize: birds,
   });
 
   return {
