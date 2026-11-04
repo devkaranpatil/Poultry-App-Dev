@@ -83,6 +83,24 @@ describe('poultry cost model', () => {
     expect(costModel.nabardComparison({ birdType: 'desi', housingSystem: 'backyard', flockSize: 100, projectCost: 1 })).toBeNull();
     expect(costModel.nabardComparison({ birdType: 'broiler', housingSystem: 'environment-controlled', flockSize: 1000, projectCost: 1 }).note).toMatch(/controlled/);
   });
+
+  it("uses the project's own state when NABARD units for it are transcribed, else Jharkhand's", () => {
+    const maharashtra = costModel.nabardComparison({ birdType: 'broiler', housingSystem: 'open-sided', stateName: 'Maharashtra', flockSize: 1000, projectCost: 500000 });
+    expect(maharashtra).toMatchObject({ state: 'Maharashtra', year: '2025-26', system: 'Deep litter, all in all out', unitBirds: 5000, otherState: false, capitalOnly: false });
+    expect(maharashtra.perBirdInr).toBe(460); // Rs 23,02,055 for 5,000 birds
+    const gujarat = costModel.nabardComparison({ birdType: 'broiler', housingSystem: 'open-sided', stateName: 'Gujarat', flockSize: 1000, projectCost: 500000 });
+    expect(gujarat).toMatchObject({ state: 'Jharkhand', unitBirds: 1000, otherState: true });
+  });
+
+  it('compares a contract unit with the capital cost only', () => {
+    const input = { birdType: 'broiler', housingSystem: 'open-sided', stateName: 'Maharashtra', flockSize: 5000, projectCost: 2000000, capitalCost: 1200000 };
+    const contract = costModel.nabardComparison({ ...input, farmingModel: 'contract' });
+    expect(contract).toMatchObject({ system: 'Deep litter, contract farming', unitCostInr: 1463800, ownCostInr: 1200000, capitalOnly: true });
+    expect(costModel.nabardComparison(input)).toMatchObject({ unitCostInr: 2302055, ownCostInr: 2000000, capitalOnly: false });
+    // Maharashtra's controlled unit is a contract one: no "open-sided only" note, and the capital cost is compared.
+    const controlled = costModel.nabardComparison({ ...input, housingSystem: 'environment-controlled', flockSize: 15000 });
+    expect(controlled).toMatchObject({ unitBirds: 15000, unitCostInr: 6207000, capitalOnly: true, note: null });
+  });
 });
 
 describe('heat stress', () => {

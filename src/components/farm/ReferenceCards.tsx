@@ -98,8 +98,10 @@ export function NabardCard({ nabard }: { nabard: NabardComparison }) {
       </dl>
       <p className="text-xs text-muted-foreground">{t(above ? 'nabard.above' : 'nabard.within', { recognised: formatINR(nabard.recognisedCostInr) })}</p>
       {nabard.note ? <p className="text-xs text-muted-foreground">{t('nabard.controlledNote')}</p> : null}
+      {nabard.capitalOnly ? <p className="text-xs text-muted-foreground">{t('nabard.capitalOnly')}</p> : null}
+      {nabard.otherState ? <p className="text-xs text-muted-foreground">{t('nabard.otherState', { state: nabard.state })}</p> : null}
       <p className="text-[11px] text-muted-foreground">
-        <SourceLink url={nabard.source.url}>{`${nabard.source.document} (${nabard.state}, ${nabard.year})`}</SourceLink>
+        <SourceLink url={nabard.source.url}>{`${nabard.source.document} (${nabard.state}, ${nabard.year}): ${nabard.system}`}</SourceLink>
       </p>
     </section>
   );

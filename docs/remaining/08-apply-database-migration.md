@@ -25,5 +25,5 @@ It does not change or delete anything the polyhouse app uses.
 ## Done when
 
 - Saving a setup in the app works against the live database.
-- `poultry_unit_costs` has 6 rows, `poultry_production_norms` 7, `poultry_scheme_rules` 3 and `poultry_siting_rules` 9.
+- `poultry_unit_costs` has 11 rows, `poultry_production_norms` 7, `poultry_scheme_rules` 3 and `poultry_siting_rules` 9.
 - The polyhouse app still saves and lists its own setups.

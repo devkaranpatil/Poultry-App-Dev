@@ -79,7 +79,7 @@ describe('reference datasets', () => {
     expect(first).toEqual({
       district_climate_monthly: 7020,
       district_climate_unresolved: 177,
-      poultry_unit_costs: 6,
+      poultry_unit_costs: 11,
       poultry_production_norms: 7,
       poultry_scheme_rules: 3,
       poultry_siting_rules: 9,

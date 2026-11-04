@@ -216,6 +216,10 @@ function loadNabardUnits() {
     state: row.state,
     year: row.year,
     birdType: row.bird_type,
+    system: row.system,
+    // Read from the unit's description: "Environment-controlled, contract farming".
+    controlled: /environment/i.test(row.system),
+    contract: /contract/i.test(row.system),
     birds: Number(row.birds),
     unitCostInr: Number(row.unit_cost_inr),
     source: { document: row.source_document, url: row.source_url },
@@ -223,31 +227,54 @@ function loadNabardUnits() {
   return nabardUnits;
 }
 
+// The state whose units stand in for a state with none of its own (the first one transcribed).
+const NABARD_FALLBACK_STATE = "Jharkhand";
+
+/** Keeps the units that match, unless none does. */
+const preferring = (units, match) => (units.some(match) ? units.filter(match) : units);
+
 /**
- * The NABARD unit cost for the nearest unit of this bird, scaled per bird to the flock, and the cost a scheme or bank
- * would recognise: the lower of the project cost and that norm. Null for birds NABARD's table does not cover (desi).
+ * The NABARD unit cost for the closest unit of this bird, scaled per bird to the flock, and the cost a scheme or bank
+ * would recognise: the lower of the project cost and that norm. The project's own state is used when it has units
+ * (banks lend against their own state's), else Jharkhand's; within them, the unit with the same kind of shed and
+ * farming model, then the nearest size. A contract unit leaves out the chicks and feed the company brings, so it is
+ * compared with the capital cost only. Null for birds NABARD's tables are not compared for (desi).
  */
-function nabardComparison({ birdType, housingSystem, flockSize, projectCost }) {
+function nabardComparison({ birdType, housingSystem, farmingModel = "independent", stateName = "", flockSize, projectCost, capitalCost = projectCost }) {
   const kind = birdType === "broiler" ? "broiler" : birdType === "layer-cage" ? "layer-cage" : null;
   const birds = Math.max(0, Number(flockSize) || 0);
   if (!kind || birds === 0) return null;
-  const units = loadNabardUnits().filter((unit) => unit.birdType === kind);
+  const all = loadNabardUnits().filter((unit) => unit.birdType === kind);
+  const own = all.filter((unit) => unit.state.toLowerCase() === String(stateName).trim().toLowerCase());
+  let units = own.length > 0 ? own : all.filter((unit) => unit.state === NABARD_FALLBACK_STATE);
   if (units.length === 0) return null;
+  const controlled = housingSystem === "environment-controlled";
+  units = preferring(units, (unit) => unit.controlled === controlled);
+  units = preferring(units, (unit) => unit.contract === (farmingModel === "contract"));
+  // A newer year of the same state replaces an older one.
+  const latest = units.map((unit) => unit.year).sort().pop();
+  units = units.filter((unit) => unit.year === latest);
   const nearest = units.reduce((best, unit) => (Math.abs(unit.birds - birds) < Math.abs(best.birds - birds) ? unit : best));
   const perBird = nearest.unitCostInr / nearest.birds;
   const normCostInr = round(perBird * birds);
+  const ownCost = nearest.contract ? capitalCost : projectCost;
   return {
     state: nearest.state,
     year: nearest.year,
+    system: nearest.system,
+    // True when the project's state has no units yet and another state's stand in.
+    otherState: own.length === 0,
     unitBirds: nearest.birds,
     unitCostInr: nearest.unitCostInr,
     perBirdInr: round(perBird),
     normCostInr,
-    ownCostInr: round(projectCost),
-    ratio: normCostInr > 0 ? Number((projectCost / normCostInr).toFixed(2)) : null,
-    recognisedCostInr: Math.min(round(projectCost), normCostInr),
-    // Only open-sided units are published; a controlled shed costs more by design.
-    note: housingSystem === "environment-controlled" ? "NABARD prices open-sided units; a controlled shed is expected to cost more." : null,
+    ownCostInr: round(ownCost),
+    // True when the unit is a contract one and so only the capital cost is compared.
+    capitalOnly: nearest.contract,
+    ratio: normCostInr > 0 ? Number((ownCost / normCostInr).toFixed(2)) : null,
+    recognisedCostInr: Math.min(round(ownCost), normCostInr),
+    // Where only open-sided units are published, a controlled shed costs more by design.
+    note: controlled && !nearest.controlled ? "NABARD prices open-sided units; a controlled shed is expected to cost more." : null,
     source: nearest.source,
   };
 }
