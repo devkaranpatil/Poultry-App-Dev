@@ -231,7 +231,19 @@ function planScenario({ rawConfig, assumptions, extracted: modelReading, questio
   const base = assumptions || {};
   // Another bird or farming model has its own production figures and prices: start from its defaults.
   const familyChanged = changes.some((change) => change.field === "birdType" || change.field === "farmingModel");
-  const next = familyChanged ? { ...defaultAssumptions(config.birdType, config.farmingModel), subsidyInr: base.subsidyInr ?? 0 } : { ...base };
+  const next = familyChanged ? { ...defaultAssumptions(config.birdType, config.farmingModel, config.stateName), subsidyInr: base.subsidyInr ?? 0 } : { ...base };
+  // Another state has its own sale and egg price: follow it unless the user had set their own.
+  const stateChange = changes.find((change) => change.field === "state");
+  if (stateChange && !familyChanged) {
+    const before = defaultAssumptions(config.birdType, config.farmingModel, stateChange.from);
+    const after = defaultAssumptions(config.birdType, config.farmingModel, stateChange.to);
+    for (const field of ["saleInrPerKg", "eggInr"]) {
+      if (before && after && typeof before[field] === "number" && base[field] === before[field] && after[field] !== before[field]) {
+        changes.push({ field, from: base[field], to: after[field] });
+        next[field] = after[field];
+      }
+    }
+  }
   for (const field of ASSUMPTION_FIELDS) {
     const value = extracted[field];
     // A value equal to today's is the model repeating the project, not a change.

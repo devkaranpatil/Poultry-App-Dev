@@ -98,7 +98,7 @@ const Index = () => {
   // The siting rules the farmer has confirmed on the Site step; the report warns about the rest.
   const [sitingTicks, setSitingTicks] = useState<Record<string, boolean>>({});
   const [financeAssumptions, setFinanceAssumptions] = useState<PoultryAssumptions>(() =>
-    defaultPoultryAssumptions(initial.config.birdType, initial.config.farmingModel)
+    defaultPoultryAssumptions(initial.config.birdType, initial.config.farmingModel, initial.config.state)
   );
 
   const { calculate, isLoading, result, error: calculationError, lastCalculatedKey } = useFarmCalculations();
@@ -133,9 +133,25 @@ const Index = () => {
     if (lastFamilyRef.current === family) return;
     const birdChanged = lastFamilyRef.current.split('|')[0] !== config.birdType;
     lastFamilyRef.current = family;
-    setFinanceAssumptions((prev) => ({ ...defaultPoultryAssumptions(config.birdType, config.farmingModel), subsidyInr: prev.subsidyInr }));
+    setFinanceAssumptions((prev) => ({ ...defaultPoultryAssumptions(config.birdType, config.farmingModel, config.state), subsidyInr: prev.subsidyInr }));
     if (birdChanged) setLoanTerms(poultryLoanTerms(config.birdType));
   }, [config.birdType, config.farmingModel]);
+
+  // Another state has its own sale and egg price: follow it, unless the user had set their own.
+  const lastStateRef = useRef(config.state);
+  useEffect(() => {
+    if (lastStateRef.current === config.state) return;
+    const before = defaultPoultryAssumptions(config.birdType, config.farmingModel, lastStateRef.current) as unknown as Record<string, unknown>;
+    const after = defaultPoultryAssumptions(config.birdType, config.farmingModel, config.state) as unknown as Record<string, unknown>;
+    lastStateRef.current = config.state;
+    setFinanceAssumptions((prev) => {
+      const next = { ...prev } as unknown as Record<string, unknown>;
+      for (const field of ['saleInrPerKg', 'eggInr']) {
+        if (typeof before[field] === 'number' && next[field] === before[field]) next[field] = after[field];
+      }
+      return next as unknown as PoultryAssumptions;
+    });
+  }, [config.state, config.birdType, config.farmingModel]);
 
   const area = config.length * config.width;
   // The 3D scene's geometry scales with the dimensions, so never hand it values

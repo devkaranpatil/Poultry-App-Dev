@@ -20,10 +20,13 @@ const clampPct = (value) => Math.min(100, nonNegative(value));
 const isLayer = (birdType) => NORMS.birdTypes[birdType]?.product === "eggs";
 
 /** Every editable assumption for a bird, starting from the norms and the planner's starting prices. */
-function defaultAssumptions(birdType, farmingModel = "independent") {
+/** A planning default, using the state's own rate when the norms have one (sale price and egg price vary by state). */
+const priceIn = (entry, stateName) => entry.byState?.[String(stateName || "").trim()] ?? entry.value;
+
+function defaultAssumptions(birdType, farmingModel = "independent", stateName = "") {
   const bird = NORMS.birdTypes[birdType];
   if (!bird) return null;
-  const pick = (entries) => Object.fromEntries(Object.entries(entries).map(([key, entry]) => [key, entry.value]));
+  const pick = (entries) => Object.fromEntries(Object.entries(entries).map(([key, entry]) => [key, priceIn(entry, stateName)]));
   if (bird.product === "eggs") {
     return {
       farmingModel: "independent",

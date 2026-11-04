@@ -19,6 +19,8 @@ import type { BirdType, FarmingModel } from '@/types/farm';
 interface ReturnsPanelProps {
   birdType: BirdType;
   farmingModel: FarmingModel;
+  /** The project's state: its own sale and egg prices apply. */
+  state?: string;
   assumptions: PoultryAssumptions;
   onAssumptionsChange: (next: PoultryAssumptions) => void;
   summary: PoultryReturns;
@@ -204,14 +206,14 @@ function BatchCalendar({ calendar, layer }: { calendar: BatchDates[]; layer: boo
   );
 }
 
-export function ReturnsPanel({ birdType, farmingModel, assumptions, onAssumptionsChange, summary, calendar }: ReturnsPanelProps) {
+export function ReturnsPanel({ birdType, farmingModel, state, assumptions, onAssumptionsChange, summary, calendar }: ReturnsPanelProps) {
   const { t } = useI18n();
   const layer = summary.product === 'eggs';
   const kind = layer ? 'eggs' : farmingModel === 'contract' ? 'contract' : 'meat';
   const values = assumptions as unknown as Record<string, number>;
   const update = (field: string, value: number) => onAssumptionsChange({ ...assumptions, [field]: value } as PoultryAssumptions);
   const unverified = FIELDS[kind]
-    .map(({ field }) => ({ field, source: assumptionSource(birdType, farmingModel, field) }))
+    .map(({ field }) => ({ field, source: assumptionSource(birdType, farmingModel, field, state) }))
     .filter(({ source }) => source && !source.verified);
 
   return (
@@ -264,7 +266,7 @@ export function ReturnsPanel({ birdType, farmingModel, assumptions, onAssumption
             size="sm"
             variant="ghost"
             className="h-8 shrink-0 px-2 text-xs"
-            onClick={() => onAssumptionsChange({ ...defaultPoultryAssumptions(birdType, farmingModel), subsidyInr: assumptions.subsidyInr })}
+            onClick={() => onAssumptionsChange({ ...defaultPoultryAssumptions(birdType, farmingModel, state), subsidyInr: assumptions.subsidyInr })}
           >
             <RotateCcw className="mr-1 h-3 w-3" />
             {t('returns.reset')}
@@ -308,7 +310,7 @@ export function ReturnsPanel({ birdType, farmingModel, assumptions, onAssumption
         </dl>
         <ul className="space-y-1 text-xs leading-snug text-muted-foreground">
           {FIELDS[kind].map(({ field }) => {
-            const source = assumptionSource(birdType, farmingModel, field);
+            const source = assumptionSource(birdType, farmingModel, field, state);
             if (!source) return null;
             return (
               <li key={field} className="flex gap-1.5">

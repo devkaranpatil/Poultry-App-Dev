@@ -16,7 +16,7 @@ const DAYS_PER_MONTH = 365 / 12;
 /** The per-bird running costs of the broiler study are for a 56-day cycle; layers pay them per day of the cycle. */
 export const RUNNING_COST_CYCLE_DAYS = 56;
 
-type Valued = { value: number; source: string };
+type Valued = { value: number; source: string; byState?: Record<string, number>; byStateSource?: string };
 interface Norms {
   birdTypes: Record<string, Record<string, unknown> & { product: 'meat' | 'eggs'; manureKgPerBirdPerWeek?: { grower: number; layer: number } }>;
   costs: Record<string, Valued>;
@@ -100,10 +100,13 @@ export interface PoultryReturns {
 const nonNegative = (value: number) => Math.max(0, Number.isFinite(Number(value)) ? Number(value) : 0);
 const clampPct = (value: number) => Math.min(100, nonNegative(value));
 export const isLayerBird = (birdType: BirdType) => N.birdTypes[birdType]?.product === 'eggs';
-const pick = (entries: Record<string, Valued>) => Object.fromEntries(Object.entries(entries).map(([key, entry]) => [key, entry.value]));
+/** A default price: the state's own rate when the norms have one (sale and egg prices vary by state), else the general value. */
+export const priceIn = (entry: Valued, state?: string) => entry.byState?.[(state ?? '').trim()] ?? entry.value;
+const pick = (entries: Record<string, Valued>, state?: string) =>
+  Object.fromEntries(Object.entries(entries).map(([key, entry]) => [key, priceIn(entry, state)]));
 
 /** Every editable assumption for a bird, starting from the norms and the planner's starting prices. */
-export function defaultPoultryAssumptions(birdType: BirdType, farmingModel: FarmingModel = 'independent'): PoultryAssumptions {
+export function defaultPoultryAssumptions(birdType: BirdType, farmingModel: FarmingModel = 'independent', state?: string): PoultryAssumptions {
   const bird = N.birdTypes[birdType] as Record<string, number> & { product: string; manureKgPerBirdPerWeek: { grower: number; layer: number } };
   const costs = N.costs;
   if (bird.product === 'eggs') {
@@ -123,7 +126,7 @@ export function defaultPoultryAssumptions(birdType: BirdType, farmingModel: Farm
       labourBirdsPerWorker: costs.labourBirdsPerWorker.value,
       otherCostInrPerBird: costs.otherCostInrPerBird.value,
       insurancePctOfChickCost: costs.birdInsurancePctOfChickCost.value,
-      ...(pick(N.planningDefaults.layer) as Pick<LayerAssumptions, 'chickInr' | 'feedInrPerKg' | 'vaccineInrPerBird' | 'eggInr' | 'culledBirdInr' | 'manureInrPerTonne'>),
+      ...(pick(N.planningDefaults.layer, state) as Pick<LayerAssumptions, 'chickInr' | 'feedInrPerKg' | 'vaccineInrPerBird' | 'eggInr' | 'culledBirdInr' | 'manureInrPerTonne'>),
       subsidyInr: 0,
     };
   }
@@ -139,7 +142,7 @@ export function defaultPoultryAssumptions(birdType: BirdType, farmingModel: Farm
     manureInrPerBird: N.prices.manureInrPerBird[0].value,
     gunnyBagsInrPerBird: N.prices.gunnyBagsInrPerBird[0].value,
     insurancePctOfChickCost: costs.birdInsurancePctOfChickCost.value,
-    ...(pick(N.planningDefaults.meat[birdType === 'desi' ? 'desi' : 'broiler']) as Pick<
+    ...(pick(N.planningDefaults.meat[birdType === 'desi' ? 'desi' : 'broiler'], state) as Pick<
       MeatAssumptions,
       'chickInr' | 'feedInrPerKg' | 'vaccineInrPerBird' | 'saleInrPerKg' | 'growingChargeInrPerKg'
     >),

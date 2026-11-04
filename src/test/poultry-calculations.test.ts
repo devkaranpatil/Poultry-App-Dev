@@ -155,16 +155,38 @@ describe('poultry production and returns', () => {
     expect(r.cyclesPerYear).toBeCloseTo(365 / 56, 6);
     expect(r.kgSoldPerYear).toBeCloseTo(1000 * 0.95 * 1.8 * (365 / 56), 6);
     expect(r.feedKgPerYear).toBeCloseTo(r.kgSoldPerYear * 1.8, 6);
-    // At the planner's Rs 100/kg the farm is near break-even, as the 2026 project guides say.
-    expect(r.breakEvenPrice).toBeGreaterThan(95);
-    expect(r.breakEvenPrice).toBeLessThan(105);
+    // With feed at Rs 35 and chicks at Rs 40 (NABARD Maharashtra 2025-26) the break-even is about Rs 111 a kg:
+    // above Maharashtra's Rs 95 and near what Karnataka and Tamil Nadu pay, as the 2026 project guides say.
+    expect(r.breakEvenPrice).toBeGreaterThan(105);
+    expect(r.breakEvenPrice).toBeLessThan(118);
+  });
+
+  it("starts the sale price at the state's own broiler rate, else at Rs 100", () => {
+    const rate = (state?: string) => production.defaultAssumptions('broiler', 'independent', state).saleInrPerKg;
+    expect(rate('Maharashtra')).toBe(95);
+    expect(rate('Rajasthan')).toBe(76);
+    expect(rate('Tamil Nadu')).toBe(127);
+    expect(rate('Sikkim')).toBe(100); // no rate found for the state
+    expect(rate()).toBe(100);
+    // The browser starts from the same figures as the server.
+    for (const state of ['Maharashtra', 'Rajasthan', 'Tamil Nadu', 'Sikkim']) {
+      expect((defaultPoultryAssumptions('broiler', 'independent', state) as { saleInrPerKg: number }).saleInrPerKg).toBe(rate(state));
+    }
+  });
+
+  it("starts the egg price at the state's NECC rate, else Namakkal's", () => {
+    const egg = (state?: string) => production.defaultAssumptions('layer-cage', 'independent', state).eggInr;
+    expect(egg('Maharashtra')).toBe(6.8);
+    expect(egg('West Bengal')).toBe(7.1);
+    expect(egg('Kerala')).toBe(6.2);
+    expect((defaultPoultryAssumptions('layer-cage', 'independent', 'Maharashtra') as { eggInr: number }).eggInr).toBe(6.8);
   });
 
   it('leaves chicks, feed and medicines to the integrator under contract', () => {
     const contract = computePoultryReturns({ birdType: 'broiler', flockSize: 1000, projectCost: 400000, assumptions: defaultPoultryAssumptions('broiler', 'contract') });
     const perBatchCost = 1000 * (5.62 + 4.8);
     expect(contract.costPerCycle).toBeCloseTo(perBatchCost, 6);
-    expect(contract.revenuePerCycle).toBeCloseTo(1000 * 0.95 * 1.8 * 7 + 1000 * (1.44 + 0.43), 6);
+    expect(contract.revenuePerCycle).toBeCloseTo(1000 * 0.95 * 1.8 * 10 + 1000 * (1.44 + 0.43), 6);
   });
 
   it('keeps a layer flock 20 + 52 weeks plus two weeks of cleaning, at 310 eggs a hen', () => {
@@ -305,7 +327,7 @@ describe('poultry loan terms', () => {
 
 describe('poultry routes', () => {
   it('calculates a shed', async () => {
-    const response = await request(app).post('/api/farm/calculate').send({ config: SHED, assumptions: { saleInrPerKg: 110 } });
+    const response = await request(app).post('/api/farm/calculate').send({ config: SHED, assumptions: { saleInrPerKg: 130 } });
     expect(response.status).toBe(200);
     expect(response.body.data.flock.birds).toBe(1076);
     expect(response.body.data.returns.annualProfit).toBeGreaterThan(0);
