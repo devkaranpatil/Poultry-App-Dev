@@ -85,3 +85,6 @@ tmp_landing_builder_*
 *.bundle
 *.bak
 *.tmp
+
+# Knowledge graph output (graphify)
+graphify-out/
