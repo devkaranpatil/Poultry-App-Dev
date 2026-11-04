@@ -64,7 +64,7 @@ function climateAdvisories(climate, config) {
 function buildPoultryResult(config, assumptions = {}, { bankFinanced = true } = {}) {
   const birds = flockSize({ ...config, housing: config.housingSystem }) ?? 0;
   const product = productOf(config.birdType);
-  const planning = { ...defaultAssumptions(config.birdType, config.farmingModel), ...assumptions };
+  const planning = { ...defaultAssumptions(config.birdType, config.farmingModel, config.stateName), ...assumptions };
   // The cost model prices the first batch at the same chick, feed and vaccine prices the returns use.
   const prices = { ...defaultPrices(config.birdType), chickInr: planning.chickInr, feedInrPerKg: planning.feedInrPerKg, vaccineInrPerBird: planning.vaccineInrPerBird };
   const { cost, diagnostics } = calculateShedCost(config, birds, prices);

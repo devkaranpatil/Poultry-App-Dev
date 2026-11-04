@@ -1,6 +1,10 @@
 # 09. Check the unverified rates and the default prices
 
-**Status:** open. Needs someone who can get current quotes (suppliers, a NABARD or bank officer, farmers).
+**Status:** partly done (2026-11-05). Web research is applied: broiler sale price and egg price by state, feed Rs 35 and
+chick Rs 40 (NABARD Maharashtra 2025-26), the environment-controlled shed at Rs 800 per sq ft (700 to 900) and the
+contract growing charge at Rs 10 a kg. Still open: dated quotes from local dealers for feed, the automatic equipment,
+cages and curtains, and an integrator's contract rate. All the new sale, egg, shed and contract figures are secondary
+and stay marked unverified. The evaluation questions were updated to the new planner figures.
 
 ## Why it is open
 

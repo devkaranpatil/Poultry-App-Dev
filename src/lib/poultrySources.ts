@@ -9,7 +9,7 @@ export interface FigureSource {
   verified: boolean;
 }
 
-type Valued = { value: number; source: string };
+type Valued = { value: number; source: string; byState?: Record<string, number>; byStateSource?: string };
 interface Norms {
   sources: Record<string, { document: string; url: string | null; verified: boolean }>;
   birdTypes: Record<string, { product: string; sources: Record<string, string> }>;
@@ -36,12 +36,15 @@ const PRICE_FIELDS = ['manureInrPerBird', 'gunnyBagsInrPerBird'];
 const MANURE_FIELDS = ['growerManureKgPerWeek', 'layerManureKgPerWeek'];
 
 /** The source of one planning assumption for this bird, or null for the farmer's own figure (the subsidy counted). */
-export function assumptionSource(birdType: BirdType, farmingModel: FarmingModel, field: string): FigureSource | null {
+export function assumptionSource(birdType: BirdType, farmingModel: FarmingModel, field: string, state?: string): FigureSource | null {
   void farmingModel; // the same sources apply to independent and contract farms; the fields differ
   const bird = N.birdTypes[birdType];
   if (!bird) return null;
   const defaults = bird.product === 'eggs' ? N.planningDefaults.layer : N.planningDefaults.meat[birdType === 'desi' ? 'desi' : 'broiler'];
-  if (defaults[field]) return sourceById(defaults[field].source);
+  const entry = defaults[field];
+  // A state's own rate comes from the table of state rates, not from the general value.
+  if (entry?.byState && state && entry.byState[state.trim()] !== undefined && entry.byStateSource) return sourceById(entry.byStateSource);
+  if (entry) return sourceById(entry.source);
   if (COST_FIELDS[field]) return sourceById(N.costs[COST_FIELDS[field]]?.source);
   if (PRICE_FIELDS.includes(field)) return sourceById(N.prices[field]?.[0]?.source);
   if (MANURE_FIELDS.includes(field)) return sourceById(bird.sources.manureKgPerBirdPerWeek);

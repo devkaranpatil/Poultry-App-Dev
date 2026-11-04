@@ -343,7 +343,7 @@ describe('AI chat', () => {
       .set(auth())
       .send({
         config: shedConfig,
-        assumptions: { saleInrPerKg: 110 },
+        assumptions: { saleInrPerKg: 130 },
         messages: [{ role: 'user', content: 'What if I keep 5000 broilers instead?' }],
       });
 

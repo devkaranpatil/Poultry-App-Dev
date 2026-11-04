@@ -11,9 +11,9 @@ vi.mock('@/services/risk.service', async (importOriginal) => ({
   runRiskSimulation: vi.fn(() => new Promise(() => {})),
 }));
 
-// A 1,076-bird open broiler shed in Nagpur, sold at Rs 110 a kg so it makes a profit.
+// A 1,076-bird open broiler shed in Nagpur, sold at Rs 130 a kg so it makes a profit (its break-even is about Rs 112).
 const config = SAMPLE_CONFIG;
-const result = sampleResult(config, { saleInrPerKg: 110 });
+const result = sampleResult(config, { saleInrPerKg: 130 });
 
 function renderStep(step: ResultStepId, overrides: Partial<Parameters<typeof StepViews>[0]> = {}) {
   window.localStorage.setItem('farm.locale', 'en');

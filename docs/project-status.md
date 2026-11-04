@@ -114,8 +114,15 @@ of memory. CI runs the whole suite in one go.
 - **Unverified rates and prices:** the environment-controlled shed rate, semi-automatic and automatic equipment,
   automatic curtains, roof sheets other than GI, the footbath and anteroom, the egg price and the broiler sale price.
   All are flagged in the data and on screen.
-- **The default broiler price leaves almost no profit** on the recommended shed (Rs 6,939 a year at Rs 100/kg;
-  break-even Rs 99.41/kg). Check the default against current farm-gate prices.
+- **At today's prices the default shed loses money in Maharashtra.** With feed at Rs 35 and chicks at Rs 40 (NABARD
+  Maharashtra 2025-26) the break-even is Rs 111.5/kg, and Maharashtra's farm-gate price on 4 Nov 2026 was Rs 95: a loss of
+  Rs 1,93,935 a year on the 14 x 7 m shed. The broiler price swung from Rs 115 to Rs 138 to Rs 99 between June and
+  August 2026, so read a single price as one point in a range. The sale price now starts at the state's rate
+  (`planningDefaults.meat.broiler.saleInrPerKg.byState`; Rs 100 where none was found), and the egg price likewise.
+- **Prices are secondary quotes** (checked 2026-11-05): state broiler rates (todaysbroilerrate.in, poultrysite.in), NECC
+  egg rates, the environment-controlled shed (Rs 800 per sq ft, range 700 to 900) and the contract growing charge
+  (Rs 10 a kg). Feed (Rs 35) and chicks (Rs 40) are NABARD's published Maharashtra figures. See the vault note
+  "05 Price Research 2026-11".
 - **NABARD unit costs for one state** (Jharkhand); banks use their own state's.
 - **State schemes:** only Maharashtra's. Its rules are read from the GR of 9 March 2026 (a copy; the original on gr.maharashtra.gov.in is still to be linked). Other states have none.
 - **Heat stress on monthly means:** afternoons are hotter than the index.

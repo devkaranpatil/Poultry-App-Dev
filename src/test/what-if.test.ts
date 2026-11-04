@@ -90,6 +90,18 @@ describe('planning a what-if', () => {
     expect(result.changes).toEqual([{ field: 'state', from: 'Maharashtra', to: 'Punjab' }]);
   });
 
+  it("follows the new state's sale price unless the user set their own", () => {
+    const production = require('../../backend/services/poultry/production');
+    const own = production.defaultAssumptions('broiler', 'independent', 'Maharashtra');
+    const moved = whatIf.planScenario({ rawConfig: shed, assumptions: own, extracted: { ...nothing, isWhatIf: true, state: 'Punjab' }, runCalculation });
+    expect(moved.changes).toEqual([
+      { field: 'state', from: 'Maharashtra', to: 'Punjab' },
+      { field: 'saleInrPerKg', from: 95, to: 99 },
+    ]);
+    // Rs 110 is the user's own figure (the default here is Rs 95), so it stays.
+    expect(plan({ state: 'Punjab' }).changes).toEqual([{ field: 'state', from: 'Maharashtra', to: 'Punjab' }]);
+  });
+
   it('writes a prompt block with the figures in rupees', () => {
     const block = whatIf.scenarioBlock(plan({ saleInrPerKg: 120 }));
     expect(block).toContain('PLANNER WHAT-IF');

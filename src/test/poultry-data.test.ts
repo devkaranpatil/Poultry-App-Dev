@@ -50,6 +50,24 @@ describe('poultry norms', () => {
     for (const { source } of [...priced, ...costed]) expect(known, source).toContain(source);
   });
 
+  it('names a known source for every planning default and every state price, for states the planner knows', () => {
+    const known = new Set(Object.keys(norms.sources));
+    type Default = { value: number; source: string; byState?: Record<string, number>; byStateSource?: string };
+    const defaults = norms.planningDefaults as unknown as { meat: Record<string, Record<string, Default>>; layer: Record<string, Default> };
+    const entries = [...Object.values(defaults.meat).flatMap((family) => Object.values(family)), ...Object.values(defaults.layer)];
+    const stateClimate = require('../../backend/data/stateClimate.js') as Record<string, unknown>;
+    for (const entry of entries) {
+      expect(known, entry.source).toContain(entry.source);
+      expect(entry.value).toBeGreaterThan(0);
+      if (!entry.byState) continue;
+      expect(known, `state rates: ${entry.byStateSource}`).toContain(entry.byStateSource);
+      for (const [state, price] of Object.entries(entry.byState)) {
+        expect(Object.keys(stateClimate), state).toContain(state);
+        expect(price, state).toBeGreaterThan(0);
+      }
+    }
+  });
+
   it('gives floor space for exactly the sheds each bird can live in', () => {
     for (const [id, bird] of Object.entries(birds)) {
       expect(Object.keys(bird.sqftPerBird).sort(), id).toEqual([...bird.housing].sort());

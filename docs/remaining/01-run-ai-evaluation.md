@@ -1,5 +1,10 @@
 # 01. Run the assistant evaluation to the end
 
+**Status (2026-11-05):** rerun after the price changes on a CPU laptop: **79 of 85**. All 23 project and what-if questions
+pass on the new figures. Open fact failures (wording or retrieval, not figures): shed-heights, space-broiler, litter-max,
+nabard-layer-1000, plus edge-typos and hi-broiler-space. Reports: `backend/.data/eval-2026-11-04T19-36-44-040Z.txt` and the
+three after it.
+
 **Status:** the rerun on the fixed code is done: **78 of 85** on a GPU (2026-11-02), up from 65. Five of its seven
 failures are fixed the same day and need a rerun of just those questions; two are open (below).
 

@@ -1,5 +1,5 @@
 {
- "about": "Questions with known answers, used to check the local assistant after any retrieval, prompt or model change. Each answer is checked with regular expressions (case-insensitive): every entry in mustMatch must be found, none of mustNotMatch may be. 'history' adds earlier turns before the question. Cases of kind 'http' check request validation and never reach the model. Ground truth comes from the files named in 'source' (datasets/knowledge/text, datasets/csv, shared/poultry-norms.json). Project figures come from the planner for the 'project' config below with its default assumptions (a 14 x 7 m open broiler shed in Nagpur: 1,054 birds, capital Rs 3,97,116, project Rs 5,66,774, Rs 6,939 profit a year at Rs 100/kg). Kind 'whatif' expects the planner's figures for the change, computed with backend/services/whatIf.js.",
+ "about": "Questions with known answers, used to check the local assistant after any retrieval, prompt or model change. Each answer is checked with regular expressions (case-insensitive): every entry in mustMatch must be found, none of mustNotMatch may be. 'history' adds earlier turns before the question. Cases of kind 'http' check request validation and never reach the model. Ground truth comes from the files named in 'source' (datasets/knowledge/text, datasets/csv, shared/poultry-norms.json). Project figures come from the planner for the 'project' config below with its default assumptions (a 14 x 7 m open broiler shed in Nagpur: 1,054 birds, capital Rs 3,97,116, project Rs 5,88,451, a loss of Rs 1,93,935 a year at Maharashtra's Rs 95/kg, break-even Rs 111.5/kg; prices as of 2026-11-05). Kind 'whatif' expects the planner's figures for the change, computed with backend/services/whatIf.js.",
  "project": {
   "length": 14,
   "width": 7,
@@ -443,7 +443,7 @@
    "kind": "project",
    "question": "What is the total project cost including the first batch?",
    "mustMatch": [
-    "5,?66,?774|5\\.67 ?lakh"
+    "5,?88,?451|5\\.88 ?lakh"
    ],
    "mustNotMatch": [],
    "source": "planner: project Rs 5,66,774"
@@ -453,7 +453,7 @@
    "kind": "project",
    "question": "How much working capital does the first batch need?",
    "mustMatch": [
-    "1,?69,?658|1\\.7 ?lakh"
+    "1,?91,?335|1\\.9 ?lakh"
    ],
    "mustNotMatch": [],
    "source": "planner: Rs 1,69,658"
@@ -463,7 +463,7 @@
    "kind": "project",
    "question": "How does my project cost compare with NABARD's unit cost for this flock?",
    "mustMatch": [
-    "6,?26,?076|6\\.26 ?lakh|91\\s?(%|percent|per cent)|0\\.91"
+    "4,?85,?273|4\\.85 ?lakh|121\\s?(%|percent|per cent)|1\\.21"
    ],
    "mustNotMatch": [],
    "source": "planner: NABARD norm Rs 6,26,076; own cost 91% of it"
@@ -506,20 +506,21 @@
    "kind": "project",
    "question": "What profit will my farm make in a year?",
    "mustMatch": [
-    "6,?939"
+    "1,?93,?935|1\\.94 ?lakh",
+    "loss|negative|−|-"
    ],
    "mustNotMatch": [],
-   "source": "planner: Rs 6,939 a year at Rs 100/kg"
+   "source": "planner: a loss of Rs 1,93,935 a year at Maharashtra's Rs 95/kg"
   },
   {
    "id": "project-breakeven",
    "kind": "project",
    "question": "What live-weight price do I need to break even?",
    "mustMatch": [
-    "99\\.4"
+    "111\\.5"
    ],
    "mustNotMatch": [],
-   "source": "planner: Rs 99.41 per kg"
+   "source": "planner: break-even Rs 111.51 per kg"
   },
   {
    "id": "project-siting",
@@ -547,33 +548,33 @@
    "kind": "whatif",
    "question": "What if I grow on contract for an integrator instead?",
    "mustMatch": [
-    "23,?495|0\\.23 ?lakh",
-    "16\\.9"
+    "58,?737|0\\.59 ?lakh",
+    "6\\.8"
    ],
    "mustNotMatch": [],
-   "source": "planner: profit Rs 23,495, payback 16.9 years"
+   "source": "planner: profit Rs 58,737, payback 6.8 years"
   },
   {
    "id": "whatif-price-110",
    "kind": "whatif",
    "question": "What happens to my profit if the broiler price is Rs 110 a kilo?",
    "mustMatch": [
-    "1,?24,?412|1\\.24 ?lakh",
-    "4\\.6"
-   ],
-   "mustNotMatch": [],
-   "source": "planner: profit Rs 1,24,412, payback 4.6 years"
-  },
-  {
-   "id": "whatif-feed-35",
-   "kind": "whatif",
-   "question": "What if feed costs Rs 35 per kg?",
-   "mustMatch": [
-    "98,?788|0\\.99 ?lakh",
+    "17,?724|0\\.18 ?lakh",
     "loss|negative|−|-"
    ],
    "mustNotMatch": [],
-   "source": "planner: loss of Rs 98,788 a year"
+   "source": "planner: loss of Rs 17,724 a year (break-even Rs 111.5 a kg)"
+  },
+  {
+   "id": "whatif-feed-45",
+   "kind": "whatif",
+   "question": "What if feed costs Rs 45 per kg?",
+   "mustMatch": [
+    "4,?05,?388|4\\.05 ?lakh",
+    "loss|negative|−|-"
+   ],
+   "mustNotMatch": [],
+   "source": "planner: loss of Rs 4,05,388 a year"
   },
   {
    "id": "whatif-layers",
@@ -581,21 +582,21 @@
    "question": "What if I keep layers in cages instead?",
    "mustMatch": [
     "5,?45,?196|5\\.45 ?lakh",
-    "3,?15,?093|3\\.15 ?lakh"
+    "2,?37,?835|2\\.38 ?lakh"
    ],
    "mustNotMatch": [],
-   "source": "planner: 1,241 layers, capital Rs 5,45,196, profit Rs 3,15,093"
+   "source": "planner: capital Rs 5,45,196, profit Rs 2,37,835, payback 3.1 years"
   },
   {
    "id": "whatif-controlled",
    "kind": "whatif",
    "question": "What if I build an environment-controlled shed?",
    "mustMatch": [
-    "11,?57,?368|11\\.57 ?lakh|11\\.6 ?lakh",
+    "9,?40,?067|9\\.4 ?lakh",
     "1,?506"
    ],
    "mustNotMatch": [],
-   "source": "planner: 1,506 birds, capital Rs 11,57,368"
+   "source": "planner: capital Rs 9,40,067 for 1,506 birds"
   },
   {
    "id": "whatif-puf",
@@ -612,10 +613,10 @@
    "kind": "whatif",
    "question": "What if mortality goes up to 10 percent?",
    "mustMatch": [
-    "21,?503|0\\.22 ?lakh"
+    "2,?13,?720|2\\.14 ?lakh"
    ],
    "mustNotMatch": [],
-   "source": "planner: loss of Rs 21,503 a year"
+   "source": "planner: loss of Rs 2,13,720 a year"
   },
   {
    "id": "whatif-automatic",
@@ -644,10 +645,10 @@
    "kind": "whatif",
    "question": "अगर ब्रॉयलर का भाव 110 रुपये किलो हो तो मेरा मुनाफा कितना होगा?",
    "mustMatch": [
-    "(1,?24,?412|१,?२४,?४१२|1\\.24)"
+    "(17,?724|१७,?७२४)"
    ],
    "mustNotMatch": [],
-   "source": "planner: profit Rs 1,24,412 at Rs 110/kg",
+   "source": "planner: loss of Rs 17,724 at Rs 110/kg",
    "locale": "hi"
   },
   {

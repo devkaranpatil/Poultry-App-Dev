@@ -117,7 +117,7 @@ export function buildReportData(input: BuildReportInput): ReportData {
       { label: en('cost.labour'), amount: wc.labourCost },
     ].filter((item) => item.amount > 0),
     assumptionRows: fields.map((field) => {
-      const source = assumptionSource(config.birdType, config.farmingModel, field);
+      const source = assumptionSource(config.birdType, config.farmingModel, field, config.state);
       return { field, label: en(`assumption.${field}`), value: values[field], source: source?.document ?? null, verified: source?.verified ?? false };
     }),
     siting: result.siting.map((rule) => ({ description: rule.description, distanceM: rule.distanceM, ticked: Boolean(ticks[rule.id]), source: rule.source.document })),

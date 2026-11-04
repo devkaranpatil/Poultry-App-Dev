@@ -56,8 +56,8 @@
       "verified": true
     },
     "necc-2026-secondary": {
-      "document": "NECC daily egg rates, July 2026 (Namakkal Rs 650, Mumbai Rs 710 per 100 eggs), as republished by kisandeals.com",
-      "url": "https://www.kisandeals.com/egg-rate/tamil-nadu/namakkal",
+      "document": "NECC daily egg rates, 2 to 4 Nov 2026 (Namakkal Rs 620, Hyderabad Rs 625, Delhi Rs 660, Pune Rs 680, Mumbai Rs 700, Kolkata Rs 710 per 100 eggs), as republished by egg-rate sites",
+      "url": "https://todayeggrate.in/namakkal-egg-rate/",
       "year": 2026,
       "verified": false
     },
@@ -72,6 +72,30 @@
       "url": "https://www.frontiersin.org/articles/10.3389/fvets.2020.568093/full",
       "year": 2020,
       "verified": true
+    },
+    "nabard-unit-cost-2025-maharashtra": {
+      "document": "NABARD Unit Cost 2025-26, Maharashtra Regional Office (SLUCC, 21 March 2025), Animal Husbandry and Poultry",
+      "url": "https://www.nabard.org/auth/writereaddata/tender/pub_2105250400341558.pdf",
+      "year": 2025,
+      "verified": true
+    },
+    "broiler-rates-2026-11-secondary": {
+      "document": "Broiler live-bird rates by state, 4 Nov 2026: state averages of published market rates (todaysbroilerrate.in) with trade quotes from poultrysite.in. Farm-gate and retail are not separated, and the price moved about Rs 40 within three months of 2026.",
+      "url": "https://todaysbroilerrate.in/",
+      "year": 2026,
+      "verified": false
+    },
+    "ec-shed-2026-secondary": {
+      "document": "Kishore Industries, Poultry farm shed cost 2026 (a shed builder, South India, 4 Aug 2026): environment-controlled shed Rs 700 to 900 per sq ft all-in, open-sided Rs 450 to 620",
+      "url": "https://kishoreindustries.in/poultry-farm-shed-cost-5000-10000-50000-birds-2026/",
+      "year": 2026,
+      "verified": false
+    },
+    "contract-charge-secondary": {
+      "document": "Broiler contract growing charge: about Rs 10 per kg as a base plus incentives (Rural Voice and ICAR IJAnS summaries); farmers report anything from Rs 8 to Rs 15",
+      "url": "https://eng.ruralvoice.in/how-we-get-chickens-on-our-platesthe-broiler-industry-is-indias-most-successful-example-of-contract-farming",
+      "year": 2026,
+      "verified": false
     }
   },
   "housingSystems": {
@@ -250,11 +274,11 @@
         "note": "Rs 5,000 for a 100 sq ft mud, bamboo and thatch shed"
       },
       "environmentControlled": {
-        "low": 800,
-        "high": 1200,
-        "source": "ec-housing-secondary",
-        "value": 1000,
-        "note": "midpoint of Rs 800 to 1,200; includes the tunnel fans, cooling pads and controller"
+        "low": 700,
+        "high": 900,
+        "source": "ec-shed-2026-secondary",
+        "value": 800,
+        "note": "midpoint of Rs 700 to 900; includes the tunnel fans, cooling pads and controller. NABARD Maharashtra 2025-26 prices a controlled contract shed at Rs 240 per sq ft plus Rs 160 per bird of equipment, so the real price depends on what is included"
       }
     },
     "equipmentInrPerBird": {
@@ -548,12 +572,12 @@
     "meat": {
       "broiler": {
         "chickInr": {
-          "value": 35,
-          "source": "nabard-unit-cost-2023"
+          "value": 40,
+          "source": "nabard-unit-cost-2025-maharashtra"
         },
         "feedInrPerKg": {
-          "value": 30,
-          "source": "nabard-unit-cost-2023"
+          "value": 35,
+          "source": "nabard-unit-cost-2025-maharashtra"
         },
         "vaccineInrPerBird": {
           "value": 32,
@@ -561,11 +585,27 @@
         },
         "saleInrPerKg": {
           "value": 100,
-          "source": "planner-assumption"
+          "source": "planner-assumption",
+          "note": "used where the state has no rate below; the price moves by about Rs 40 within a season, so read it as a range",
+          "byState": {
+            "Rajasthan": 76,
+            "Chhattisgarh": 92,
+            "Maharashtra": 95,
+            "Punjab": 99,
+            "Telangana": 100,
+            "West Bengal": 102,
+            "Odisha": 103,
+            "Uttar Pradesh": 106,
+            "Bihar": 108,
+            "Karnataka": 114,
+            "Andhra Pradesh": 126,
+            "Tamil Nadu": 127
+          },
+          "byStateSource": "broiler-rates-2026-11-secondary"
         },
         "growingChargeInrPerKg": {
-          "value": 7,
-          "source": "planner-assumption"
+          "value": 10,
+          "source": "contract-charge-secondary"
         }
       },
       "desi": {
@@ -605,8 +645,16 @@
         "source": "nabard-unit-cost-2023"
       },
       "eggInr": {
-        "value": 6.5,
-        "source": "necc-2026-secondary"
+        "value": 6.2,
+        "source": "necc-2026-secondary",
+        "note": "NECC Namakkal, 2 to 4 Nov 2026",
+        "byState": {
+          "Tamil Nadu": 6.2,
+          "Telangana": 6.25,
+            "Maharashtra": 6.8,
+          "West Bengal": 7.1
+        },
+        "byStateSource": "necc-2026-secondary"
       },
       "culledBirdInr": {
         "value": 60,

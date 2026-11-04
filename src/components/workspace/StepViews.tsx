@@ -304,6 +304,7 @@ function EarningsPage({ step, onNavigate, config, result, financials, assumption
       <ReturnsPanel
         birdType={config.birdType}
         farmingModel={config.farmingModel}
+        state={config.state}
         assumptions={assumptions}
         onAssumptionsChange={onAssumptionsChange}
         summary={financials}
