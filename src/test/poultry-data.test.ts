@@ -176,10 +176,21 @@ describe('schemes', () => {
     expect(byId(result, 'ahidf')).toMatchObject({ status: 'eligible', interestSubventionPct: 3 });
   });
 
-  it("shows Maharashtra's scheme there only, unverified, at 75% for SC/ST applicants", () => {
-    const mh = byId(computeSchemes({ birdType: 'broiler', state: 'Maharashtra', category: 'sc-st', capitalCostInr: 2_000_000 }), 'mh-mgpuy-poultry');
-    expect(mh).toMatchObject({ status: 'check', percent: 75, amountInr: 1_500_000, verified: false });
+  it("shows Maharashtra's scheme there only, as the GR sets it: 75% for SC/ST, up to the unit's fixed project cost", () => {
+    const mh = byId(computeSchemes({ birdType: 'broiler', state: 'Maharashtra', category: 'sc-st', capitalCostInr: 2_000_000, flockSize: 5000 }), 'mh-mgpuy-poultry');
+    // 75% of the GR's Rs 19,00,000 unit is Rs 14,25,000, below 75% of this project's Rs 20,00,000.
+    expect(mh).toMatchObject({ status: 'check', percent: 75, capInr: 1_425_000, amountInr: 1_425_000, cappedAtInr: 1_425_000, verified: true });
     expect(byId(computeSchemes({ birdType: 'broiler', state: 'Gujarat', capitalCostInr: 2_000_000 }), 'mh-mgpuy-poultry')).toBeUndefined();
+  });
+
+  it("pays Maharashtra's share of the project cost when that is below the unit's, and picks the unit by flock and kind", () => {
+    const small = byId(computeSchemes({ birdType: 'desi', state: 'Maharashtra', capitalCostInr: 1_000_000, flockSize: 3000 }), 'mh-mgpuy-poultry');
+    expect(small).toMatchObject({ percent: 50, capInr: 600_000, amountInr: 500_000, cappedAtInr: null }); // 50% of Rs 12,00,000 is the cap
+    const layers = byId(computeSchemes({ birdType: 'layer-cage', state: 'Maharashtra', category: 'sc-st', capitalCostInr: 5_000_000, flockSize: 5000 }), 'mh-mgpuy-poultry');
+    expect(layers).toMatchObject({ capInr: 2_250_000, amountInr: 2_250_000 }); // 75% of Rs 30,00,000
+    expect((layers.reasons as string[]).join(' ')).toMatch(/5,000 desi or improved layers/);
+    const broiler = byId(computeSchemes({ birdType: 'broiler', state: 'Maharashtra', capitalCostInr: 2_000_000, flockSize: 5000 }), 'mh-mgpuy-poultry');
+    expect((broiler.reasons as string[]).join(' ')).toMatch(/commercial broiler/);
   });
 
   it('matches the scheme rules published in datasets/csv', () => {

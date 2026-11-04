@@ -117,7 +117,7 @@ of memory. CI runs the whole suite in one go.
 - **The default broiler price leaves almost no profit** on the recommended shed (Rs 6,939 a year at Rs 100/kg;
   break-even Rs 99.41/kg). Check the default against current farm-gate prices.
 - **NABARD unit costs for one state** (Jharkhand); banks use their own state's.
-- **State schemes:** only Maharashtra's, unverified.
+- **State schemes:** only Maharashtra's. Its rules are read from the GR of 9 March 2026 (a copy; the original on gr.maharashtra.gov.in is still to be linked). Other states have none.
 - **Heat stress on monthly means:** afternoons are hotter than the index.
 - **AI:** 40-90 s per answer on a laptop CPU, 20-30 s with part of the model on a GPU (what-if answers 70-135 s).
   The evaluation passes 78 of 85; five of the seven failures are fixed but not yet rerun, two are open

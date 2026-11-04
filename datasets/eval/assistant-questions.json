@@ -477,7 +477,7 @@
     "verif|check|confirm"
    ],
    "mustNotMatch": [],
-   "source": "planner: Maharashtra scheme marked check (unverified); NLM-EDP and AHIDF not eligible"
+   "source": "planner: Maharashtra scheme marked check (rules from the 2026 GR, applicant conditions to confirm); NLM-EDP and AHIDF not eligible"
   },
   {
    "id": "project-heat",

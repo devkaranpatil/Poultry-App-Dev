@@ -36,16 +36,30 @@ const SCHEMES = {
     notes: ["3% interest subvention on a loan of up to 90% of cost, repaid over up to 8 years including 2 years of moratorium."],
   },
   "mh-mgpuy-poultry": {
-    name: "Mukhyamantri Gramin Pashudhan Udyojak Yojana (poultry)",
+    name: "Mukhyamantri Gramin Pashudhan Udyojakta Yojana (poultry)",
     state: "Maharashtra",
     percent: { general: 50, "sc-st": 75 },
+    // The subsidy is a share of a fixed project cost per unit (below), so there is no single cap.
     capInr: null,
-    verified: false,
-    source: { document: "Third-party summaries of the 2026 scheme; official GR not yet found", url: "https://www.govtschemes.in/node/139909" },
+    // Project cost the GR fixes for each unit it funds, by the kind of flock.
+    units: {
+      meat: [
+        { birds: 3000, projectCostInr: 1200000 },
+        { birds: 5000, projectCostInr: 1900000 },
+      ],
+      layer: [{ birds: 5000, projectCostInr: 3000000 }],
+    },
+    verified: true,
+    source: {
+      document: "Maharashtra GR DAHD-14017/1/2026-AH4, 9 March 2026 (Agriculture, Animal Husbandry, Dairy Development and Fisheries Department)",
+      url: "https://drive.google.com/file/d/11z0KklPtP6vcgNg8hM1xgEHnYc2M7yNr/view",
+    },
     notes: [
-      "Unverified: the figures come from secondary summaries until the official GR is found.",
-      "Applied on MahaDBT; beneficiaries are chosen by lottery.",
-      "Needs 2 years of experience or training, and land owned or on a 5-year registered lease.",
+      "Read from the GR itself (a copy of it; the original is on gr.maharashtra.gov.in).",
+      "The GR funds two kinds of unit: 5,000 egg-laying desi or improved birds (project Rs 30,00,000) and 3,000 or 5,000 desi or improved meat birds (Rs 12,00,000 and Rs 19,00,000).",
+      "Paid in two halves: the first after the shed is built, the second after the equipment and birds are bought. The shed must be started within 2 months of selection.",
+      "Needs 2 years of poultry experience or a training certificate, and at least 20 gunthe of land owned or on a 5-year registered lease, plus a bank loan sanction.",
+      "50% of places are kept for women and 5% for people with disabilities.",
     ],
   },
 };
@@ -125,20 +139,40 @@ function checkAhidf(project) {
   };
 }
 
-/** Maharashtra's state scheme: shown only there, and always to be checked until the GR is found. */
+/** The unit the GR funds that is closest to this flock (the larger one when the size is not known). */
+function maharashtraUnit(kind, birds) {
+  const units = SCHEMES["mh-mgpuy-poultry"].units[kind];
+  if (!(birds > 0)) return units[units.length - 1];
+  return units.reduce((best, unit) => (Math.abs(unit.birds - birds) < Math.abs(best.birds - birds) ? unit : best));
+}
+
+/**
+ * Maharashtra's state scheme, from the GR of 9 March 2026: shown only there, and always "check" because the planner
+ * cannot know the applicant's experience, land or whether the breed counts as desi or improved. The subsidy is a share
+ * of the GR's fixed project cost for the unit, so it never exceeds that share whatever the project costs.
+ */
 function checkMaharashtra(project) {
   const rule = SCHEMES["mh-mgpuy-poultry"];
   const percent = rule.percent[category(project.category)];
   const cost = Math.max(0, Number(project.capitalCostInr) || 0);
+  const layer = project.birdType === "layer-cage" || project.birdType === "layer-floor";
+  const unit = maharashtraUnit(layer ? "layer" : "meat", Number(project.flockSize));
+  const cap = round((percent / 100) * unit.projectCostInr);
+  const share = round((percent / 100) * cost);
+  const reasons = [];
+  if (project.birdType === "broiler") reasons.push("The GR funds desi or improved meat birds; confirm a commercial broiler breed qualifies.");
+  if (layer) reasons.push("The GR funds a unit of 5,000 desi or improved layers that lay at least 200 eggs a year.");
+  if (project.birdType === "desi") reasons.push("The GR funds units of 3,000 or 5,000 desi or improved meat birds.");
+  reasons.push("Confirm 2 years of poultry experience or a training certificate, and 20 gunthe of land owned or on a 5-year registered lease.");
   return {
     id: "mh-mgpuy-poultry",
     name: rule.name,
     status: "check",
-    reasons: ["Confirm the unit size and the cost the scheme allows in the official GR."],
+    reasons,
     percent,
-    capInr: null,
-    amountInr: round((percent / 100) * cost),
-    cappedAtInr: null,
+    capInr: cap,
+    amountInr: Math.min(share, cap),
+    cappedAtInr: share > cap ? cap : null,
     interestSubventionPct: null,
     verified: rule.verified,
     notes: rule.notes,
@@ -154,6 +188,7 @@ function checkMaharashtra(project) {
  * @param {string} project.state
  * @param {"general"|"sc-st"} [project.category]
  * @param {number} project.capitalCostInr   the capital cost a scheme would support (no working capital or land)
+ * @param {number} [project.flockSize]       for the Maharashtra scheme (picks the unit size)
  * @param {boolean} [project.lowInputBreed]  for NLM
  * @param {boolean} [project.hasHatchery]    for NLM
  * @param {number} [project.parentFemales]   for NLM
