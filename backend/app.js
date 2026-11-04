@@ -45,7 +45,7 @@ app.use(
 );
 
 // Served before CORS: static assets, and browsers send an Origin header on same-origin module scripts.
-// 3D "API Studio": an animated polyhouse scene driven by live /api/health data.
+// 3D "API Studio": an animated broiler shed scene driven by live /api/health data.
 app.use("/studio/vendor", express.static(path.join(__dirname, "node_modules", "three", "build")));
 app.use("/studio", express.static(path.join(__dirname, "studio")));
 

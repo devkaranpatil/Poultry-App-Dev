@@ -28,61 +28,96 @@ const grid = new THREE.GridHelper(28, 28, 0x2c5a43, 0x1d3a2b);
 grid.position.y = 0.01;
 scene.add(grid);
 
-// ---- Polyhouse (tunnel type, matching the app's polyhouse model) ----
+// ---- Broiler shed (open-sided, gable roof, matching the app's default shed) ----
 const house = new THREE.Group();
 house.position.set(-3, 0, 0);
 scene.add(house);
-const LENGTH = 8, RADIUS = 2.2;
+const LENGTH = 8, WIDTH = 4, EAVES = 2.1, RIDGE = 3.1;
 const frameMat = new THREE.MeshStandardMaterial({ color: 0xcfd8d3, metalness: 0.6, roughness: 0.35 });
-for (let i = 0; i < 7; i++) {
-  const hoop = new THREE.Mesh(new THREE.TorusGeometry(RADIUS, 0.04, 8, 40, Math.PI), frameMat);
-  hoop.position.z = -LENGTH / 2 + (i * LENGTH) / 6;
-  house.add(hoop);
+const floor = new THREE.Mesh(new THREE.BoxGeometry(WIDTH, 0.12, LENGTH), new THREE.MeshStandardMaterial({ color: 0x8a7350, roughness: 1 }));
+floor.position.y = 0.06;
+house.add(floor);
+// Posts and trusses every 1.6 m along the shed.
+const BAYS = 5;
+for (let i = 0; i <= BAYS; i++) {
+  const z = -LENGTH / 2 + (i * LENGTH) / BAYS;
+  [-WIDTH / 2, WIDTH / 2].forEach((x) => {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.08, EAVES, 0.08), frameMat);
+    post.position.set(x, EAVES / 2, z);
+    house.add(post);
+  });
+  const rafterLength = Math.hypot(WIDTH / 2, RIDGE - EAVES);
+  const slope = Math.atan2(RIDGE - EAVES, WIDTH / 2);
+  [-1, 1].forEach((side) => {
+    const rafter = new THREE.Mesh(new THREE.BoxGeometry(rafterLength, 0.06, 0.06), frameMat);
+    rafter.position.set((side * WIDTH) / 4, (EAVES + RIDGE) / 2, z);
+    rafter.rotation.z = -side * slope;
+    house.add(rafter);
+  });
 }
-const film = new THREE.Mesh(
-  new THREE.CylinderGeometry(RADIUS, RADIUS, LENGTH, 48, 1, true, Math.PI / 2, Math.PI),
-  new THREE.MeshPhysicalMaterial({ color: 0xd6f5e4, transparent: true, opacity: 0.18, roughness: 0.1, side: THREE.DoubleSide, depthWrite: false }),
-);
-film.rotation.x = Math.PI / 2;
-house.add(film);
-
-const plants = [];
-const leafMat = new THREE.MeshStandardMaterial({ color: 0x2f9e6a, roughness: 0.7 });
-const stemMat = new THREE.MeshStandardMaterial({ color: 0x1d6b46 });
-[-1.1, 0, 1.1].forEach((x, row) => {
-  const bed = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.16, LENGTH - 1), new THREE.MeshStandardMaterial({ color: 0x5b4636, roughness: 1 }));
-  bed.position.set(x, 0.08, 0);
-  house.add(bed);
-  for (let i = 0; i < 8; i++) {
-    const plant = new THREE.Group();
-    plant.position.set(x, 0.16, -LENGTH / 2 + 0.8 + (i * (LENGTH - 1.6)) / 7);
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.035, 0.5, 6), stemMat);
-    stem.position.y = 0.25;
-    plant.add(stem);
-    for (let k = 0; k < 3; k++) {
-      const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.16 - k * 0.02, 12, 8), leafMat);
-      leaf.scale.y = 0.35;
-      leaf.position.set(Math.cos(k * 2.1) * 0.12, 0.38 + k * 0.1, Math.sin(k * 2.1) * 0.12);
-      plant.add(leaf);
-    }
-    plant.userData.phase = i * 0.7 + row * 1.9;
-    plants.push(plant);
-    house.add(plant);
-  }
+// Roof sheets, overhanging the walls a little.
+const roofMat = new THREE.MeshStandardMaterial({ color: 0x9aa7a2, metalness: 0.5, roughness: 0.45, side: THREE.DoubleSide });
+const sheetWidth = Math.hypot(WIDTH / 2, RIDGE - EAVES) + 0.4;
+[-1, 1].forEach((side) => {
+  const sheet = new THREE.Mesh(new THREE.BoxGeometry(sheetWidth, 0.04, LENGTH + 0.6), roofMat);
+  sheet.position.set((side * (WIDTH / 2 + 0.4)) / 2, (EAVES + RIDGE) / 2 - 0.05, 0);
+  sheet.rotation.z = -side * Math.atan2(RIDGE - EAVES, WIDTH / 2);
+  house.add(sheet);
+});
+// Low brick walls with mesh above, and curtains that roll up and down; the HUD button toggles them.
+const wallMat = new THREE.MeshStandardMaterial({ color: 0xa4553c, roughness: 0.9 });
+const meshMat = new THREE.MeshStandardMaterial({ color: 0xcfd8d3, transparent: true, opacity: 0.15, side: THREE.DoubleSide, depthWrite: false });
+const curtainMat = new THREE.MeshStandardMaterial({ color: 0x2f6fb5, roughness: 0.8, side: THREE.DoubleSide });
+const CURTAIN = EAVES - 0.45;
+const curtains = [];
+[-WIDTH / 2, WIDTH / 2].forEach((x) => {
+  const wall = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.45, LENGTH), wallMat);
+  wall.position.set(x, 0.225, 0);
+  house.add(wall);
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(LENGTH, CURTAIN), meshMat);
+  mesh.rotation.y = Math.PI / 2;
+  mesh.position.set(x, 0.45 + CURTAIN / 2, 0);
+  house.add(mesh);
+  const curtain = new THREE.Mesh(new THREE.PlaneGeometry(LENGTH, CURTAIN), curtainMat);
+  curtain.rotation.y = Math.PI / 2;
+  curtain.position.set(x + Math.sign(x) * 0.03, 0.45 + CURTAIN / 2, 0);
+  house.add(curtain);
+  curtains.push(curtain);
 });
 
-// Sprinkler droplets falling inside the polyhouse; the HUD button toggles them.
-const DROPS = 220;
-const dropPos = new Float32Array(DROPS * 3);
-const dropState = Array.from({ length: DROPS }, () => ({ x: (Math.random() - 0.5) * 3.2, y: Math.random() * 2, z: (Math.random() - 0.5) * (LENGTH - 1), v: 1.2 + Math.random() }));
-const dropGeo = new THREE.BufferGeometry();
-dropGeo.setAttribute("position", new THREE.BufferAttribute(dropPos, 3));
-const drops = new THREE.Points(dropGeo, new THREE.PointsMaterial({ color: 0x9fd8ff, size: 0.05, transparent: true, opacity: 0.85, depthWrite: false }));
-house.add(drops);
-let sprinklersOn = true;
-$("sprinklers").addEventListener("click", () => { sprinklersOn = !sprinklersOn; drops.visible = sprinklersOn; });
+// Feeder pans down the middle, and birds pecking on the litter.
+const panMat = new THREE.MeshStandardMaterial({ color: 0xd9b23a, roughness: 0.5 });
+for (let i = 0; i < 5; i++) {
+  const pan = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.08, 20), panMat);
+  pan.position.set(0, 0.16, -LENGTH / 2 + 1 + i * ((LENGTH - 2) / 4));
+  house.add(pan);
+}
+const birds = [];
+const bodyMat = new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: 0.8 });
+const combMat = new THREE.MeshStandardMaterial({ color: 0xc8322b });
+for (let i = 0; i < 36; i++) {
+  const bird = new THREE.Group();
+  bird.position.set((Math.random() - 0.5) * (WIDTH - 0.6), 0.12, (Math.random() - 0.5) * (LENGTH - 0.6));
+  bird.rotation.y = Math.random() * Math.PI * 2;
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 10), bodyMat);
+  body.scale.set(1, 0.85, 1.3);
+  body.position.y = 0.13;
+  bird.add(body);
+  const head = new THREE.Group();
+  head.position.set(0, 0.24, 0.14);
+  head.add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), bodyMat));
+  const comb = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.04, 0.06), combMat);
+  comb.position.y = 0.06;
+  head.add(comb);
+  bird.add(head);
+  bird.userData = { head, phase: Math.random() * 10 };
+  birds.push(bird);
+  house.add(bird);
+}
+let curtainsDown = false;
+$("curtains").addEventListener("click", () => { curtainsDown = !curtainsDown; });
 
-// ---- API node (server rack) + database cylinder, linked to the polyhouse by a pipe ----
+// ---- API node (server rack) + database cylinder, linked to the shed by a pipe ----
 const api = new THREE.Group();
 api.position.set(5, 0, -1.5);
 scene.add(api);
@@ -111,7 +146,7 @@ dbRing.rotation.x = Math.PI / 2;
 dbRing.position.y = 1.1;
 dbGroup.add(dbRing);
 
-// Pipe route: polyhouse door -> API rack -> database. Pulses travel along it on each health check.
+// Pipe route: shed end -> API rack -> database. Pulses travel along it on each health check.
 const route = new THREE.CatmullRomCurve3([new THREE.Vector3(-3, 0.25, 4.1), new THREE.Vector3(0, 0.25, 3.2), new THREE.Vector3(3.2, 0.25, -0.6), new THREE.Vector3(5, 0.25, -1.5)]);
 scene.add(new THREE.Mesh(new THREE.TubeGeometry(route, 48, 0.07, 8), new THREE.MeshStandardMaterial({ color: 0x3a6a53, roughness: 0.6 })));
 const dbRoute = new THREE.CatmullRomCurve3([new THREE.Vector3(5, 0.25, -1.5), new THREE.Vector3(5.8, 0.25, 0.5), new THREE.Vector3(5, 0.25, 2.5)]);
@@ -187,16 +222,14 @@ function frame() {
   sun.position.set(Math.cos(sa) * 11, 5 + Math.sin(sa) * 3, -8);
   sunLight.position.copy(sun.position);
 
-  if (!reduced) plants.forEach((p) => { p.rotation.z = Math.sin(t * 1.4 + p.userData.phase) * 0.06; p.rotation.x = Math.cos(t * 1.1 + p.userData.phase) * 0.04; });
+  if (!reduced) birds.forEach((b) => { b.userData.head.rotation.x = Math.max(0, Math.sin(t * 2.4 + b.userData.phase)) * 0.9; });
 
-  if (sprinklersOn && !reduced) {
-    dropState.forEach((d, i) => {
-      d.y -= d.v * dt;
-      if (d.y < 0.2) d.y = 2.1;
-      dropPos[i * 3] = d.x; dropPos[i * 3 + 1] = d.y; dropPos[i * 3 + 2] = d.z;
-    });
-    dropGeo.attributes.position.needsUpdate = true;
-  }
+  // Curtains roll from the eaves down to the wall top (open) or cover the mesh (closed).
+  curtains.forEach((c) => {
+    const target = curtainsDown ? 1 : 0.08;
+    c.scale.y += (target - c.scale.y) * (reduced ? 1 : Math.min(1, dt * 3));
+    c.position.y = 0.45 + (CURTAIN * c.scale.y) / 2;
+  });
 
   apiLamp.material.color.setHex(COLORS[apiState]);
   apiLamp.scale.setScalar(1 + (0.6 + Math.sin(t * 3) * 0.4) * 0.25);
