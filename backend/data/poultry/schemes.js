@@ -51,15 +51,16 @@ const SCHEMES = {
     },
     verified: true,
     source: {
-      document: "Maharashtra GR DAHD-14017/1/2026-AH4, 9 March 2026 (Agriculture, Animal Husbandry, Dairy Development and Fisheries Department)",
-      url: "https://drive.google.com/file/d/11z0KklPtP6vcgNg8hM1xgEHnYc2M7yNr/view",
+      document: "Maharashtra GR DAHD-14017/1/2026-AH4, 9 March 2026, State Plan Scheme (unique code 202603091924368401), as amended by the corrigendum of 27 August 2026 (202608271649419545)",
+      url: "https://gr.maharashtra.gov.in/Site/Upload/Government%20Resolutions/Marathi/202603091924368401.pdf",
     },
     notes: [
-      "Read from the GR itself (a copy of it; the original is on gr.maharashtra.gov.in).",
+      "Read from the GR on gr.maharashtra.gov.in. The corrigendum of 27 August 2026 changes nothing for poultry.",
       "The GR funds two kinds of unit: 5,000 egg-laying desi or improved birds (project Rs 30,00,000) and 3,000 or 5,000 desi or improved meat birds (Rs 12,00,000 and Rs 19,00,000).",
       "Paid in two halves: the first after the shed is built, the second after the equipment and birds are bought. The shed must be started within 2 months of selection.",
       "Needs 2 years of poultry experience or a training certificate, and at least 20 gunthe of land owned or on a 5-year registered lease, plus a bank loan sanction.",
       "50% of places are kept for women and 5% for people with disabilities.",
+      "Applications are made online once a year; since the corrigendum of 27 August 2026 they are chosen first come, first served (it was a random draw). One person per family, and not for anyone who had a similar scheme in the last 3 years. Not in Mumbai or Mumbai Suburban.",
     ],
   },
 };

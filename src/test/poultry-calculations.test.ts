@@ -79,17 +79,23 @@ describe('poultry cost model', () => {
 
   it('compares with the nearest NABARD unit and recognises the lower cost', () => {
     const compared = costModel.nabardComparison({ birdType: 'broiler', housingSystem: 'open-sided', flockSize: 800, projectCost: 900000 });
-    expect(compared).toMatchObject({ unitBirds: 1000, perBirdInr: 594, normCostInr: 475200, recognisedCostInr: 475200, note: null });
+    expect(compared).toMatchObject({ unitBirds: 1000, perBirdInr: 692, normCostInr: 553600, recognisedCostInr: 553600, note: null }); // Jharkhand 2026-27: Rs 6,92,000 for 1,000 birds
     expect(costModel.nabardComparison({ birdType: 'desi', housingSystem: 'backyard', flockSize: 100, projectCost: 1 })).toBeNull();
     expect(costModel.nabardComparison({ birdType: 'broiler', housingSystem: 'environment-controlled', flockSize: 1000, projectCost: 1 }).note).toMatch(/controlled/);
   });
 
   it("uses the project's own state when NABARD units for it are transcribed, else Jharkhand's", () => {
     const maharashtra = costModel.nabardComparison({ birdType: 'broiler', housingSystem: 'open-sided', stateName: 'Maharashtra', flockSize: 1000, projectCost: 500000 });
-    expect(maharashtra).toMatchObject({ state: 'Maharashtra', year: '2025-26', system: 'Deep litter, all in all out', unitBirds: 5000, otherState: false, capitalOnly: false });
+    expect(maharashtra).toMatchObject({ state: 'Maharashtra', year: '2026-27', system: 'Deep litter, all in all out', unitBirds: 5000, otherState: false, capitalOnly: false });
     expect(maharashtra.perBirdInr).toBe(460); // Rs 23,02,055 for 5,000 birds
-    const gujarat = costModel.nabardComparison({ birdType: 'broiler', housingSystem: 'open-sided', stateName: 'Gujarat', flockSize: 1000, projectCost: 500000 });
-    expect(gujarat).toMatchObject({ state: 'Jharkhand', unitBirds: 1000, otherState: true });
+    // Andhra Pradesh's booklet prints broiler norms per bird only, with no unit total, so Jharkhand's units stand in.
+    const andhra = costModel.nabardComparison({ birdType: 'broiler', housingSystem: 'open-sided', stateName: 'Andhra Pradesh', flockSize: 1000, projectCost: 500000 });
+    expect(andhra).toMatchObject({ state: 'Jharkhand', unitBirds: 1000, otherState: true });
+    const tamilNadu = costModel.nabardComparison({ birdType: 'broiler', housingSystem: 'open-sided', stateName: 'Tamil Nadu', flockSize: 8000, projectCost: 4000000 });
+    expect(tamilNadu).toMatchObject({ state: 'Tamil Nadu', year: '2026-27', unitBirds: 10000, otherState: false });
+    expect(tamilNadu.perBirdInr).toBe(599); // Rs 59,89,000 for 10,000 birds
+    const tamilNaduLayers = costModel.nabardComparison({ birdType: 'layer-cage', housingSystem: 'open-sided', stateName: 'Tamil Nadu', flockSize: 12000, projectCost: 12000000 });
+    expect(tamilNaduLayers).toMatchObject({ state: 'Tamil Nadu', unitBirds: 10000, unitCostInr: 11270000 });
   });
 
   it('compares a contract unit with the capital cost only', () => {
