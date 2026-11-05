@@ -135,7 +135,7 @@ const Index = () => {
     lastFamilyRef.current = family;
     setFinanceAssumptions((prev) => ({ ...defaultPoultryAssumptions(config.birdType, config.farmingModel, config.state), subsidyInr: prev.subsidyInr }));
     if (birdChanged) setLoanTerms(poultryLoanTerms(config.birdType));
-  }, [config.birdType, config.farmingModel]);
+  }, [config.birdType, config.farmingModel, config.state]);
 
   // Another state has its own sale and egg price: follow it, unless the user had set their own.
   const lastStateRef = useRef(config.state);
