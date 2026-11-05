@@ -148,6 +148,23 @@ describe('poultry production and returns', () => {
     }
   });
 
+  it('starts from the same defaults in the browser and on the server in every state with its own prices', () => {
+    // The price lookup is written twice (TypeScript here, CommonJS in the backend); this keeps the two in step.
+    const states = new Set<string>(['', 'Sikkim']);
+    JSON.stringify(require('../../shared/poultry-norms.json'), (key, value) => {
+      if (key === 'byState') Object.keys(value).forEach((state) => states.add(state));
+      return value;
+    });
+    expect(states.size).toBeGreaterThan(5);
+    for (const [birdType, model] of cases) {
+      for (const state of states) {
+        expect(defaultPoultryAssumptions(birdType, model, state), `${birdType} ${model} ${state}`).toEqual(
+          production.defaultAssumptions(birdType, model, state)
+        );
+      }
+    }
+  });
+
   it('runs about 6.5 broiler batches a year and sells live weight less mortality', () => {
     const a = defaultPoultryAssumptions('broiler');
     const r = computePoultryReturns({ birdType: 'broiler', flockSize: 1000, projectCost: 600000, assumptions: a });
