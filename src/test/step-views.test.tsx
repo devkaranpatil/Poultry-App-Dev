@@ -67,7 +67,7 @@ describe('StepViews', () => {
     expect(screen.getAllByText(/^₹\d{1,2}(,\d{2})*,\d{3}$/).length).toBeGreaterThan(1);
     expect(screen.getByText('The first batch')).toBeInTheDocument();
     expect(screen.getByTestId('nabard-card')).toHaveTextContent(/5,000-bird unit/);
-    expect(screen.getByTestId('nabard-card')).toHaveTextContent('(Maharashtra, 2025-26): Deep litter, all in all out');
+    expect(screen.getByTestId('nabard-card')).toHaveTextContent('(Maharashtra, 2026-27): Deep litter, all in all out');
     const schemes = screen.getByTestId('schemes-card');
     expect(within(schemes).getAllByText('Not eligible')).toHaveLength(2);
     expect(within(schemes).getByText(/Mukhyamantri Gramin Pashudhan/)).toBeInTheDocument();

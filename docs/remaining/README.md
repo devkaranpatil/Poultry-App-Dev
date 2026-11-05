@@ -28,7 +28,7 @@ The full run of 01 passed 65 of 85 on the old code (2026-10-23) and 78 of 85 on 
 | 09 | [Check the unverified rates and the default prices](09-check-rates-and-prices.md) | someone who can get current quotes | medium |
 | 10 | [Native review of Hindi and Marathi](10-review-hindi-marathi.md) | native speakers | medium |
 | 11 | [Fetch the CPCB guideline text](11-fetch-cpcb-guideline.md) | developer | small |
-| 12 | [NABARD unit costs and schemes for more states](12-more-states.md) | developer or researcher | medium per state |
+| 12 | [NABARD unit costs and schemes for more states](12-more-states.md) (Maharashtra done 2026-11-05) | developer or researcher | medium per state |
 
 ## Clean-up
 

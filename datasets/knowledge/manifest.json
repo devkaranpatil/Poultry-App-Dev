@@ -51,6 +51,42 @@
       "note": "Broiler (own and contract, open and controlled), layer cage and Kaveri units. Used by the Cost step's NABARD card for Maharashtra projects."
     },
     {
+      "id": "nabard-unit-cost-2026-tamil-nadu",
+      "title": "NABARD unit costs 2026-27 (Tamil Nadu & UT of Puducherry Regional Office, June 2026), including poultry",
+      "publisher": "NABARD (copy hosted by the State Level Bankers' Committee, Tamil Nadu)",
+      "url": "https://www.slbctn.com/Uploads/Tamil%20Nadu%20Unit%20Cost%20Booklet%202026-27.pdf",
+      "format": "pdf",
+      "layout": true,
+      "status": "current",
+      "priority": 1.05,
+      "scope": "Tamil Nadu and Puducherry (NABARD unit costs are set per state)",
+      "note": "Broiler 5,000-20,000 birds, standalone and integrated (1+1+7) cage layers 10,000-1,00,000 birds, hybrid and other poultry, quail. Used by the Cost step's NABARD card for Tamil Nadu projects."
+    },
+    {
+      "id": "mh-mgpuy-gr-2026",
+      "title": "Maharashtra GR DAHD-14017/1/2026-AH4, 9 March 2026: Mukhyamantri Gramin Pashudhan Udyojakta Yojana, State Plan Scheme (in Marathi)",
+      "publisher": "Government of Maharashtra, Agriculture, Dairy Development, Animal Husbandry and Fisheries Department",
+      "url": "https://gr.maharashtra.gov.in/Site/Upload/Government%20Resolutions/Marathi/202603091924368401.pdf",
+      "format": "pdf",
+      "layout": true,
+      "status": "current",
+      "priority": 1.1,
+      "scope": "Maharashtra",
+      "note": "The state's poultry subsidy: 50% (75% SC/ST) of a fixed project cost for 5,000 layers (Rs 30 lakh) or 3,000 or 5,000 desi or improved meat birds (Rs 12 or 19 lakh); also a hatchery unit and a 4% interest subvention. Used by the Cost step's scheme card for Maharashtra projects."
+    },
+    {
+      "id": "mh-mgpuy-gr-2026-corrigendum",
+      "title": "Corrigendum of 27 August 2026 to Maharashtra GR DAHD-14017/1/2026-AH4, State Plan Scheme (in Marathi)",
+      "publisher": "Government of Maharashtra, Agriculture, Dairy Development, Animal Husbandry and Fisheries Department",
+      "url": "https://gr.maharashtra.gov.in/Site/Upload/Government%20Resolutions/Marathi/202608271649419545.pdf",
+      "format": "pdf",
+      "layout": true,
+      "status": "current",
+      "priority": 1.0,
+      "scope": "Maharashtra",
+      "note": "Changes the dairy unit and the loan-repayment wording, and moves selection from a random draw to first come, first served. Nothing changes for poultry."
+    },
+    {
       "id": "nabard-broiler-model",
       "tags": { "birdKind": "broiler" },
       "title": "NABARD model bankable project: broiler farming",
