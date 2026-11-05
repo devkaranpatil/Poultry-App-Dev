@@ -4,7 +4,7 @@ What is left after the polyhouse to poultry migration (all seven phases are merg
 `phase-7`; the polyhouse code is on the `polyhouse` tag). One file per task. Each says what the task is, why it is
 open, what to do, and how to check it is done.
 
-Last updated: 2026-11-02.
+Last updated: 2026-11-05.
 
 ## The AI assistant
 
@@ -24,7 +24,7 @@ The full run of 01 passed 65 of 85 on the old code (2026-10-23) and 78 of 85 on 
 
 | # | Task | Who | Size |
 |---|---|---|---|
-| 08 | [Apply the poultry migration to the live database](08-apply-database-migration.md) | owner of the Supabase project | small |
+| 08 | [Apply the poultry migration to the live database](08-apply-database-migration.md) (done 2026-11-05) | owner of the Supabase project | small |
 | 09 | [Check the unverified rates and the default prices](09-check-rates-and-prices.md) | someone who can get current quotes | medium |
 | 10 | [Native review of Hindi and Marathi](10-review-hindi-marathi.md) | native speakers | medium |
 | 11 | [Fetch the CPCB guideline text](11-fetch-cpcb-guideline.md) | developer | small |
@@ -34,4 +34,4 @@ The full run of 01 passed 65 of 85 on the old code (2026-10-23) and 78 of 85 on 
 
 | # | Task | Who | Size |
 |---|---|---|---|
-| 13 | [Small leftovers from the polyhouse](13-small-leftovers.md) | developer | small |
+| 13 | [Small leftovers from the polyhouse](13-small-leftovers.md) (done 2026-11-04) | developer | small |

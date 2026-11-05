@@ -1,6 +1,6 @@
 # 08. Apply the poultry migration to the live database
 
-**Status:** open. Needs the owner of the Supabase project.
+**Status:** done (2026-11-05). Checked against the live project (Polyhouse App Dev): `poultry_unit_costs` 11 rows, `poultry_production_norms` 7, `poultry_scheme_rules` 3, `poultry_siting_rules` 9, and the `saved_configurations.config_type` check accepts `poultry`. Not yet tried: saving a setup from the app (no poultry setups are saved yet). The Supabase security advisor also warns that leaked-password protection is off (Auth settings).
 
 ## Why it is open
 
