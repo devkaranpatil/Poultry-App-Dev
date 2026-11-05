@@ -38,11 +38,9 @@ import { cn } from '@/lib/utils';
 import { OptionGrid, ShedTabIcon, SizeRow, Stat, type ShedTab } from './ShedControls';
 import { OPTION_GROUP, PART_VALUES, isOptionLocked, type OptionPart } from '@/lib/sceneEdit';
 
-/** A tab of the sidebar: one part of the shed, or where it will be built. */
-export type DesignTab = ShedTab;
+import { DESIGN_TABS, type DesignTab } from './designTabs';
 
-/** Tab order follows how a shed is planned: its size and kind, what it is built of, then the birds and their feeding. */
-export const DESIGN_TABS: DesignTab[] = ['size', 'housing', 'roof', 'frame', 'roofSheet', 'sideWalls', 'entry', 'birds', 'feeding', 'location'];
+export type { DesignTab } from './designTabs';
 
 /** The setup field each option tab sets. */
 const TAB_FIELD: Partial<Record<DesignTab, keyof FarmConfig>> = {

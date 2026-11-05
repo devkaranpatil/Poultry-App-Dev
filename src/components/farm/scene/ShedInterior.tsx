@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { InstanceSet, InstancedPart, addSegment } from './instancing';
+import { InstancedPart } from './instancing';
+import { InstanceSet, addSegment } from './instanceSet';
 import { geo } from './sceneGeometry';
 import { CAGE, FITTING_CAP, PLINTH, type InteriorLayout, type RenderQuality, type ShedLayout } from './shedLayout';
 import { createConcreteMaterial, createLitterMaterial } from './shedMaterials';
-import { metrePlane, useDisposal } from './ShedStructure';
+import { metrePlane, useDisposal } from './structureHelpers';
 
 /**
  * Inside the shed, laid out by buildInteriorLayout (shedLayout.ts): the litter or cage floor, the flock, the A-type
@@ -71,7 +72,7 @@ let birdGeometry: { body: THREE.BufferGeometry; details: THREE.BufferGeometry } 
  * A low-poly hen about 32 cm long facing +z, standing on y = 0: the body and head take the plumage colour (one
  * instance colour each), and the comb, wattle, beak and legs are painted into a second mesh.
  */
-export function chickenGeometry() {
+function chickenGeometry() {
   if (birdGeometry) return birdGeometry;
   const body = mergeGeometries(
     [

@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useReducer, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import { MAX_STEP } from './sizeEase';
 
 /**
  * Smooth changes for the 3D model, all driven from useFrame so they also run with
@@ -8,7 +10,7 @@ import * as THREE from 'three';
  *
  *  Reveal   a part grows out of the ground, rises into place, or fades in when it mounts
  *  Swap     when the option it shows changes, the old part animates out while the new one animates in
- *  useSizeEase  the whole model eases to a new size, unless sizes arrive every frame (a live drag)
+ *  useSizeEase  (sizeEase.ts) the whole model eases to a new size, unless sizes arrive every frame (a live drag)
  *
  * With prefers-reduced-motion everything snaps.
  */
@@ -18,27 +20,8 @@ export type RevealKind = 'grow' | 'rise' | 'fade';
 /** Name prefix given to every object of an outgoing part, so lookups by name only find the live one. */
 export const LEAVING_PREFIX = 'leaving:';
 
-function prefersReducedMotion(): boolean {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
+const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 
-export function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(prefersReducedMotion);
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
-    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const update = () => setReduced(query.matches);
-    query.addEventListener?.('change', update);
-    return () => query.removeEventListener?.('change', update);
-  }, []);
-  return reduced;
-}
-
-export const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
-
-/** Longest frame step an animation takes, so a stalled tab does not jump straight to the end. */
-const MAX_STEP = 0.2;
 
 interface FadeTarget {
   material: THREE.Material;
@@ -63,7 +46,7 @@ function collectFades(root: THREE.Object3D): FadeTarget[] {
 }
 
 /** Puts a group at transition progress p (0 hidden, 1 in place). */
-export function applyReveal(group: THREE.Object3D, kind: RevealKind, p: number, fades: FadeTarget[] | null) {
+function applyReveal(group: THREE.Object3D, kind: RevealKind, p: number, fades: FadeTarget[] | null) {
   const e = easeOutCubic(p);
   if (kind === 'grow') {
     group.scale.set(1, Math.max(0.001, e), 1);
@@ -224,71 +207,4 @@ export function Swap({ id, kind = 'rise', delay = 0, duration = 0.36, children }
       ))}
     </>
   );
-}
-
-export interface Size3 {
-  width: number;
-  length: number;
-  height: number;
-}
-
-/** A size change that arrives sooner than this after the previous one is a live drag: no easing. */
-const DRAG_INTERVAL_MS = 90;
-/** Damping rate: about 95 % of the way in 170 ms. */
-const SIZE_LAMBDA = 18;
-
-/**
- * Eases a model to a new size by briefly scaling its root from the old size to the new one. The
- * geometry itself is rebuilt once at the new size, so the ease costs nothing per frame.
- */
-export function useSizeEase(ref: RefObject<THREE.Object3D>, size: Size3) {
-  const invalidate = useThree((state) => state.invalidate);
-  const reduced = usePrefersReducedMotion();
-  const previous = useRef(size);
-  const lastChange = useRef(0);
-  const active = useRef(false);
-
-  const { width, length, height } = size;
-
-  useLayoutEffect(() => {
-    const object = ref.current;
-    const before = previous.current;
-    const next = { width, length, height };
-    previous.current = next;
-    if (!object) return;
-    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
-    const dragging = now - lastChange.current < DRAG_INTERVAL_MS;
-    lastChange.current = now;
-    if (reduced || dragging || before.width <= 0 || before.length <= 0 || before.height <= 0) {
-      object.scale.set(1, 1, 1);
-      active.current = false;
-      return;
-    }
-    // Start where the eye last saw the model, including part-way through a previous ease.
-    object.scale.set(
-      (object.scale.x * before.width) / next.width,
-      (object.scale.y * before.height) / next.height,
-      (object.scale.z * before.length) / next.length
-    );
-    active.current = true;
-    invalidate();
-  }, [ref, width, length, height, reduced, invalidate]);
-
-  useFrame((_, delta) => {
-    const object = ref.current;
-    if (!active.current || !object) return;
-    const step = Math.min(delta, MAX_STEP);
-    const s = object.scale;
-    s.set(
-      THREE.MathUtils.damp(s.x, 1, SIZE_LAMBDA, step),
-      THREE.MathUtils.damp(s.y, 1, SIZE_LAMBDA, step),
-      THREE.MathUtils.damp(s.z, 1, SIZE_LAMBDA, step)
-    );
-    if (Math.abs(s.x - 1) + Math.abs(s.y - 1) + Math.abs(s.z - 1) < 0.003) {
-      s.set(1, 1, 1);
-      active.current = false;
-    } else {
-      invalidate();
-    }
-  });
 }

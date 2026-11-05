@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { InstanceSet, InstancedPart } from './scene/instancing';
+import { InstancedPart } from './scene/instancing';
+import { InstanceSet } from './scene/instanceSet';
 import { createMotionMaterial, useSceneClock } from './scene/sceneMaterials';
 
 type RenderQuality = 'high' | 'balanced' | 'lite';
