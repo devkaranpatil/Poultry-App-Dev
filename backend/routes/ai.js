@@ -1,28 +1,29 @@
 const express = require("express");
 const { requireAuth } = require("./auth");
 const { runCalculation } = require("./farm");
-const { APP_NAME } = require("../config/app");
 const { createRateLimiter } = require("../middleware/rateLimit");
 const { success, failure } = require("../utils/response");
-const {
-  AiNotConfiguredError,
-  generateJson,
-  generateText,
-  getModel,
-  isAiConfigured,
-  streamText,
-} = require("../services/ai");
+const { AiNotConfiguredError, generateJson, getModel, isAiConfigured, streamText } = require("../services/ai");
 const { ModelBusyError } = require("../services/llm/engine");
 const knowledge = require("../services/rag");
 const schemas = require("../validators/requestSchemas");
 const whatIfService = require("../services/whatIf");
-const { CPCB_THRESHOLD_BIRDS } = require("../data/poultry/siting");
+const {
+  LANGUAGES,
+  CHAT_GUIDANCE,
+  buildProjectFacts,
+  compact,
+  conversationSystem,
+  sourcesBlock,
+  clientSources,
+  citedNumbers,
+} = require("../services/assistant/prompt");
+const { retrieve, promptTurns, retrievalQuery, withEnglishFarmingTerms, searchText } = require("../services/assistant/search");
+const { ADVISOR_SCHEMA, cleanAdvisor } = require("../services/assistant/advisor");
+const { unverifiedFigures } = require("../services/assistant/figureCheck");
 
 const router = express.Router();
 
-const LANGUAGES = { en: "English", hi: "Hindi", mr: "Marathi" };
-const PROMPT_CHAT_TURNS = 6; // actually sent to the model: older turns only cost time on a CPU
-const PASSAGE_CHARS = 650; // per retrieved passage in the prompt (every ~3.5 characters costs the model a token)
 const SOURCES_MARKER = "[[AI_SOURCES]]";
 
 // The model runs on this server's CPU, so budget requests per signed-in user.
@@ -42,254 +43,6 @@ const sanitizeAssumptions = (input) => {
 };
 
 const resolveLanguage = (locale) => LANGUAGES[schemas.locale.parse(locale)];
-
-const round = (value) => (value === null || value === undefined ? null : Math.round(value));
-
-/** Everything the model may quote about this project, all computed by the planner. */
-function buildProjectFacts(config, result) {
-  const r = result.returns;
-  return {
-    location: { state: config.stateName, district: config.district || null },
-    shed: {
-      lengthM: Number(config.length),
-      widthM: Number(config.width),
-      eavesHeightM: Number(config.eavesHeight),
-      ridgeHeightM: Number(config.ridgeHeight),
-      areaSqm: result.area,
-      areaSqft: result.areaSqft,
-      housing: config.housingSystem,
-      roof: config.roofType,
-      frame: config.frameMaterial,
-      roofSheet: config.roofSheet,
-      sideWalls: config.sideWalls,
-      entry: config.entry,
-      feeding: config.feedingSystem,
-    },
-    flock: {
-      birdType: config.birdType,
-      birds: result.flock.birds,
-      sqftPerBird: result.flock.sqftPerBird,
-      farmingModel: config.farmingModel,
-    },
-    climate: {
-      zone: result.climate.climateZone,
-      group: result.climate.climateGroup,
-      hottestMonthMeanC: result.climate.hottestMonthMeanC ?? null,
-      humidityPct: result.climate.humidity,
-      annualRainfallMm: result.climate.rainfall,
-      heatStressMonths: result.climate.heatStress?.severeMonths ?? [],
-      advisories: result.climate.advisories,
-    },
-    // Each name says what the figure covers: with a short name ("project") the model quoted NABARD's unit cost as
-    // the project's total.
-    costInr: {
-      buildAndEquipShed: result.cost.capitalCost,
-      firstBatchWorkingCapital: result.cost.workingCapital.total,
-      totalWithFirstBatch: result.cost.projectCost,
-      financedByFarmer: result.financedCost,
-      civilWorks: result.cost.civilCost,
-      equipment: result.cost.equipmentCost,
-      nabardUnitCostForThisFlock: result.nabard?.normCostInr ?? null,
-    },
-    // Every scheme checked, with its verdict; noneApplies means the bank loan carries the project.
-    schemes: {
-      noneApplies: result.schemes.noneApplies,
-      list: result.schemes.schemes.map((scheme) => ({
-        name: scheme.name,
-        status: scheme.status,
-        percent: scheme.percent,
-        amountInr: scheme.amountInr,
-        reasons: scheme.reasons,
-      })),
-    },
-    // The rules that bind this farm, and the CPCB ones that do not: shown only the first, the model listed the CPCB
-    // distances from the SOURCES for a 1,054-bird farm.
-    siting: {
-      rulesForThisFarm: result.siting.map((rule) => rule.description + (rule.distanceM ? ` (at least ${rule.distanceM} m)` : "")),
-      notForThisFarm:
-        result.flock.birds > CPCB_THRESHOLD_BIRDS
-          ? null
-          : `The CPCB siting distances and the pollution control consent apply only above ${CPCB_THRESHOLD_BIRDS.toLocaleString("en-IN")} birds, so not to this farm of ${result.flock.birds.toLocaleString("en-IN")}.`,
-    },
-    yearlyFigures: {
-      batchesPerYear: Math.round(r.cyclesPerYear * 10) / 10,
-      birdsSold: round(r.birdsSoldPerYear),
-      kgSold: round(r.kgSoldPerYear),
-      eggs: round(r.eggsPerYear),
-      revenueInr: round(r.annualRevenue),
-      runningCostInr: round(r.annualOperatingCost),
-      profitInr: round(r.annualProfit),
-      subsidyCountedInr: round(r.subsidyAmount),
-      netInvestmentInr: round(r.netInvestment),
-      paybackYears: r.paybackYears === null ? null : Math.round(r.paybackYears * 10) / 10,
-      breakEvenPrice: r.breakEvenPrice === null ? null : Math.round(r.breakEvenPrice * 100) / 100,
-      breakEvenUnit: r.product === "eggs" ? "Rs per egg" : config.farmingModel === "contract" ? "Rs per kg growing charge" : "Rs per kg live weight",
-    },
-    assumptions: result.assumptions,
-  };
-}
-
-function systemInstruction(language) {
-  return [
-    `You are the ${APP_NAME} assistant: a poultry husbandry and agri-finance adviser for poultry farms (broilers, layers and improved desi birds) in India.`,
-    "Rules:",
-    "1. Answer from the PROJECT FACTS and the numbered SOURCES below. Cite a source by its number, like [2], right after the claim it supports. A general question (what a shed should be, how much space a broiler needs) is answered from the SOURCES first, and may then say how this project compares; a question about \"my\" shed, farm, flock or project is answered from the PROJECT FACTS.",
-    "2. If the SOURCES do not contain the answer, say plainly that the knowledge base has no official source for it. Then give at most two sentences of general advice with no numbers, and never name varieties, brands, chemicals or products that are not in the SOURCES.",
-    "3. Never invent subsidy amounts, eligibility rules, prices, temperatures, doses or production figures. Copy figures exactly as the facts or sources give them. If sources disagree, use the one marked CURRENT, not OLDER or SUPERSEDED, and say which you used. Subsidies come only from the schemes in the PROJECT FACTS with their status; when schemes.noneApplies is true, say plainly that no scheme applies and the bank loan carries the project. Never work out a subsidy as a share of the cost yourself.",
-    "4. Money is in Indian rupees (₹); use lakh and crore where natural. For vaccines, medicines and disinfectants, give only the product and schedule written in the SOURCES and add that a veterinarian's advice must be followed.",
-    "5. Every question about poultry, birds, sheds, feed, water, disease, biosecurity, weather, subsidies, loans, costs or markets is in scope, even for topics the SOURCES do not cover (then follow rule 2). Only questions with nothing to do with farming (geography, celebrities, coding, poems, etc.) are out of scope: do not answer those, not even briefly; say in one sentence that you can only help with poultry farm planning. Refuse any request to harm people or to mistreat animals.",
-    `6. Write all user-facing text in ${language}.`,
-  ].join("\n");
-}
-
-const CHAT_GUIDANCE =
-  `You are chatting with the project owner inside the ${APP_NAME} planner. Keep the answer under 150 words, use short paragraphs or bullet points, and refer to their actual numbers. ` +
-  "If the message is only a greeting or thanks, reply in one short friendly sentence and offer help, with no figures.";
-
-/** Drops empty values (null, "", empty lists) so the facts take fewer tokens to read. */
-function compact(value) {
-  if (Array.isArray(value)) return value.map(compact).filter((item) => item !== undefined);
-  if (value && typeof value === "object") {
-    const out = {};
-    for (const [key, inner] of Object.entries(value)) {
-      const kept = compact(inner);
-      const empty = kept === null || kept === undefined || kept === "" || (Array.isArray(kept) && kept.length === 0) ||
-        (typeof kept === "object" && !Array.isArray(kept) && Object.keys(kept).length === 0);
-      if (!empty) out[key] = kept;
-    }
-    return out;
-  }
-  return value;
-}
-
-const factsBlock = (facts) => `PROJECT FACTS (JSON):\n${JSON.stringify(compact(facts))}`;
-
-/** Instructions plus the project's facts: identical for every request about one project, so the model keeps it warm. */
-const conversationSystem = (project) => [systemInstruction(project.language), "", factsBlock(project.facts)].join("\n");
-
-/** The numbered passages the model may quote, each tagged with where it came from. */
-function sourcesBlock(passages) {
-  if (passages.length === 0) return "SOURCES: none were found for this question.";
-  const entries = passages.map((passage) => {
-    const flags = [passage.status === "older" ? "OLDER DOCUMENT" : "CURRENT", passage.scope !== "India" ? `${passage.scope} only` : null]
-      .filter(Boolean)
-      .join(", ");
-    const note = passage.status === "older" && passage.note ? ` Note: ${passage.note}` : "";
-    return `[${passage.n}] ${passage.title} (${flags}) - ${passage.publisher}.${note}\n${passage.text.slice(0, PASSAGE_CHARS)}`;
-  });
-  return `SOURCES (cite as [1], [2], ...):\n${entries.join("\n\n")}`;
-}
-
-/** What the browser needs to show where an answer came from. */
-function clientSources(passages, citedNumbers) {
-  const cited = passages.filter((passage) => citedNumbers.has(passage.n));
-  const shown = cited.length > 0 ? cited : passages.slice(0, 2);
-  return shown.map((passage) => ({
-    n: passage.n,
-    title: passage.title,
-    publisher: passage.publisher,
-    url: passage.url,
-    section: passage.section || null,
-    cited: cited.length > 0,
-  }));
-}
-
-const citedNumbers = (text) => new Set([...text.matchAll(/\[(\d{1,2})\]/g)].map((match) => Number(match[1])));
-
-/** Passages about this project's district, bird and shed rank higher when they also match the question. */
-function projectBoosts(config) {
-  return [
-    config.district ? { tag: "district", value: config.district, factor: 1.8 } : null,
-    config.birdType ? { tag: "bird", value: config.birdType, factor: 1.08 } : null,
-    config.housingSystem ? { tag: "housing", value: config.housingSystem, factor: 1.08 } : null,
-  ].filter(Boolean);
-}
-
-// The bird a question names. The guides for that bird rank a little higher, so a broiler question is not answered
-// from the long layer tables of the disease page; the boost is small, since large ones crowd out the right text.
-const BIRD_WORDS = {
-  broiler: /\bbroilers?\b|ब्रॉयलर/i,
-  layer: /\blayers?\b|\bhens?\b|\begg[\s-]*laying\b|लेयर/i,
-  desi: /\bdesi\b|देसी|vanaraja|kaveri|giriraja|gramapriya|kadaknath|backyard/i,
-};
-
-function questionBoosts(query) {
-  return Object.entries(BIRD_WORDS)
-    .filter(([, words]) => words.test(query))
-    .map(([bird]) => ({ tag: "birdKind", value: bird, factor: 1.15 }));
-}
-
-async function retrieve(query, config, k) {
-  return knowledge.search(query, { k, boosts: [...projectBoosts(config), ...questionBoosts(query)] });
-}
-
-/* ------------------------------ schemas -------------------------------- */
-
-const ADVISOR_SCHEMA = {
-  type: "object",
-  properties: {
-    summary: { type: "string", description: "3-4 sentence executive summary of the project's viability." },
-    verdict: { type: "string", enum: ["strong", "viable", "marginal", "weak"] },
-    strengths: { type: "array", items: { type: "string" }, description: "2-4 strengths, one short sentence each." },
-    risks: {
-      type: "array",
-      description: "2-4 key risks.",
-      items: {
-        type: "object",
-        properties: {
-          title: { type: "string" },
-          detail: { type: "string" },
-          severity: { type: "string", enum: ["low", "medium", "high"] },
-        },
-        required: ["title", "detail", "severity"],
-      },
-    },
-    recommendations: {
-      type: "array",
-      description: "3-5 prioritised, actionable recommendations.",
-      items: {
-        type: "object",
-        properties: {
-          title: { type: "string" },
-          detail: { type: "string" },
-          category: { type: "string", enum: ["structure", "birds", "climate", "cost", "operations"] },
-          impact: { type: "string", description: "Expected effect, e.g. 'Reduces heat stress'." },
-        },
-        required: ["title", "detail", "category", "impact"],
-      },
-    },
-  },
-  required: ["summary", "verdict", "strengths", "risks", "recommendations"],
-};
-
-/* --------------------------- output hygiene ---------------------------- */
-
-const str = (value, max = 600) => String(value ?? "").trim().slice(0, max);
-const oneOf = (value, allowed, fallback) => (allowed.includes(value) ? value : fallback);
-const list = (value, max) => (Array.isArray(value) ? value.slice(0, max) : []);
-
-function cleanAdvisor(raw) {
-  return {
-    summary: str(raw?.summary, 1200),
-    verdict: oneOf(raw?.verdict, ["strong", "viable", "marginal", "weak"], "viable"),
-    strengths: list(raw?.strengths, 5).map((item) => str(item)).filter(Boolean),
-    risks: list(raw?.risks, 6)
-      .map((risk) => ({
-        title: str(risk?.title, 120),
-        detail: str(risk?.detail),
-        severity: oneOf(risk?.severity, ["low", "medium", "high"], "medium"),
-      }))
-      .filter((risk) => risk.title),
-    recommendations: list(raw?.recommendations, 8)
-      .map((rec) => ({
-        title: str(rec?.title, 120),
-        detail: str(rec?.detail),
-        category: oneOf(rec?.category, ["structure", "birds", "climate", "cost", "operations"], "operations"),
-        impact: str(rec?.impact, 160),
-      }))
-      .filter((rec) => rec.title),
-  };
-}
 
 /* ------------------------------ helpers -------------------------------- */
 
@@ -394,84 +147,6 @@ function parseChatTurns(messages) {
   return parsed.success ? parsed.data : null;
 }
 
-/** The last few turns, starting on a user turn, so the model sees context without a long prompt. */
-function promptTurns(turns) {
-  const recent = turns.slice(-PROMPT_CHAT_TURNS);
-  const firstUser = recent.findIndex((turn) => turn.role === "user");
-  return recent.slice(Math.max(firstUser, 0));
-}
-
-/** A short follow-up ("and for cucumber?") is searched together with the question before it. */
-function retrievalQuery(turns) {
-  const question = turns[turns.length - 1].content;
-  if (question.split(/\s+/).length >= 6) return question;
-  const previous = [...turns.slice(0, -1)].reverse().find((turn) => turn.role === "user");
-  return previous ? `${previous.content} ${question}` : question;
-}
-
-const hasIndicScript = (text) => /[ऀ-ॿ]/.test(text);
-
-// Farming words a small translation model gets wrong ("शिमला मिर्च" is capsicum, not the city of Shimla). They are
-// swapped for English before the model sees the question, because a small model ignores a glossary hint.
-// Longer phrases come first so they win over the words inside them.
-const FARMING_TERMS = [
-  ["ब्रॉयलर", "broiler"], ["ब्रायलर", "broiler"], ["लेयर", "layer"], ["देसी मुर्गी", "desi chicken"], ["गावरान कोंबडी", "desi chicken"],
-  ["कड़कनाथ", "kadaknath"], ["कडकनाथ", "kadaknath"], ["वनराजा", "vanaraja"], ["मुर्गी पालन", "poultry farming"],
-  ["कुक्कुटपालन", "poultry farming"], ["कुक्कुट पालन", "poultry farming"], ["पोल्ट्री", "poultry"], ["मुर्गियां", "chickens"],
-  ["मुर्गी", "chicken"], ["कोंबड्या", "chickens"], ["कोंबडी", "chicken"], ["चूजे", "chicks"], ["चूजा", "chick"], ["पिल्ले", "chicks"],
-  ["अंडे", "eggs"], ["अंडा", "egg"], ["अंडी", "eggs"], ["दाना", "feed"], ["खाद्य", "feed"], ["चारा", "feed"], ["शेड", "shed"],
-  ["टीकाकरण", "vaccination"], ["लसीकरण", "vaccination"], ["टीका", "vaccine"], ["बर्ड फ्लू", "bird flu"],
-  ["मृत्यु दर", "mortality"], ["मरतुक", "mortality"], ["ठेका", "contract"], ["करार", "contract"], ["अनुदान", "subsidy"],
-  ["सब्सिडी", "subsidy"], ["सबसिडी", "subsidy"], ["कर्ज", "loan"], ["ऋण", "loan"], ["गर्मी", "heat"], ["उष्णता", "heat"],
-  ["तापमान", "temperature"], ["रोग", "disease"], ["लागत", "cost"], ["खर्च", "cost"], ["जिला", "district"], ["जिल्हा", "district"],
-  ["मौसम", "weather"], ["हवामान", "climate"], ["सरकार", "government"], ["पानी", "water"], ["पाणी", "water"],
-  // Not a bare "लिटर", which is also a litre of water.
-  ["डीप लिटर", "deep litter"], ["डीप-लिटर", "deep litter"], ["बिछावन", "litter"], ["जगह", "space"], ["जागा", "space"],
-];
-
-function withEnglishFarmingTerms(text) {
-  return FARMING_TERMS.reduce((out, [local, english]) => out.split(local).join(` ${english} `), text).replace(/\s+/g, " ").trim();
-}
-
-const isFollowUp = (turns) =>
-  turns[turns.length - 1].content.split(/\s+/).length < 6 && turns.slice(0, -1).some((turn) => turn.role === "user");
-
-/**
- * What to search for, in English. The documents are in English, so a Hindi or Marathi question is translated
- * first. A short follow-up ("And gerbera?") is rewritten into a full question, because searching it together
- * with the earlier question finds the earlier topic instead. Both use the small "helper" lane; if it fails,
- * the plain retrieval query is searched (embeddings still work across languages, just less precisely).
- * Returns { query, standalone }: standalone is the rewritten follow-up, or null.
- */
-async function searchText(turns) {
-  const fallback = retrievalQuery(turns);
-  const followUp = isFollowUp(turns);
-  if (!followUp && !hasIndicScript(fallback)) return { query: fallback, standalone: null };
-
-  const question = withEnglishFarmingTerms(turns[turns.length - 1].content);
-  const previous = [...turns.slice(0, -1)].reverse().find((turn) => turn.role === "user");
-  try {
-    const english = await generateText(
-      followUp
-        ? {
-            system: "Rewrite the follow-up as one complete, standalone question in English about poultry farming in India, using the earlier question only for context. Reply with the question only.",
-            prompt: `Earlier question: ${withEnglishFarmingTerms(previous.content)}\nFollow-up: ${question}`,
-            maxTokens: 60,
-          }
-        : {
-            system: "Translate the user's message into English for a search about poultry farming in India. Reply with the translation only, no notes. Keep any English words as they are.",
-            prompt: question,
-            maxTokens: 80,
-          }
-    );
-    const text = english.trim();
-    if (!text || hasIndicScript(text)) return { query: fallback, standalone: null };
-    return { query: text, standalone: followUp ? text : null };
-  } catch {
-    return { query: fallback, standalone: null };
-  }
-}
-
 /**
  * A "what if" question is answered by the planner: the model only reads which change is asked about (on the helper
  * lane, so the chat's warm context survives), the calculator produces both sets of figures. Null for any other
@@ -522,40 +197,6 @@ async function planWhatIf(req, project, question) {
 const ASKS_FOR_INSTRUCTIONS =
   /\b(ignore|disregard|forget)\b.{0,30}\b(instructions?|rules|prompt)\b|\b(system|hidden)\s+prompt\b|\b(reveal|print|show|repeat)\b.{0,20}\b(your|the)\s+(instructions|rules|prompt)\b/i;
 const INSTRUCTIONS_REPLY = "I can't share or change my instructions, but I'm happy to help with your poultry farm: costs, schemes, birds, disease or climate.";
-
-/* ------------------------- checking figures in an answer ------------------------- */
-
-const DEVANAGARI_DIGITS = "०१२३४५६७८९";
-const asciiDigits = (text) => text.replace(/[०-९]/g, (digit) => String(DEVANAGARI_DIGITS.indexOf(digit)));
-const normaliseFigure = (figure) => figure.replace(/,/g, "").replace(/\.0+$/, "");
-const FIGURE_PATTERN = /(\d[\d,]*(?:\.\d+)?)\s?([A-Za-z%°]{0,3})/g;
-const DOSE_UNIT = /^(ml|l|g|kg|mg|mm|cm|m|ha|t|%|°|c|ec|sc|wp|sl|sq)$/i;
-const AMOUNT_UNIT = /^(kg|g|mg|ml|l)$/i;
-
-/**
- * Small models sometimes state a figure (a dose, a temperature, a rate) that is in none of the material they were
- * given. This lists every significant figure in the answer that appears in neither the passages the model saw
- * nor the project facts, so the reader is warned instead of trusting it. Citation numbers and list numbers are
- * ignored, as are small whole numbers without a unit.
- */
-function unverifiedFigures(answer, passages, facts) {
-  const shown = [passages.map((passage) => passage.text.slice(0, PASSAGE_CHARS)).join(" "), JSON.stringify(facts)].join(" ");
-  const shownAscii = asciiDigits(shown).replace(/(\d),(\d)/g, "$1$2");
-  const known = new Set([...shownAscii.matchAll(FIGURE_PATTERN)].map((match) => normaliseFigure(match[1])));
-  const body = asciiDigits(answer).replace(/\[\d{1,2}\]/g, " ").replace(/^\s*\d+[.)]\s/gm, " ");
-  const flagged = new Set();
-  for (const match of body.matchAll(FIGURE_PATTERN)) {
-    const figure = normaliseFigure(match[1]);
-    const unit = match[2] || "";
-    const significant = Number(figure) > 10 || figure.includes(".") || DOSE_UNIT.test(unit || "x");
-    // An amount ("50 kg") must appear with its unit: the bare number 50 elsewhere (a 50% subsidy) does not
-    // support it. A range counts ("2-3 kg" supports "2 kg").
-    const amountUnsupported = AMOUNT_UNIT.test(unit) &&
-      !new RegExp(`(^|[^\\d.])${figure.replace(".", "\\.")}(?![\\d.])[^a-z]{0,12}${unit}\\b`, "i").test(shownAscii);
-    if (significant && (!known.has(figure) || amountUnsupported)) flagged.add(`${match[1]}${unit && DOSE_UNIT.test(unit) ? unit : ""}`);
-  }
-  return [...flagged].slice(0, 6);
-}
 
 router.post("/chat", requireAuth, aiRateLimiter, requireAiConfigured, async (req, res) => {
   const turns = parseChatTurns(req.body?.messages);

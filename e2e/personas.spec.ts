@@ -150,7 +150,8 @@ test.describe("personas", () => {
     await page.getByLabel("Egg price (₹)", { exact: true }).fill("5");
     await expect(summary).not.toHaveText(before ?? "");
     await page.getByRole("button", { name: "Reset" }).first().click();
-    await expect(page.getByLabel("Egg price (₹)", { exact: true })).toHaveValue("6.5");
+    // Reset returns to Maharashtra's own egg price, not the national default.
+    await expect(page.getByLabel("Egg price (₹)", { exact: true })).toHaveValue("6.8");
 
     // NABARD's layer terms: a year of grace while the flock grows to point of lay.
     await goToStep(page, "Loan");

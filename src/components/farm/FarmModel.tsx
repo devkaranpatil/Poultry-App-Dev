@@ -8,7 +8,9 @@ import { flockSize } from '@/lib/flock';
 import { buildInteriorLayout, buildShedLayout, entryDepth, type RenderQuality } from './scene/shedLayout';
 import { ShedEntryModel, ShedFloor, ShedFrame, ShedRoof, ShedWalls, TunnelEquipment } from './scene/ShedStructure';
 import { BirdFlock, CageRows, FeedingModel, LitterFloor, SiteExtras } from './scene/ShedInterior';
-import { Swap, usePrefersReducedMotion, useSizeEase } from './scene/transitions';
+import { Swap } from './scene/transitions';
+import { useSizeEase } from './scene/sizeEase';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 
 /**
  * The whole poultry shed, built up in stages: 1 plinth and floor, 2 frame, 3 roof, 4 walls and entry, 5 cages,

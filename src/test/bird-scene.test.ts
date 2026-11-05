@@ -12,7 +12,7 @@ import {
   type InteriorInput,
   type RenderQuality,
 } from '@/components/farm/scene/shedLayout';
-import { tunnelFans } from '@/components/farm/scene/ShedStructure';
+import { tunnelFans } from '@/components/farm/scene/structureHelpers';
 import { flockSize } from '@/lib/flock';
 import { DEFAULT_CONFIG } from '@/types/farm';
 

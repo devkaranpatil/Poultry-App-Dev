@@ -14,7 +14,7 @@ import {
   disposeMaterial,
   resetShedTextures,
 } from '@/components/farm/scene/shedMaterials';
-import { InstanceSet, addSegment } from '@/components/farm/scene/instancing';
+import { InstanceSet, addSegment } from '@/components/farm/scene/instanceSet';
 import { ROOF_SHEET_OPTIONS } from '@/types/farm';
 
 /** A 2D context that records what is drawn, so the procedural textures can be built without a real canvas. */

@@ -20,7 +20,7 @@ import {
   resizePatch,
   roofSurface,
 } from '@/lib/sceneEdit';
-import { DESIGN_TABS } from '@/components/farm/DesignSidebar';
+import { DESIGN_TABS } from '@/components/farm/designTabs';
 
 // The recommended shed: 14 x 7 m, 2.1 m to the eaves, 3.5 m at the ridge, open-sided, broilers.
 const base: FarmConfig = { ...DEFAULT_CONFIG, state: 'Maharashtra', district: 'Nagpur' };

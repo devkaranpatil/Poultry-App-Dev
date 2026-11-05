@@ -1,21 +1,18 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Html, AdaptiveDpr } from '@react-three/drei';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { AdaptiveDpr } from '@react-three/drei';
 import * as THREE from 'three';
-import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { optionKey, type FarmConfig, type SetupSectionProgress } from '@/types/farm';
 import { useI18n } from '@/context/I18nContext';
 import { useTheme } from 'next-themes';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useEditHistory } from '@/hooks/useEditHistory';
-import { registerModelSnapshot } from '@/lib/modelSnapshot';
 import { hasSoftwareWebGL } from '@/lib/renderCapability';
-import { createOrientationChannel, type OrientationChannel } from '@/lib/orientationChannel';
+import { createOrientationChannel } from '@/lib/orientationChannel';
 import {
   PART_ORDER,
   cycleOptionPatch,
   handlesForPart,
-  partForObject,
   partLabelKey,
   type EditablePart,
   type FocusTarget,
@@ -30,12 +27,9 @@ import {
   readSkyChoice,
   resolveEnvironment,
   saveSceneChoice,
-  sceneReach,
   type EnvironmentChoice,
-  type EnvironmentId,
   type SkyId,
 } from '@/lib/sceneEnvironment';
-import { SceneEnvironment } from './scene/SceneEnvironment';
 import { EnvironmentPicker } from './EnvironmentPicker';
 import {
   formatModalLabel,
@@ -50,95 +44,15 @@ import {
   type ModalState,
   type ScreenPoint,
 } from '@/lib/modalTransform';
-import type { Vec3 } from '@/lib/viewMath';
 import type { CameraPreset, CameraRequest } from './CameraController';
-import { EditHandles, type DragState } from './scene/EditHandles';
-import { SelectionOutline } from './scene/SelectionOutline';
-import { OrientationReporter, ViewGizmo } from './ViewGizmo';
+import type { DragState } from './scene/EditHandles';
+import { ViewGizmo } from './ViewGizmo';
 import { PropertiesPanel } from './PropertiesPanel';
 import { ModeSwitch, NavigationTools, UndoRedo } from './ViewportTools';
 import { ShedTabIcon } from './ShedControls';
-
-/** What a G or S transform needs from the view: the house centre on screen, and metres per pixel there. */
-interface ModalProjector {
-  centre: (height: number) => ScreenPoint;
-  metresPerPixel: () => number;
-}
-
-function ModalProjectorRegistrar({ projector }: { projector: { current: ModalProjector | null } }) {
-  const { camera, gl } = useThree();
-  useEffect(() => {
-    projector.current = {
-      centre: (height) => {
-        camera.updateMatrixWorld();
-        const point = new THREE.Vector3(0, height / 2, 0).project(camera);
-        const rect = gl.domElement.getBoundingClientRect();
-        return { x: rect.left + ((point.x + 1) / 2) * rect.width, y: rect.top + ((1 - point.y) / 2) * rect.height };
-      },
-      metresPerPixel: () => {
-        const rect = gl.domElement.getBoundingClientRect();
-        const fov = camera instanceof THREE.PerspectiveCamera ? camera.fov : 45;
-        const distance = camera.position.length();
-        return (2 * distance * Math.tan(THREE.MathUtils.degToRad(fov) / 2)) / Math.max(rect.height, 1);
-      },
-    };
-    return () => {
-      projector.current = null;
-    };
-  }, [camera, gl, projector]);
-  return null;
-}
-
-/** Exposes a capture of the current view to the report exporters. */
-function SnapshotRegistrar() {
-  const { gl, scene, camera } = useThree();
-  useEffect(
-    () =>
-      registerModelSnapshot(() => {
-        // Render synchronously so the buffer holds a frame even without preserveDrawingBuffer.
-        gl.render(scene, camera);
-        return gl.domElement.toDataURL('image/jpeg', 0.9);
-      }),
-    [gl, scene, camera]
-  );
-  return null;
-}
-
-/**
- * With frameloop="demand", asks for a frame a few times a second so the ambient animations keep
- * moving. Used on software WebGL, where rendering at the display rate blocks the page's input.
- */
-function FrameRateCap({ fps }: { fps: number }) {
-  const invalidate = useThree((state) => state.invalidate);
-  useEffect(() => {
-    const timer = window.setInterval(() => invalidate(), 1000 / fps);
-    return () => window.clearInterval(timer);
-  }, [invalidate, fps]);
-  return null;
-}
-
-/** Test hook: where a named object appears on screen, so a browser test can click or drag it. Not in production builds. */
-function ProjectionTestHook() {
-  const { camera, gl, scene } = useThree();
-  useEffect(() => {
-    if (import.meta.env.PROD) return undefined;
-    const target = window as unknown as { __farmProject?: (name: string, centre?: boolean) => { x: number; y: number } | null };
-    // `centre` aims at the middle of the object's bounds; part groups such as doors sit at the house origin.
-    target.__farmProject = (name: string, centre = false) => {
-      const object = scene.getObjectByName(name);
-      if (!object) return null;
-      camera.updateMatrixWorld();
-      const world = centre ? new THREE.Box3().setFromObject(object).getCenter(new THREE.Vector3()) : object.getWorldPosition(new THREE.Vector3());
-      const point = world.project(camera);
-      const rect = gl.domElement.getBoundingClientRect();
-      return { x: rect.left + ((point.x + 1) / 2) * rect.width, y: rect.top + ((1 - point.y) / 2) * rect.height };
-    };
-    return () => {
-      delete target.__farmProject;
-    };
-  }, [camera, gl, scene]);
-  return null;
-}
+import { FrameRateCap, ModalProjectorRegistrar, SnapshotRegistrar, type ModalProjector } from './scene/canvasHelpers';
+import { LoadingFallback, Scene, type BuildStage, type RenderQuality } from './scene/ShedScene';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 
 interface MiddlePanelProps {
   config: FarmConfig;
@@ -155,228 +69,8 @@ interface MiddlePanelProps {
   onSelectedPartChange?: (part: EditablePart | null) => void;
 }
 
-type BuildStage = 1 | 2 | 3 | 4 | 5 | 6;
-type RenderQuality = 'high' | 'balanced' | 'lite';
 type QualityMode = 'auto' | RenderQuality;
 
-const MIN_CAMERA_DISTANCE = 2;
-
-const FOV = 45;
-
-const FarmModel = lazy(async () => {
-  const module = await import('./FarmModel');
-  return { default: module.FarmModel };
-});
-
-const CameraController = lazy(async () => {
-  const module = await import('./CameraController');
-  return { default: module.CameraController };
-});
-
-function LoadingFallback({ label }: { label: string }) {
-  return (
-    <Html center>
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        <span className="text-sm text-muted-foreground">{label}</span>
-      </div>
-    </Html>
-  );
-}
-
-function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(() =>
-    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      : false
-  );
-  useEffect(() => {
-    if (typeof window.matchMedia !== 'function') return undefined;
-    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const onChange = () => setReduced(query.matches);
-    query.addEventListener?.('change', onChange);
-    return () => query.removeEventListener?.('change', onChange);
-  }, []);
-  return reduced;
-}
-
-const isHandleObject = (object: THREE.Object3D | undefined) => {
-  let current: THREE.Object3D | null = object ?? null;
-  while (current) {
-    if (current.name === 'edit-handles') return true;
-    current = current.parent;
-  }
-  return false;
-};
-
-interface SceneProps {
-  config: FarmConfig;
-  buildStage: BuildStage;
-  quality: RenderQuality;
-  cameraRequest: CameraRequest | null;
-  focusHighlight: FocusTarget | null;
-  isDark: boolean;
-  editing: boolean;
-  selected: EditablePart | null;
-  hovered: EditablePart | null;
-  hoverEnabled: boolean;
-  onSelect: (part: EditablePart | null) => void;
-  onHover: (part: EditablePart | null) => void;
-  onFrame: (part: EditablePart) => void;
-  onConfigChange?: (patch: Partial<FarmConfig>) => void;
-  handleLabels: Record<ResizeKey, string>;
-  touch: boolean;
-  reducedMotion: boolean;
-  onDragChange: (state: DragState | null) => void;
-  onDragStart: () => void;
-  onDragEnd: () => void;
-  orientation: OrientationChannel;
-  /** Measurements drawn beside the house: those of the selected part only. */
-  guides: readonly ResizeKey[];
-  environment: EnvironmentId;
-  sky: SkyId;
-}
-
-function Scene({
-  config,
-  buildStage,
-  quality,
-  cameraRequest,
-  focusHighlight,
-  isDark,
-  editing,
-  selected,
-  hovered,
-  hoverEnabled,
-  onSelect,
-  onHover,
-  onFrame,
-  onConfigChange,
-  handleLabels,
-  touch,
-  reducedMotion,
-  onDragChange,
-  onDragStart,
-  onDragEnd,
-  orientation,
-  guides,
-  environment,
-  sky,
-}: SceneProps) {
-  const orbitControlsRef = useRef<OrbitControlsImpl | null>(null);
-  const gl = useThree((state) => state.gl);
-  // The starting camera spot only; afterwards config changes must never move the camera.
-  const [initialPosition] = useState<Vec3>(() => [config.width * 1.5, config.ridgeHeight * 2, config.length * 1.2]);
-  const reach = sceneReach(config.length, config.width);
-  const cameraLimits = useMemo(
-    () => ({ minDistance: MIN_CAMERA_DISTANCE, maxDistance: reach.maxDistance }),
-    [reach.maxDistance]
-  );
-  const revision = `${config.length}|${config.width}|${config.eavesHeight}|${config.ridgeHeight}|${config.housingSystem}|${config.roofType}|${config.frameMaterial}|${config.roofSheet}|${config.sideWalls}|${config.entry}|${config.birdType}|${config.cageTiers}|${config.feedingSystem}|${config.stockingDensity}|${buildStage}`;
-
-  useEffect(() => {
-    gl.domElement.style.cursor = editing && hovered ? 'pointer' : '';
-  }, [gl, editing, hovered]);
-
-  const partAt = (event: ThreeEvent<PointerEvent | MouseEvent>) => {
-    const first = event.intersections[0]?.object;
-    if (isHandleObject(first)) return undefined; // a grip in front of the model takes the pointer
-    return partForObject(event.object);
-  };
-
-  return (
-    <>
-      <PerspectiveCamera makeDefault position={initialPosition} fov={FOV} />
-      <OrbitControls
-        ref={orbitControlsRef}
-        makeDefault
-        enablePan
-        enableZoom
-        enableRotate
-        enableDamping
-        dampingFactor={0.08}
-        minDistance={cameraLimits.minDistance}
-        maxDistance={cameraLimits.maxDistance}
-        maxPolarAngle={Math.PI / 2 - 0.05}
-      />
-      <CameraController
-        config={config}
-        orbitControlsRef={orbitControlsRef}
-        request={cameraRequest}
-        reducedMotion={reducedMotion}
-        limits={cameraLimits}
-      />
-      <OrientationReporter channel={orientation} />
-
-      <SceneEnvironment
-        environment={environment}
-        sky={sky}
-        quality={quality}
-        isDark={isDark}
-        reach={reach}
-        length={config.length}
-        width={config.width}
-        height={config.ridgeHeight}
-      />
-
-      {/* The shed. Clicking a part selects it, double-clicking frames it. */}
-      <group
-        onClick={(event) => {
-          // A finger wobbles more than a mouse: allow more travel before a tap counts as a drag.
-          if (!editing || event.delta > (touch ? 14 : 6)) return;
-          const part = partAt(event);
-          if (part === undefined) return;
-          event.stopPropagation();
-          onSelect(part);
-        }}
-        onDoubleClick={(event) => {
-          if (!editing) return;
-          const part = partAt(event);
-          if (!part) return;
-          event.stopPropagation();
-          onSelect(part);
-          onFrame(part);
-        }}
-        onPointerMove={
-          hoverEnabled
-            ? (event) => {
-                const part = partAt(event);
-                if (part === undefined) return;
-                event.stopPropagation();
-                if (part !== hovered) onHover(part);
-              }
-            : undefined
-        }
-        onPointerOut={hoverEnabled ? () => onHover(null) : undefined}
-      >
-        <FarmModel
-          config={config}
-          buildStage={buildStage}
-          quality={quality}
-          focusHighlight={focusHighlight}
-          guides={guides}
-        />
-      </group>
-
-      {editing ? <SelectionOutline selected={selected} hovered={hoverEnabled ? hovered : null} config={config} revision={revision} /> : null}
-      {editing && onConfigChange ? (
-        <EditHandles
-          config={config}
-          part={selected}
-          onChange={onConfigChange}
-          orbitControlsRef={orbitControlsRef}
-          labels={handleLabels}
-          touch={touch}
-          reducedMotion={reducedMotion}
-          onDragChange={onDragChange}
-          onDragStart={onDragStart}
-          onDragEnd={onDragEnd}
-        />
-      ) : null}
-      <ProjectionTestHook />
-    </>
-  );
-}
 
 const VIEW_PRESET: Record<ViewName, CameraPreset> = {
   auto: 'auto',
@@ -785,7 +479,7 @@ export function MiddlePanel({
   const frameLabel = selectedPart ? t('viewport.frameSelected') : t('viewport.frameAll');
   const guides = useMemo<ResizeKey[]>(
     () => (editing ? handlesForPart(selectedPart).filter((key): key is ResizeKey => key !== 'corner') : []),
-    [editing, selectedPart, config]
+    [editing, selectedPart]
   );
   const rightGutter = 12;
 

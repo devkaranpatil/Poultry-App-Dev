@@ -62,7 +62,6 @@ function evaluator(workbook: Workbook) {
     const ROUND = (x: number, d: number) => Math.round(x * 10 ** d) / 10 ** d;
     const AND = (...xs: unknown[]) => xs.every(Boolean);
     const PMT = (rate: number, n: number, pv: number) => (rate === 0 ? -pv / n : (-pv * rate) / (1 - (1 + rate) ** -n));
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval
     return new Function('IF', 'MIN', 'SUM', 'ROUND', 'AND', 'PMT', `return (${js});`)(IF, MIN, SUM, ROUND, AND, PMT) as number | string;
   };
   return { value: valueOf };

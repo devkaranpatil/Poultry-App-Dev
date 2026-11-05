@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { messages } from '@/i18n/messages';
 import { STEPS } from '@/components/workspace/steps';
-import { DESIGN_TABS } from '@/components/farm/DesignSidebar';
+import { DESIGN_TABS } from '@/components/farm/designTabs';
 import {
   BIRD_OPTIONS,
   CATEGORY_OPTIONS,
