@@ -5,6 +5,7 @@ const { CPCB_THRESHOLD_BIRDS } = require("../../data/poultry/siting");
 const LANGUAGES = { en: "English", hi: "Hindi", mr: "Marathi" };
 const PASSAGE_CHARS = 650; // per retrieved passage in the prompt (every ~3.5 characters costs the model a token)
 
+const inr = (value) => `Rs ${Math.round(value).toLocaleString("en-IN")}`;
 const round = (value) => (value === null || value === undefined ? null : Math.round(value));
 
 /** Everything the model may quote about this project, all computed by the planner. */
@@ -42,6 +43,17 @@ function buildProjectFacts(config, result) {
       heatStressMonths: result.climate.heatStress?.severeMonths ?? [],
       advisories: result.climate.advisories,
     },
+    // The rules that bind this farm, and the CPCB ones that do not: shown only the first, the model listed the CPCB
+    // distances from the SOURCES for a 1,054-bird farm. Kept before the costs and schemes, which grow with the state:
+    // behind Maharashtra's four schemes the model ignored them.
+    siting: {
+      rulesForThisFarm: result.siting.map((rule) => rule.description + (rule.distanceM ? ` (at least ${rule.distanceM} m)` : "")),
+      notForThisFarm:
+        result.flock.birds > CPCB_THRESHOLD_BIRDS
+          ? null
+          : `The CPCB siting distances and the pollution control consent apply only above ${CPCB_THRESHOLD_BIRDS.toLocaleString("en-IN")} birds, so not to this farm of ${result.flock.birds.toLocaleString("en-IN")}. ` +
+            `The rules in rulesForThisFarm still apply to it: ${result.siting.map((rule) => rule.description).join("; ")}.`,
+    },
     // Each name says what the figure covers: with a short name ("project") the model quoted NABARD's unit cost as
     // the project's total.
     costInr: {
@@ -53,6 +65,13 @@ function buildProjectFacts(config, result) {
       equipment: result.cost.equipmentCost,
       nabardUnitCostForThisFlock: result.nabard?.normCostInr ?? null,
     },
+    // The comparison in words: with only the number, the model quoted another state's unit from the SOURCES.
+    nabardComparison: result.nabard
+      ? `NABARD's unit cost for this flock is ${inr(result.nabard.normCostInr)} (${result.nabard.state} ${result.nabard.year}, ` +
+        `${inr(result.nabard.perBirdInr)} a bird); this project's ${result.nabard.capitalOnly ? "capital" : "total"} cost of ` +
+        `${inr(result.nabard.ownCostInr)} is ${Math.round((result.nabard.ratio ?? 0) * 100)}% of it.` +
+        (result.nabard.otherState ? ` The state has no NABARD units of its own yet, so ${result.nabard.state}'s are used.` : "")
+      : null,
     // Every scheme checked, with its verdict; noneApplies means the bank loan carries the project.
     schemes: {
       noneApplies: result.schemes.noneApplies,
@@ -63,15 +82,6 @@ function buildProjectFacts(config, result) {
         amountInr: scheme.amountInr,
         reasons: scheme.reasons,
       })),
-    },
-    // The rules that bind this farm, and the CPCB ones that do not: shown only the first, the model listed the CPCB
-    // distances from the SOURCES for a 1,054-bird farm.
-    siting: {
-      rulesForThisFarm: result.siting.map((rule) => rule.description + (rule.distanceM ? ` (at least ${rule.distanceM} m)` : "")),
-      notForThisFarm:
-        result.flock.birds > CPCB_THRESHOLD_BIRDS
-          ? null
-          : `The CPCB siting distances and the pollution control consent apply only above ${CPCB_THRESHOLD_BIRDS.toLocaleString("en-IN")} birds, so not to this farm of ${result.flock.birds.toLocaleString("en-IN")}.`,
     },
     yearlyFigures: {
       batchesPerYear: Math.round(r.cyclesPerYear * 10) / 10,

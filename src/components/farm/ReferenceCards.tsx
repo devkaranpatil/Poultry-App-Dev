@@ -88,7 +88,11 @@ export function NabardCard({ nabard }: { nabard: NabardComparison }) {
       </p>
       <dl className="grid grid-cols-2 gap-2 text-sm">
         <div>
-          <dt className="text-xs text-muted-foreground">{t('nabard.norm', { birds: formatNumber(nabard.unitBirds), perBird: formatINR(nabard.perBirdInr) })}</dt>
+          <dt className="text-xs text-muted-foreground">
+            {nabard.perBirdNorm
+              ? t('nabard.perBirdNorm', { perBird: formatINR(nabard.perBirdInr) })
+              : t('nabard.norm', { birds: formatNumber(nabard.unitBirds), perBird: formatINR(nabard.perBirdInr) })}
+          </dt>
           <dd className="font-semibold tabular-nums text-foreground">{formatINR(nabard.normCostInr)}</dd>
         </div>
         <div>

@@ -70,7 +70,8 @@ describe('StepViews', () => {
     expect(screen.getByTestId('nabard-card')).toHaveTextContent('(Maharashtra, 2026-27): Deep litter, all in all out');
     const schemes = screen.getByTestId('schemes-card');
     expect(within(schemes).getAllByText('Not eligible')).toHaveLength(2);
-    expect(within(schemes).getByText(/Mukhyamantri Gramin Pashudhan/)).toBeInTheDocument();
+    expect(within(schemes).getByText(/Mukhyamantri Gramin Pashudhan Udyojakta Yojana \(poultry\)/)).toBeInTheDocument();
+    expect(within(schemes).getByText(/interest subvention on a poultry loan/)).toBeInTheDocument();
   });
 
   it('walks on to the next step and back', () => {

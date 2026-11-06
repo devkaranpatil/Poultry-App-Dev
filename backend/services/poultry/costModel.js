@@ -265,6 +265,8 @@ function nabardComparison({ birdType, housingSystem, farmingModel = "independent
     // True when the project's state has no units yet and another state's stand in.
     otherState: own.length === 0,
     unitBirds: nearest.birds,
+    // A booklet that prints only a cost per bird, with no unit size, is kept as a one-bird row.
+    perBirdNorm: nearest.birds === 1,
     unitCostInr: nearest.unitCostInr,
     perBirdInr: round(perBird),
     normCostInr,

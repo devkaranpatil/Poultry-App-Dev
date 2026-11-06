@@ -4,9 +4,15 @@ const knowledge = require("../rag");
 
 const PROMPT_CHAT_TURNS = 6; // actually sent to the model: older turns only cost time on a CPU
 
-/** Passages about this project's district, bird and shed rank higher when they also match the question. */
+/**
+ * Passages about this project's state, district, bird and shed rank higher when they also match the question. The state
+ * boost keeps the project's own NABARD units ahead of the other 27 states' (asked about "this flock", the model quoted
+ * West Bengal's for a Maharashtra farm).
+ */
 function projectBoosts(config) {
+  const state = config.stateName || config.state;
   return [
+    state ? { tag: "state", value: state, factor: 1.8 } : null,
     config.district ? { tag: "district", value: config.district, factor: 1.8 } : null,
     config.birdType ? { tag: "bird", value: config.birdType, factor: 1.08 } : null,
     config.housingSystem ? { tag: "housing", value: config.housingSystem, factor: 1.08 } : null,

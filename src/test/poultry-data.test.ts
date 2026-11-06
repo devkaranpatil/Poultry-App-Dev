@@ -211,6 +211,39 @@ describe('schemes', () => {
     expect((broiler.reasons as string[]).join(' ')).toMatch(/commercial broiler/);
   });
 
+  it("offers Maharashtra's 4% interest subvention as an alternative, paying nothing up front and up to Rs 4,00,000", () => {
+    const interest = byId(computeSchemes({ birdType: 'layer-cage', state: 'Maharashtra', capitalCostInr: 5_000_000, flockSize: 5000 }), 'mh-mgpuy-interest');
+    expect(interest).toMatchObject({ status: 'check', interestSubventionPct: 4, capInr: 400_000, amountInr: 0, percent: null, verified: true });
+    expect((interest.reasons as string[]).join(' ')).toMatch(/no other central or state subsidy/);
+    expect(byId(computeSchemes({ birdType: 'layer-cage', state: 'Gujarat', capitalCostInr: 5_000_000 }), 'mh-mgpuy-interest')).toBeUndefined();
+  });
+
+  it("applies other states' own schemes from their orders: share, unit cap, fixed amount, interest and minimum size", () => {
+    // Bihar: 50% for SC/ST on a 3,000-bird broiler unit of Rs 10 lakh, so at most Rs 5 lakh.
+    expect(byId(computeSchemes({ birdType: 'broiler', state: 'Bihar', category: 'sc-st', capitalCostInr: 1_200_000, flockSize: 3000 }), 'br-broiler-farm'))
+      .toMatchObject({ status: 'check', percent: 50, capInr: 500_000, amountInr: 500_000, cappedAtInr: 500_000, verified: true });
+    // Odisha: the nearest layer unit to 2,200 birds is 2,000 (Rs 16.45 lakh); 50% of a smaller project is paid in full.
+    expect(byId(computeSchemes({ birdType: 'layer-cage', state: 'Odisha', capitalCostInr: 1_000_000, flockSize: 2200 }), 'od-pssy-layer'))
+      .toMatchObject({ percent: 50, capInr: 822_500, amountInr: 500_000, cappedAtInr: null });
+    // Uttarakhand pays a fixed Rs 60,000 for a broiler unit, and has nothing for layers under that order.
+    expect(byId(computeSchemes({ birdType: 'broiler', state: 'Uttarakhand', capitalCostInr: 400_000, flockSize: 500 }), 'uk-broiler-farm'))
+      .toMatchObject({ amountInr: 60_000, capInr: 60_000, percent: null });
+    expect(byId(computeSchemes({ birdType: 'layer-cage', state: 'Uttarakhand', capitalCostInr: 400_000, flockSize: 500 }), 'uk-broiler-farm').status).toBe('not-eligible');
+    // Uttar Pradesh reimburses 7% interest, up to the nearest unit's limit.
+    expect(byId(computeSchemes({ birdType: 'layer-cage', state: 'Uttar Pradesh', capitalCostInr: 20_000_000, flockSize: 25000 }), 'up-poultry-policy-2022'))
+      .toMatchObject({ interestSubventionPct: 7, capInr: 3_771_000, amountInr: 0 });
+    // Goa caps 75% at the order's Rs 6 lakh for a broiler unit.
+    expect(byId(computeSchemes({ birdType: 'broiler', state: 'Goa', capitalCostInr: 900_000, flockSize: 2000 }), 'ga-poultry-infrastructure'))
+      .toMatchObject({ capInr: 600_000, amountInr: 600_000, verified: false });
+    // Assam's policy is for big farms only.
+    expect(byId(computeSchemes({ birdType: 'layer-cage', state: 'Assam', capitalCostInr: 5_000_000, flockSize: 10000 }), 'as-poultry-policy-2024').status).toBe('not-eligible');
+    expect(byId(computeSchemes({ birdType: 'layer-cage', state: 'Assam', capitalCostInr: 40_000_000, flockSize: 60000 }), 'as-poultry-policy-2024'))
+      .toMatchObject({ status: 'check', amountInr: 13_200_000 });
+    // Tamil Nadu funds desi units only.
+    expect(byId(computeSchemes({ birdType: 'desi', state: 'Tamil Nadu', capitalCostInr: 400_000, flockSize: 250 }), 'tn-country-chicken')).toMatchObject({ capInr: 165_625, amountInr: 165_625 });
+    expect(byId(computeSchemes({ birdType: 'broiler', state: 'Tamil Nadu', capitalCostInr: 400_000, flockSize: 250 }), 'tn-country-chicken').status).toBe('not-eligible');
+  });
+
   it('matches the scheme rules published in datasets/csv', () => {
     const rows = csv('poultry_scheme_rules.csv');
     expect(rows.map((row) => row.scheme_id).sort()).toEqual(Object.keys(SCHEMES).sort());

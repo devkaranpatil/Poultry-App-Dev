@@ -1,21 +1,17 @@
 # 12. NABARD unit costs and schemes for more states
 
-**Status:** Maharashtra done (2026-11-05). Unit costs (NABARD 2025-26) are transcribed and used by `nabardComparison`. The scheme is read from the official GR on gr.maharashtra.gov.in: DAHD-14017/1/2026-AH4 of 9 March 2026, State Plan Scheme (unique code 202603091924368401), with its corrigendum of 27 August 2026 (202608271649419545), which changes nothing for poultry. Both are in the knowledge manifest. NABARD poultry unit costs for all 28 states added 2026-11-05 (161 rows in `datasets/csv/nabard_poultry_unit_costs.csv`, 2025-26 or 2026-27, each total checked against its booklet page). Still open: commercial broiler and layer totals for Andhra Pradesh and Telangana (their booklets print only per-bird and per-sq-ft norms), cage-layer units for Himachal Pradesh, Kerala, Rajasthan, Sikkim, Uttar Pradesh and Uttarakhand (they fall back to Jharkhand's), and state schemes other than Maharashtra's.
+**Status:** done (2026-11-06). NABARD poultry unit costs for all 28 states (165 rows, 2025-26 or 2026-27, each total checked against its booklet page; Andhra Pradesh and Telangana as per-bird norms because their booklets print no unit totals). State schemes from official orders for Maharashtra (capital subsidy and 4% interest subvention), Bihar, Odisha, Uttarakhand, Uttar Pradesh and Assam, plus unverified ones from department pages, handbills or press releases for Goa, Himachal Pradesh, Jharkhand, Tamil Nadu and Arunachal Pradesh. No in-force state poultry farm scheme was found for the other 16 states. Each scheme has a test in `src/test/poultry-data.test.ts`.
 
-## Why it is open
+## What is still open (not blocking)
 
-- **Unit costs:** NABARD publishes unit costs per state (each regional office). Only Jharkhand (2023-24), Maharashtra
-  (2025-26) and Tamil Nadu (2026-27) are transcribed (`datasets/csv/nabard_poultry_unit_costs.csv`); a project in any other state is compared with
-  Jharkhand's figures. Banks finance against their own state's.
-- **State schemes:** only Maharashtra's scheme is in the planner.
-
-Where unit costs are: NABARD's state-wise unit cost page, https://www.nabard.org/info-centre-statewise-masterunitcost.aspx?cid=669&id=24,
-lists every state's booklet for 2025-26 and 2026-27. It blocks scripted requests, so pick the state and year in a browser; the
-PDF links it gives download normally. Several booklets are scans with no text layer, so their figures have to be read from the page.
-
-Finding a Maharashtra GR: on gr.maharashtra.gov.in pick the department, put the date as YYYYMMDD in Unique Code (it accepts
-part of a code), and use the old department name for orders before 24 June 2026. A GR's PDF is at
-`https://gr.maharashtra.gov.in/Site/Upload/Government%20Resolutions/Marathi/<unique code>.pdf`.
+- Cage-layer units fall back to Jharkhand's in Himachal Pradesh, Kerala, Rajasthan, Sikkim, Uttar Pradesh and Uttarakhand: their
+  booklets have no cage-layer unit.
+- Gujarat's poultry schemes (1,000-broiler, 100-broiler and RIR/Kadaknath units) exist, but their terms load only in a browser on
+  the Animal Husbandry Directorate's site; read them there and add them. Meghalaya's CM-ELEVATE and Andhra Pradesh's Poultry
+  Development Policy 2026-29 need their official orders. Karnataka's Pashu Bhagya has no guideline newer than 2019-20.
+- The unverified schemes (Goa, Himachal Pradesh, Jharkhand, Tamil Nadu, Arunachal Pradesh) need their order numbers.
+- Left out on purpose: Uttarakhand's CM State Livestock Mission (enrolment window likely closed) and Poultry Valley
+  (cooperative members only), Assam's 2024-25 SCOPE and egg programmes, West Bengal's layer incentive (ended Aug 2025).
 
 ## What to do
 

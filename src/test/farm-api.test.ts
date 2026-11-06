@@ -57,7 +57,7 @@ describe('farm API integration', () => {
     expect(data.cost.capitalCost).toBeGreaterThan(400000);
     expect(data.cost.projectCost).toBe(data.cost.capitalCost + data.cost.workingCapital.total);
     expect(data.nabard).toMatchObject({ state: 'Maharashtra', year: '2026-27', unitBirds: 5000, otherState: false }); // Nagpur: Maharashtra's own units
-    expect(data.schemes.schemes).toHaveLength(3);
+    expect(data.schemes.schemes).toHaveLength(4);
     expect(data.siting.length).toBeGreaterThan(0);
     expect(data.climate.heatStress.severeMonths).toEqual(['APR', 'MAY', 'JUN']);
     expect(data.returns.cyclesPerYear).toBeCloseTo(365 / 56, 6);
