@@ -88,9 +88,13 @@ describe('poultry cost model', () => {
     const maharashtra = costModel.nabardComparison({ birdType: 'broiler', housingSystem: 'open-sided', stateName: 'Maharashtra', flockSize: 1000, projectCost: 500000 });
     expect(maharashtra).toMatchObject({ state: 'Maharashtra', year: '2026-27', system: 'Deep litter, all in all out', unitBirds: 5000, otherState: false, capitalOnly: false });
     expect(maharashtra.perBirdInr).toBe(460); // Rs 23,02,055 for 5,000 birds
-    // Andhra Pradesh's booklet prints broiler norms per bird only, with no unit total, so Jharkhand's units stand in.
-    const andhra = costModel.nabardComparison({ birdType: 'broiler', housingSystem: 'open-sided', stateName: 'Andhra Pradesh', flockSize: 1000, projectCost: 500000 });
-    expect(andhra).toMatchObject({ state: 'Jharkhand', unitBirds: 1000, otherState: true });
+    // Every state in the planner has broiler units now; a place outside the list still gets Jharkhand's.
+    const delhi = costModel.nabardComparison({ birdType: 'broiler', housingSystem: 'open-sided', stateName: 'Delhi', flockSize: 1000, projectCost: 500000 });
+    expect(delhi).toMatchObject({ state: 'Jharkhand', unitBirds: 1000, otherState: true });
+    // Andhra Pradesh prints only a cost per bird (Rs 400-450, the top is kept), so the norm scales with the flock.
+    const andhra = costModel.nabardComparison({ birdType: 'broiler', housingSystem: 'open-sided', stateName: 'Andhra Pradesh', flockSize: 3000, projectCost: 1200000 });
+    expect(andhra).toMatchObject({ state: 'Andhra Pradesh', year: '2026-27', perBirdNorm: true, perBirdInr: 450, normCostInr: 1350000, otherState: false });
+    expect(costModel.nabardComparison({ birdType: 'broiler', housingSystem: 'open-sided', stateName: 'Tamil Nadu', flockSize: 8000, projectCost: 1 }).perBirdNorm).toBe(false);
     const tamilNadu = costModel.nabardComparison({ birdType: 'broiler', housingSystem: 'open-sided', stateName: 'Tamil Nadu', flockSize: 8000, projectCost: 4000000 });
     expect(tamilNadu).toMatchObject({ state: 'Tamil Nadu', year: '2026-27', unitBirds: 10000, otherState: false });
     expect(tamilNadu.perBirdInr).toBe(599); // Rs 59,89,000 for 10,000 birds
@@ -271,6 +275,7 @@ describe('poultry calculator', () => {
       'nlm-edp-rural-poultry:not-eligible',
       'ahidf:not-eligible',
       'mh-mgpuy-poultry:check',
+      'mh-mgpuy-interest:check',
     ]);
     expect(result.siting.map((rule: { id: string }) => rule.id)).toEqual(['existing-farms', 'registration']);
     expect(result.climate.heatStress.severeMonths).toEqual(['APR', 'MAY', 'JUN']);

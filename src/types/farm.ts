@@ -225,6 +225,8 @@ export interface NabardComparison {
   /** A contract unit (no chicks or feed): only the capital cost is compared. */
   capitalOnly: boolean;
   unitBirds: number;
+  /** The state's booklet prints only a cost per bird, with no unit size (unitBirds is 1). */
+  perBirdNorm?: boolean;
   unitCostInr: number;
   perBirdInr: number;
   normCostInr: number;
