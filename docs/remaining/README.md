@@ -4,13 +4,13 @@ What is left after the polyhouse to poultry migration (all seven phases are merg
 `phase-7`; the polyhouse code is on the `polyhouse` tag). One file per task. Each says what the task is, why it is
 open, what to do, and how to check it is done.
 
-Last updated: 2026-11-05.
+Last updated: 2026-11-06.
 
 ## The AI assistant
 
 | # | Task | Who | Size |
 |---|---|---|---|
-| 01 | [Run the assistant evaluation to the end](01-run-ai-evaluation.md) (78 of 85; five fixed, to rerun; two open) | developer | small |
+| 01 | [Run the assistant evaluation to the end](01-run-ai-evaluation.md) (74 of 85 on 2026-11-06; project and NABARD questions fixed since; seven open) | developer | small |
 | 02 | [What-if answers quote the wrong column](02-fix-what-if-answers.md) | developer | small |
 | 03 | [An impossible change gets no limit](03-fix-impossible-change.md) | developer | small |
 | 04 | [Project cost questions quote the wrong figure](04-fix-project-cost-figures.md) | developer | small |
@@ -28,7 +28,7 @@ The full run of 01 passed 65 of 85 on the old code (2026-10-23) and 78 of 85 on 
 | 09 | [Check the unverified rates and the default prices](09-check-rates-and-prices.md) | someone who can get current quotes | medium |
 | 10 | [Native review of Hindi and Marathi](10-review-hindi-marathi.md) | native speakers | medium |
 | 11 | [Fetch the CPCB guideline text](11-fetch-cpcb-guideline.md) | developer | small |
-| 12 | [NABARD unit costs and schemes for more states](12-more-states.md) (Maharashtra done 2026-11-05) | developer or researcher | medium per state |
+| 12 | [NABARD unit costs and schemes for more states](12-more-states.md) (done 2026-11-06: all 28 states' unit costs, 11 states' schemes) | developer or researcher | medium per state |
 
 ## Clean-up
 

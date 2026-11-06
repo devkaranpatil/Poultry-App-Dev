@@ -1,5 +1,7 @@
 # 01. Run the assistant evaluation to the end
 
+**Status (2026-11-06):** full run after task 12 (28 states' NABARD units and 11 states' schemes) on a CPU laptop: **74 of 85**. The drop came from the new data: three NABARD questions asked for "NABARD's unit cost" with no state (now they name Jharkhand 2023-24), the model quoted another state's unit for this project (now NABARD and scheme passages are tagged by state and the project's state is boosted, and the facts carry the comparison in words), and it dropped the siting rules behind the longer scheme list (now listed earlier, and the under-5,000-birds note names the rules that still apply). Reruns: all 12 project questions and the 3 NABARD questions pass. Still failing: shed-heights, space-broiler, litter-max, edge-typos, hi-broiler-space, and edge-no-source-quail and edge-follow-up, which fail on the code before task 12 too. Reports: `backend/.data/eval-2026-11-05T17-17-22-282Z.txt` (full) and the four after it.
+
 **Status (2026-11-05):** rerun after the price changes on a CPU laptop: **79 of 85**. All 23 project and what-if questions
 pass on the new figures. Open fact failures (wording or retrieval, not figures): shed-heights, space-broiler, litter-max,
 nabard-layer-1000, plus edge-typos and hi-broiler-space. Reports: `backend/.data/eval-2026-11-04T19-36-44-040Z.txt` and the

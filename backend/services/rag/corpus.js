@@ -111,11 +111,14 @@ function unitCostDocument() {
   return documentFromPassages(
     doc,
     rows.map((row) => ({
-      section: `${row.bird_type} ${row.birds} birds`,
-      tags: { bird: row.bird_type },
+      section: `${row.state} ${row.year}: ${row.bird_type} ${row.birds} birds`,
+      tags: { bird: row.bird_type, state: row.state },
       text:
-        `NABARD unit cost (${row.state}, ${row.year}): ${row.bird_type}, ${row.system}, ${Number(row.birds).toLocaleString("en-IN")} birds: ` +
-        `${inr(row.unit_cost_inr)} for the unit, repaid over ${row.repayment_years} years. ` +
+        `NABARD unit cost (${row.state}, ${row.year}): ${row.bird_type}, ${row.system}, ` +
+        (Number(row.birds) === 1
+          ? `${inr(row.unit_cost_inr)} a bird (the booklet gives no unit size)`
+          : `${Number(row.birds).toLocaleString("en-IN")} birds: ${inr(row.unit_cost_inr)} for the unit`) +
+        (row.repayment_years ? `, repaid over ${row.repayment_years} years. ` : ". ") +
         `${row.notes ? `${row.notes}. ` : ""}Banks finance against the unit cost of their own state; other states publish different figures. Source: ${row.source_document}.`,
     }))
   );
@@ -175,6 +178,7 @@ function schemeRulesDocument() {
     const verified = String(row.verified).toLowerCase() === "true";
     return {
       section: row.scheme,
+      ...(row.state ? { tags: { state: row.state } } : {}),
       status: verified ? "current" : "unverified",
       note: verified ? undefined : "Not confirmed from the official notification; check with the state animal husbandry department.",
       text:

@@ -259,7 +259,7 @@
   {
    "id": "nabard-broiler-1000",
    "kind": "fact",
-   "question": "What is NABARD's unit cost for a 1,000-bird broiler unit?",
+   "question": "What is NABARD's 2023-24 unit cost in Jharkhand for a 1,000-bird broiler unit?",
    "mustMatch": [
     "5,?94,?000|5\\.94 ?lakh"
    ],
@@ -269,7 +269,7 @@
   {
    "id": "nabard-layer-1000",
    "kind": "fact",
-   "question": "What is NABARD's unit cost for 1,000 layers in cages?",
+   "question": "What is NABARD's 2023-24 unit cost in Jharkhand for 1,000 layers in cages?",
    "mustMatch": [
     "6,?42,?000|6\\.42 ?lakh"
    ],
@@ -289,7 +289,7 @@
   {
    "id": "equipment-rate",
    "kind": "fact",
-   "question": "How much does NABARD allow for equipment per broiler?",
+   "question": "How much does NABARD's 2023-24 Jharkhand unit cost allow for equipment per broiler?",
    "mustMatch": [
     "\\b45\\b"
    ],
