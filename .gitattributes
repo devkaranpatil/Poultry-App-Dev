@@ -1,0 +1,3 @@
+# Server files run on Linux: keep LF whatever the checkout machine uses.
+*.sh text eol=lf
+deploy/** text eol=lf
