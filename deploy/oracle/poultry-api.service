@@ -1,0 +1,19 @@
+# The Poultry Planner API as a systemd service. setup.sh fills in __USER__ and __APP_DIR__ and installs it as
+# /etc/systemd/system/poultry-api.service. The API reads its settings from backend/.env itself.
+[Unit]
+Description=Poultry Planner API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+WorkingDirectory=__APP_DIR__/backend
+ExecStart=/usr/bin/node index.js
+Restart=on-failure
+RestartSec=5
+# The AI models load into memory at start; give it time before systemd calls it failed.
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target

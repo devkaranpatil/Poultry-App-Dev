@@ -1,0 +1,9 @@
+# HTTPS in front of the API. setup.sh fills in __DOMAIN__ and installs it as /etc/caddy/Caddyfile; Caddy gets and
+# renews the certificate by itself.
+__DOMAIN__ {
+	encode gzip
+	reverse_proxy 127.0.0.1:5000 {
+		# Pass the advisor's streamed answer through as it is written.
+		flush_interval -1
+	}
+}

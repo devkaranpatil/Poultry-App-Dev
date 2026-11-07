@@ -10,8 +10,9 @@ const { createEmbeddingStore, hashText } = require("./embeddingStore");
 const { createRetriever } = require("./retriever");
 const { focusPassage, splitQuestion } = require("./text");
 
-const QUERY_EMBED_TIMEOUT_MS = 10_000;
-const RERANK_TIMEOUT_MS = 40_000;
+// A small server (two cores) needs longer; past the limit the search falls back to keywords or the hybrid order.
+const QUERY_EMBED_TIMEOUT_MS = Number(process.env.RAG_EMBED_TIMEOUT_MS) || 10_000;
+const RERANK_TIMEOUT_MS = Number(process.env.RAG_RERANK_TIMEOUT_MS) || 40_000;
 const RERANK_POOL = 10; // candidates the reranker reads per question (about half a second each on a laptop CPU)
 const SHOWN_CHARS = 650; // the part of each passage the reranker and the model read
 // Passages from one document in the final context. The planner's own pages (bird list, cost model) match many

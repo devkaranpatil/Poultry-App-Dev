@@ -148,5 +148,6 @@ npm run ci                # lint + types + coverage + build, exactly as CI runs 
 
 ## Production notes
 
+- **Free hosting walk-through:** [docs/deploy.md](docs/deploy.md) (Cloudflare Pages, Oracle Cloud Always Free in Hyderabad, DuckDNS and Caddy; scripts in `deploy/oracle`).
 - Set `NODE_ENV=production`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `DATABASE_URL` (the Supabase connection string) and `CORS_ORIGINS` in `backend/.env`; the API refuses to start without them. Password-reset emails are sent by Supabase Auth, so set Resend as its SMTP provider in the dashboard.
 - Generated PDF reports are always in English, because jsPDF cannot render Devanagari text.
