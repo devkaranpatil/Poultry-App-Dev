@@ -170,7 +170,7 @@ export function OptionGrid<T extends string | number>({
             disabled={disabled}
             onClick={() => onChange(option)}
             className={cn(
-              'group flex min-w-0 flex-col items-center gap-1 rounded-lg border px-1.5 py-2 text-center text-[11px] font-medium leading-tight transition-all duration-150',
+              'group flex min-w-0 flex-col items-center gap-1 rounded-lg border px-1.5 py-2 text-center text-[12px] font-medium leading-tight transition-all duration-150',
               'disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               selected
                 ? 'border-primary bg-primary/10 text-foreground shadow-[inset_0_0_0_1px_hsl(var(--primary))]'
@@ -191,7 +191,7 @@ export function OptionGrid<T extends string | number>({
 export function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 rounded-md bg-muted/60 px-2 py-1.5">
-      <div className="truncate text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="truncate text-[12px] uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className="font-mono text-xs font-semibold tabular-nums text-foreground">{value}</div>
     </div>
   );
@@ -258,7 +258,7 @@ export function SizeRow({
         <Button type="button" variant="ghost" size="icon" className="h-7 w-7" disabled={value >= max} onClick={() => commit(value + step)} aria-label={`${label} +`}>
           <Plus className="h-3.5 w-3.5" />
         </Button>
-        <span className="w-8 text-[11px] text-muted-foreground">{unit}</span>
+        <span className="w-8 text-[12px] text-muted-foreground">{unit}</span>
       </div>
     </div>
   );

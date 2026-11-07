@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { configureSetup, signUp, trackPageErrors } from "./helpers";
+import { configureSetup, goToStep, openAdvisor, signUp, trackPageErrors } from "./helpers";
 
 test("mobile workspace switches between setup, 3D and the planning steps", async ({ page }) => {
   const errors = trackPageErrors(page);
@@ -10,12 +10,14 @@ test("mobile workspace switches between setup, 3D and the planning steps", async
   await page.getByRole("radio", { name: "3D view" }).click();
   await expect(page.locator("canvas").first()).toBeVisible();
 
-  // The steps scroll along the top on a phone.
-  await page.getByRole("tab", { name: "Cost", exact: true }).click();
+  // On a phone one bar says where you are; every step is in the sheet it opens.
+  await expect(page.getByTestId("journey-switcher")).toContainText("Design");
+  await goToStep(page, "Cost");
+  await expect(page.getByTestId("journey-switcher")).toContainText("Step 3 of 8");
   await expect(page.getByText("Up to date")).toBeVisible();
   await expect(page.getByText("Build cost")).toBeVisible();
 
-  await page.getByRole("tab", { name: "Design", exact: true }).click();
+  await goToStep(page, "Design");
   await page.getByRole("radio", { name: "Setup" }).click();
   await expect(page.getByText("Project setup")).toBeVisible();
 
@@ -41,18 +43,20 @@ test("a newcomer on a phone follows the guide and the steps", async ({ page }) =
     await expect(page.getByTestId("in-short")).toBeVisible({ timeout: 30_000 });
     // click() scrolls the button into view itself, and retries if a results refresh re-renders it.
     await page.getByRole("button", { name: `Next: ${next}` }).click();
-    await expect(page.getByRole("tab", { name: next, exact: true })).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator("main#workspace-main")).toHaveAttribute("aria-label", next);
+    // The step is in the address, so the phone's back button and a refresh keep the user on it.
+    await expect(page).toHaveURL(new RegExp(`step=${next.toLowerCase()}`));
   }
-  // The advisor fits a phone screen too: the corner button opens it as a sheet over most of the screen.
-  await page.getByTestId("advisor-launcher").click();
-  const chat = page.getByTestId("advisor-window");
-  await expect(chat).toBeVisible();
+  // No chat button floats over the step; the advisor opens from "More options" as a page of its own.
+  await expect(page.getByTestId("advisor-launcher")).toHaveCount(0);
+  const chat = await openAdvisor(page);
   const box = await chat.boundingBox();
   const viewport = page.viewportSize();
-  expect(box && viewport ? box.height / viewport.height : 0).toBeGreaterThan(0.85);
-  await page.keyboard.press("Escape");
+  expect(box && viewport ? box.height / viewport.height : 0).toBeGreaterThan(0.95);
+  // The phone's back button closes it and leaves the user on the same step.
+  await page.goBack();
   await expect(chat).toBeHidden();
-  await expect(page.getByTestId("advisor-launcher")).toBeVisible();
+  await expect(page.locator("main#workspace-main")).toHaveAttribute("aria-label", "Loan");
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);

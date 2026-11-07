@@ -106,7 +106,7 @@ test.describe("landing page", () => {
     const errors = trackPageErrors(page);
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Know what a poultry shed will cost");
-    for (const id of ["problem", "solution", "features", "ai", "workflow", "faq"]) {
+    for (const id of ["questions", "how-it-works", "bank", "birds", "ai", "faq"]) {
       await expect(page.locator(`#${id}`)).toBeAttached();
     }
     await page.getByRole("link", { name: "FAQ" }).first().click();
@@ -122,7 +122,8 @@ test.describe("landing page", () => {
 
   test("the main button goes to the estimate without asking for an account", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: /Try a free estimate/ }).click();
+    // The hero, the closing band and the footer all start the estimate; the hero one is first.
+    await page.getByRole("link", { name: /Try a free estimate/ }).first().click();
     await expect(page).toHaveURL(/\/estimate$/);
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });

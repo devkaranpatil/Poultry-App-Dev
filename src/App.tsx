@@ -10,7 +10,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { RouteNavigationManager } from "@/components/RouteNavigationManager";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { safeRedirectPath } from "@/lib/utils";
-import { InteractionLayer } from "@/components/motion/InteractionLayer";
 import { CommandPalette } from "@/components/CommandPalette";
 
 const Index = lazy(() => import("./pages/Index"));
@@ -84,7 +83,6 @@ const App = () => (
             <Sonner position="top-center" closeButton />
             <BrowserRouter>
               <RouteNavigationManager />
-              <InteractionLayer />
               <CommandPalette />
               <AppRoutes />
             </BrowserRouter>

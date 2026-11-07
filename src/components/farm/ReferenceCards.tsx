@@ -37,7 +37,7 @@ export function DistrictClimateCard({ reference }: { reference: ReferenceContext
       <p className="text-xs text-muted-foreground">
         {t('right.districtClimateRange', { mean: climate.hottestMonthMeanC.toFixed(1), max: climate.hottestMonthMaxTempC.toFixed(1), min: climate.coldestMonthMinTempC.toFixed(1) })}
       </p>
-      <p className="text-[11px] text-muted-foreground">{t('right.districtClimateNote')}</p>
+      <p className="text-[12px] text-muted-foreground">{t('right.districtClimateNote')}</p>
     </section>
   );
 }
@@ -71,7 +71,7 @@ export function HeatStressCard({ heatStress }: { heatStress: HeatStress }) {
           </div>
         ))}
       </div>
-      <p className="text-[11px] text-muted-foreground">{t(heatStress.basis === 'district' ? 'heat.noteDistrict' : 'heat.noteState', { threshold: heatStress.threshold })}</p>
+      <p className="text-[12px] text-muted-foreground">{t(heatStress.basis === 'district' ? 'heat.noteDistrict' : 'heat.noteState', { threshold: heatStress.threshold })}</p>
     </section>
   );
 }
@@ -104,7 +104,7 @@ export function NabardCard({ nabard }: { nabard: NabardComparison }) {
       {nabard.note ? <p className="text-xs text-muted-foreground">{t('nabard.controlledNote')}</p> : null}
       {nabard.capitalOnly ? <p className="text-xs text-muted-foreground">{t('nabard.capitalOnly')}</p> : null}
       {nabard.otherState ? <p className="text-xs text-muted-foreground">{t('nabard.otherState', { state: nabard.state })}</p> : null}
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-[12px] text-muted-foreground">
         <SourceLink url={nabard.source.url}>{`${nabard.source.document} (${nabard.state}, ${nabard.year}): ${nabard.system}`}</SourceLink>
       </p>
     </section>
@@ -146,20 +146,20 @@ export function SchemesCard({ schemes }: { schemes: SchemesResult }) {
                     {scheme.verified ? '' : ` · ${t('schemes.unverified')}`}
                   </p>
                   {scheme.reasons.length > 0 ? (
-                    <ul className="list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
+                    <ul className="max-w-[72ch] list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
                       {scheme.reasons.map((reason) => (
                         <li key={reason}>{reason}</li>
                       ))}
                     </ul>
                   ) : null}
                   {scheme.status !== 'not-eligible' && scheme.notes.length > 0 ? (
-                    <ul className="list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
+                    <ul className="max-w-[72ch] list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
                       {scheme.notes.map((note) => (
                         <li key={note}>{note}</li>
                       ))}
                     </ul>
                   ) : null}
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[12px] text-muted-foreground">
                     <SourceLink url={scheme.source.url}>{scheme.source.document}</SourceLink>
                   </p>
                 </div>
@@ -168,7 +168,7 @@ export function SchemesCard({ schemes }: { schemes: SchemesResult }) {
           );
         })}
       </ul>
-      <p className="text-[11px] text-muted-foreground">{t('schemes.disclaimer')}</p>
+      <p className="text-[12px] text-muted-foreground">{t('schemes.disclaimer')}</p>
     </section>
   );
 }
@@ -203,13 +203,13 @@ export function SitingChecklist({
               <span className="flex flex-wrap items-center gap-x-2 text-sm text-foreground">
                 {rule.description}
                 {rule.distanceM !== null ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[12px] font-medium tabular-nums text-muted-foreground">
                     <Ruler className="h-3 w-3" />
                     {t('siting.distance', { m: formatNumber(rule.distanceM) })}
                   </span>
                 ) : null}
               </span>
-              <span className="block text-[11px] text-muted-foreground">
+              <span className="block text-[12px] text-muted-foreground">
                 {t(`siting.appliesTo.${rule.appliesTo.replace(/\s+/g, '-')}`)} · <SourceLink url={rule.source.url}>{rule.source.document}</SourceLink>
               </span>
             </label>

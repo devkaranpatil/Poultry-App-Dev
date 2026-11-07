@@ -85,7 +85,7 @@ export default function ResetPasswordPage() {
         </div>
 
         {message ? (
-          <p role="status" className="text-sm text-emerald-600">
+          <p role="status" className="text-sm text-success">
             {message}{" "}
             <Link to="/visualizer" className="underline">
               {t("auth.backVisualizer")}

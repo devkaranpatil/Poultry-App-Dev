@@ -51,8 +51,9 @@ describe('App routing', () => {
   it('lets signed-in users into the workspace', async () => {
     authMock.setSession(makeSession());
     renderAppAt('/visualizer');
-    expect(await screen.findByText("Project setup", {}, { timeout: 8000 })).toBeInTheDocument();
-  });
+    // The workspace route is loaded lazily; in a full coverage run its first import can take several seconds.
+    expect(await screen.findByText("Project setup", {}, { timeout: 15_000 })).toBeInTheDocument();
+  }, 20_000);
 
   it('keeps signed-in users away from the login page', async () => {
     authMock.setSession(makeSession());

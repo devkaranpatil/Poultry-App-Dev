@@ -315,7 +315,7 @@ export function DesignSidebar({
             onCommit={(value) => apply({ stockingDensity: value === norm ? null : value })}
           />
           {fieldError('stockingDensity')}
-          <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+          <div className="flex items-center justify-between gap-2 text-[12px] text-muted-foreground">
             <span>{norm !== null ? t('design.densityNorm', { value: norm }) : null}</span>
             {config.stockingDensity !== null ? (
               <button type="button" className="inline-flex items-center gap-1 text-primary hover:underline" onClick={() => apply({ stockingDensity: null })}>
@@ -326,7 +326,7 @@ export function DesignSidebar({
           </div>
         </div>
         {config.housingSystem !== 'environment-controlled' && config.width > OPEN_SHED_MAX_WIDTH ? (
-          <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2.5 py-2 text-xs text-foreground" role="note">
+          <p className="rounded-md border border-warning/40 bg-warning/10 px-2.5 py-2 text-xs text-foreground" role="note">
             {t('design.tooWide', { max: OPEN_SHED_MAX_WIDTH })}
           </p>
         ) : null}
@@ -384,7 +384,7 @@ export function DesignSidebar({
             value={config.beneficiaryCategory}
             onChange={(value) => apply({ beneficiaryCategory: value })}
           />
-          <p className="text-[11px] leading-relaxed text-muted-foreground">{t('design.categoryHint')}</p>
+          <p className="text-[12px] leading-relaxed text-muted-foreground">{t('design.categoryHint')}</p>
         </div>
       </div>
     );
@@ -409,7 +409,7 @@ export function DesignSidebar({
             isDisabled={(value) => value === 'contract' && layer}
             onChange={(value) => apply({ farmingModel: value })}
           />
-          <p className="text-[11px] leading-relaxed text-muted-foreground">{t(layer ? 'design.contractLayers' : `design.farmingHint.${config.farmingModel}`)}</p>
+          <p className="text-[12px] leading-relaxed text-muted-foreground">{t(layer ? 'design.contractLayers' : `design.farmingHint.${config.farmingModel}`)}</p>
         </div>
         {config.birdType === 'layer-cage' ? (
           <div className="space-y-1.5">
@@ -446,7 +446,7 @@ export function DesignSidebar({
       <header className="space-y-3 border-b border-border px-4 pb-3 pt-4">
         <div className="flex items-center gap-2">
           <h2 className="min-w-0 flex-1 truncate font-display text-base font-semibold text-foreground">{t('setup.title')}</h2>
-          <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground" data-testid="setup-progress">
+          <span className="rounded-full bg-muted px-2 py-0.5 text-[12px] font-medium tabular-nums text-muted-foreground" data-testid="setup-progress">
             {t('setup.stepsDone', { done: completed, total: SECTIONS.length })}
           </span>
           <Button
@@ -475,9 +475,9 @@ export function DesignSidebar({
         </div>
         {recentSetups.length > 0 ? (
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] font-medium text-muted-foreground">{t('left.recent')}:</span>
+            <span className="text-[12px] font-medium text-muted-foreground">{t('left.recent')}:</span>
             {recentSetups.map((item) => (
-              <span key={item.id} className="group inline-flex max-w-full items-center rounded-full border border-border text-[11px]">
+              <span key={item.id} className="group inline-flex max-w-full items-center rounded-full border border-border text-[12px]">
                 <button type="button" onClick={() => loadRecentSetup(item)} className="truncate rounded-l-full py-0.5 pl-2 pr-1 text-foreground hover:bg-muted">
                   {item.label}
                 </button>
@@ -507,12 +507,12 @@ export function DesignSidebar({
               onClick={() => onTabChange(item)}
               title={done ? `${tabLabel(item)} · ${t('setup.done')}` : tabLabel(item)}
               className={cn(
-                'relative flex min-w-0 flex-col items-center gap-1 rounded-lg px-0.5 pb-1.5 pt-2 text-[10.5px] leading-tight transition-colors duration-150',
+                'relative flex min-w-0 flex-col items-center gap-1 rounded-lg px-0.5 pb-1.5 pt-2 text-[12px] leading-tight transition-colors duration-150',
                 active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
               {item === 'location' ? <MapPin className="h-4 w-4 shrink-0" /> : <ShedTabIcon tab={item} className="h-4 w-4 shrink-0" />}
-              <span className="max-w-full truncate">{tabLabel(item)}</span>
+              <span className="line-clamp-2 max-w-full break-words text-center">{tabLabel(item)}</span>
               {done ? (
                 <span
                   className={cn(

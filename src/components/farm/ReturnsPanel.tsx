@@ -168,12 +168,12 @@ function BatchCalendar({ calendar, layer }: { calendar: BatchDates[]; layer: boo
             ) : (
               <div className="h-full flex-1 bg-primary" />
             )}
-            <div className="h-full bg-amber-400/70" style={{ width: `${((batch.readyDay - batch.saleDay) / (batch.readyDay - batch.placeDay)) * 100}%` }} />
+            <div className="h-full bg-straw/80" style={{ width: `${((batch.readyDay - batch.saleDay) / (batch.readyDay - batch.placeDay)) * 100}%` }} />
           </div>
         ))}
         <div className="absolute inset-y-0 border-l-2 border-dashed border-foreground/40" style={{ left: `${(365 / span) * 100}%` }} aria-hidden />
       </div>
-      <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+      <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-muted-foreground">
         {layer ? (
           <li className="inline-flex items-center gap-1">
             <span className="h-2 w-3 rounded-sm bg-primary/40" /> {t('returns.calendarGrowing')}
@@ -183,7 +183,7 @@ function BatchCalendar({ calendar, layer }: { calendar: BatchDates[]; layer: boo
           <span className="h-2 w-3 rounded-sm bg-primary" /> {t(layer ? 'returns.calendarLaying' : 'returns.calendarRearing')}
         </li>
         <li className="inline-flex items-center gap-1">
-          <span className="h-2 w-3 rounded-sm bg-amber-400/70" /> {t('returns.calendarCleaning')}
+          <span className="h-2 w-3 rounded-sm bg-straw/80" /> {t('returns.calendarCleaning')}
         </li>
         <li className="inline-flex items-center gap-1">
           <span className="h-2 w-0 border-l-2 border-dashed border-foreground/40" /> {t('returns.calendarYearEnd')}
@@ -218,7 +218,7 @@ export function ReturnsPanel({ birdType, farmingModel, state, assumptions, onAss
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <section className="space-y-3 rounded-2xl border border-border bg-card p-4">
+      <section className="space-y-3 rounded-card border border-border bg-card p-4">
         <h3 className="text-base font-semibold text-foreground">{t('returns.production')}</h3>
         <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
           <div>
@@ -249,13 +249,13 @@ export function ReturnsPanel({ birdType, farmingModel, state, assumptions, onAss
         <BatchCalendar calendar={calendar} layer={layer} />
       </section>
 
-      <section className="space-y-2 rounded-2xl border border-border bg-card p-4">
+      <section className="space-y-2 rounded-card border border-border bg-card p-4">
         <h3 className="text-base font-semibold text-foreground">{t('returns.cashflow')}</h3>
         <p className="text-sm text-muted-foreground">{t('returns.cashflowHint')}</p>
         <CashflowChart values={summary.cumulativeCashflow} yearLabel={(year) => t('returns.year', { year })} />
       </section>
 
-      <section className="space-y-4 rounded-2xl border border-border bg-card p-4">
+      <section className="space-y-4 rounded-card border border-border bg-card p-4">
         <div className="flex items-start justify-between gap-2">
           <div>
             <h3 className="text-base font-semibold text-foreground">{t('returns.assumptions')}</h3>
@@ -287,7 +287,7 @@ export function ReturnsPanel({ birdType, farmingModel, state, assumptions, onAss
           ))}
         </div>
         {unverified.length > 0 ? (
-          <p role="note" className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-foreground" data-testid="unverified-assumptions">
+          <p role="note" className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-foreground" data-testid="unverified-assumptions">
             {t('returns.verifyThese', { items: unverified.map(({ field }) => t(`assumption.${field}`)).join(', ') })}
           </p>
         ) : null}

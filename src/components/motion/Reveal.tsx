@@ -1,21 +1,19 @@
-import type { ReactNode } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import type { ElementType, ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
-/** Fades and lifts its children into view once, when scrolled onto the screen. */
-export function Reveal({ children, delay = 0, className }: { children: ReactNode; delay?: number; className?: string }) {
-  const reduce = useReducedMotion();
-  if (reduce || typeof IntersectionObserver === "undefined") {
-    return <div className={className}>{children}</div>;
-  }
-  return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.55, delay, ease: [0.22, 1, 0.36, 1] }}
-    >
-      {children}
-    </motion.div>
-  );
+/**
+ * Fades and lifts its children in as they scroll into view. Pure CSS (`.reveal` in index.css, a scroll-driven
+ * animation), so the content is visible whenever it is on screen and never waits on JavaScript; browsers without
+ * scroll timelines and reduced-motion users just see it.
+ */
+export function Reveal({
+  children,
+  className,
+  as: Tag = "div",
+}: {
+  children: ReactNode;
+  className?: string;
+  as?: ElementType;
+}) {
+  return <Tag className={cn("reveal", className)}>{children}</Tag>;
 }

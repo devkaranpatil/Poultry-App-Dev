@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { trackPageErrors } from "./helpers";
+import { PASSWORD, trackPageErrors, uniqueEmail } from "./helpers";
 
 // The real calculator answers these: no mocks, no account.
 test.describe("landing example and no-account estimate", () => {
@@ -40,8 +40,29 @@ test.describe("landing example and no-account estimate", () => {
     await page.getByLabel("State").selectOption("Punjab");
     await expect(page.getByLabel(/Live-bird price/)).toHaveValue("99");
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await page.getByRole("button", { name: /Save, compare or export/ }).click();
+    await page.getByRole("button", { name: /Save and refine/ }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
+  });
+
+  test("Save and refine signs up and opens the same farm in the workspace", async ({ page }) => {
+    const errors = trackPageErrors(page);
+    await page.goto("/estimate");
+    await expect(page.getByTestId("estimate-cases")).toBeVisible();
+    await page.getByLabel("State").selectOption("Punjab");
+    await expect(page.getByLabel(/Live-bird price/)).toHaveValue("99");
+    await page.getByLabel(/Live-bird price/).fill("140");
+
+    await page.getByRole("button", { name: /Save and refine/ }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Name").fill("E2E Grower");
+    await dialog.getByLabel("Email").fill(uniqueEmail("handoff"));
+    await dialog.getByLabel("Password").fill(PASSWORD);
+    await dialog.getByRole("button", { name: "Create account" }).click();
+
+    await expect(page).toHaveURL(/\/visualizer/);
+    await expect(page.getByText(/Carried over from your estimate/)).toBeVisible();
+    await expect(page.getByRole("banner")).toContainText("Punjab");
+    expect(errors).toEqual([]);
   });
 
   test("switching to layers shows the egg price", async ({ page }) => {

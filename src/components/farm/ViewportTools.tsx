@@ -115,7 +115,7 @@ export function NavigationTools({ onZoom, onFrame, onReset, onView, hasWalls, ha
           {views.map(({ view, label, keys }) => (
             <DropdownMenuItem key={view} onSelect={() => onView(view)} className="text-xs">
               {label}
-              <kbd className="ml-auto font-mono text-[10px] text-muted-foreground">{keys}</kbd>
+              <kbd className="ml-auto font-mono text-[12px] text-muted-foreground">{keys}</kbd>
             </DropdownMenuItem>
           ))}
           <DropdownMenuSeparator />
@@ -124,7 +124,7 @@ export function NavigationTools({ onZoom, onFrame, onReset, onView, hasWalls, ha
             .map(({ view, label, keys }) => (
               <DropdownMenuItem key={view} onSelect={() => onView(view)} className="text-xs">
                 {label}
-                <kbd className="ml-auto font-mono text-[10px] text-muted-foreground">{keys}</kbd>
+                <kbd className="ml-auto font-mono text-[12px] text-muted-foreground">{keys}</kbd>
               </DropdownMenuItem>
             ))}
         </DropdownMenuContent>
@@ -137,12 +137,12 @@ export function NavigationTools({ onZoom, onFrame, onReset, onView, hasWalls, ha
         </PopoverTrigger>
         <PopoverContent side="left" align="start" className="w-80 p-3" data-testid="shortcut-help">
           <p className="mb-2 text-xs font-semibold text-foreground">{t('viewport.help')}</p>
-          <dl className="grid grid-cols-[auto,1fr] items-baseline gap-x-3 gap-y-1.5 text-[11px]">
+          <dl className="grid grid-cols-[auto,1fr] items-baseline gap-x-3 gap-y-1.5 text-[12px]">
             {SHORTCUTS.map(({ keys, label }) => (
               <div key={label} className="contents">
                 <dt className="flex flex-wrap justify-end gap-1">
                   {keys.map((key) => (
-                    <kbd key={key} className="rounded border border-border bg-muted px-1 py-px font-mono text-[10px] text-foreground">
+                    <kbd key={key} className="rounded border border-border bg-muted px-1 py-px font-mono text-[12px] text-foreground">
                       {key}
                     </kbd>
                   ))}

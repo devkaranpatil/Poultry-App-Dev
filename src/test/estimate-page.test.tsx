@@ -46,7 +46,8 @@ describe('Estimate (no account)', () => {
     expect(cases).toHaveTextContent('Upside');
     // One base call and one call each for the downside and the upside, all against the public calculator.
     await waitFor(() => expect(calc.calculateFarm).toHaveBeenCalledTimes(3));
-    expect(screen.getByRole('button', { name: /Save, compare or export/ })).toBeInTheDocument();
+    // One button on wide screens and one fixed at the bottom on phones; CSS shows one of them.
+    expect(screen.getAllByRole('button', { name: /Save and refine/ }).length).toBeGreaterThan(0);
     expect(screen.getByText(/not financial advice/i)).toBeInTheDocument();
   });
 

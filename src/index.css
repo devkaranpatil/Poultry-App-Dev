@@ -1,5 +1,6 @@
-/* Design system: clean agri-tech.
-   Off-white canvas, white cards, 1px borders, one deep-green accent. */
+/* Design system: warm and grounded (docs/superpowers/specs/2026-11-07-ui-redesign-design.md).
+   Forest green for action, straw used sparingly for emphasis, faint green-grey canvas.
+   Martel (headings) and Mukta (body) cover Latin and Devanagari, so en, hi and mr share one look. */
 
 @tailwind base;
 @tailwind components;
@@ -7,119 +8,133 @@
 
 @layer base {
   :root {
-    --background: 140 20% 97.5%;
-    --foreground: 155 18% 11%;
+    --background: 100 14% 97%;
+    --foreground: 160 22% 9%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 155 18% 11%;
+    --card: 90 20% 99.4%;
+    --card-foreground: 160 22% 9%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 155 18% 11%;
+    --popover: 90 20% 99.4%;
+    --popover-foreground: 160 22% 9%;
 
-    /* Deep field green */
-    --primary: 153 56% 27%;
-    --primary-foreground: 0 0% 100%;
+    /* Forest green: the one action colour. */
+    --primary: 158 52% 24%;
+    --primary-foreground: 90 20% 98%;
 
-    --secondary: 140 14% 93%;
-    --secondary-foreground: 155 18% 16%;
+    --secondary: 100 12% 92.5%;
+    --secondary-foreground: 160 22% 14%;
 
-    --muted: 140 14% 95%;
-    --muted-foreground: 155 6% 40%;
+    --muted: 100 12% 94%;
+    --muted-foreground: 160 8% 35%;
 
-    /* Soft green surface for selected / highlighted states */
-    --accent: 148 38% 93%;
-    --accent-foreground: 153 56% 22%;
+    /* Soft green surface for selected and highlighted states. */
+    --accent: 150 30% 91%;
+    --accent-foreground: 158 52% 20%;
 
-    --destructive: 4 66% 47%;
+    /* Straw: emphasis only (logo, highlights, chart marks), never a second button colour. */
+    --straw: 42 78% 52%;
+    --straw-foreground: 35 60% 12%;
+    /* Soil: a warm grey-brown neutral for captions over imagery. */
+    --soil: 30 10% 40%;
+
+    --destructive: 6 62% 44%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 140 12% 88%;
-    --input: 140 10% 84%;
-    --ring: 153 56% 27%;
+    --border: 100 10% 86%;
+    --input: 100 10% 79%;
+    --ring: 158 52% 30%;
 
+    /* Controls 10 px, cards and panels 16 px, pills full. */
     --radius: 0.625rem;
+    --radius-card: 1rem;
 
-    --success: 153 56% 32%;
-    --warning: 35 92% 42%;
-    --info: 206 72% 42%;
+    --success: 152 50% 30%;
+    /* 30% lightness keeps amber text at 5.5:1 on the page (38% was 3.6:1). */
+    --warning: 34 90% 30%;
+    --info: 200 60% 36%;
 
-    --shadow-soft: 0 1px 2px hsl(155 18% 11% / 0.05);
-    --shadow-card: 0 1px 3px hsl(155 18% 11% / 0.06), 0 1px 2px hsl(155 18% 11% / 0.04);
-    --shadow-elevated: 0 10px 30px -10px hsl(155 18% 11% / 0.18);
+    --shadow-soft: 0 1px 2px hsl(160 30% 12% / 0.05);
+    --shadow-card: 0 1px 2px hsl(160 30% 12% / 0.04), 0 4px 14px -6px hsl(160 30% 12% / 0.08);
+    --shadow-elevated: 0 18px 40px -16px hsl(160 30% 12% / 0.22);
 
-    --panel-left: 0 0% 100%;
-    --panel-middle: 140 16% 96%;
-    --panel-right: 0 0% 100%;
+    --panel-left: 90 20% 99.4%;
+    --panel-middle: 100 14% 94.5%;
+    --panel-right: 90 20% 99.4%;
 
     --scene-ground: 35 30% 65%;
     --scene-structure: 35 25% 55%;
     --scene-cover: 120 35% 75%;
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 155 18% 11%;
-    --sidebar-primary: 153 56% 27%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 148 38% 93%;
-    --sidebar-accent-foreground: 153 56% 22%;
-    --sidebar-border: 140 12% 88%;
-    --sidebar-ring: 153 56% 27%;
+    --sidebar-background: 90 20% 99.4%;
+    --sidebar-foreground: 160 22% 9%;
+    --sidebar-primary: 158 52% 24%;
+    --sidebar-primary-foreground: 90 20% 98%;
+    --sidebar-accent: 150 30% 91%;
+    --sidebar-accent-foreground: 158 52% 20%;
+    --sidebar-border: 100 10% 86%;
+    --sidebar-ring: 158 52% 30%;
   }
 
   .dark {
-    --background: 155 14% 6.5%;
-    --foreground: 140 12% 93%;
+    --background: 160 18% 7%;
+    --foreground: 90 14% 92%;
 
-    --card: 155 12% 9.5%;
-    --card-foreground: 140 12% 93%;
+    --card: 160 16% 9.5%;
+    --card-foreground: 90 14% 92%;
 
-    --popover: 155 12% 10.5%;
-    --popover-foreground: 140 12% 93%;
+    --popover: 160 16% 10.5%;
+    --popover-foreground: 90 14% 92%;
 
-    --primary: 152 48% 46%;
-    --primary-foreground: 155 30% 6%;
+    --primary: 152 45% 50%;
+    --primary-foreground: 160 30% 7%;
 
-    --secondary: 155 10% 15%;
-    --secondary-foreground: 140 12% 90%;
+    --secondary: 160 12% 14%;
+    --secondary-foreground: 90 12% 90%;
 
-    --muted: 155 10% 13%;
-    --muted-foreground: 145 6% 62%;
+    --muted: 160 12% 12.5%;
+    --muted-foreground: 100 8% 66%;
 
-    --accent: 153 30% 15%;
-    --accent-foreground: 150 45% 72%;
+    --accent: 156 28% 15%;
+    --accent-foreground: 150 45% 76%;
 
-    --destructive: 4 62% 55%;
-    --destructive-foreground: 0 0% 100%;
+    --straw: 42 80% 58%;
+    --straw-foreground: 35 60% 10%;
+    --soil: 30 12% 64%;
 
-    --border: 155 9% 18%;
-    --input: 155 9% 22%;
-    --ring: 152 48% 46%;
+    --destructive: 6 68% 60%;
+    --destructive-foreground: 160 30% 7%;
 
-    --success: 152 48% 46%;
-    --warning: 38 88% 55%;
-    --info: 206 70% 60%;
+    --border: 160 10% 18%;
+    --input: 160 10% 24%;
+    --ring: 152 45% 50%;
 
-    --shadow-soft: 0 1px 2px hsl(0 0% 0% / 0.4);
-    --shadow-card: 0 1px 3px hsl(0 0% 0% / 0.45);
-    --shadow-elevated: 0 12px 32px -10px hsl(0 0% 0% / 0.6);
+    --success: 152 45% 50%;
+    --warning: 38 88% 58%;
+    --info: 200 65% 62%;
 
-    --panel-left: 155 12% 9.5%;
-    --panel-middle: 155 12% 8%;
-    --panel-right: 155 12% 9.5%;
+    --shadow-soft: 0 1px 2px hsl(160 40% 2% / 0.4);
+    --shadow-card: 0 1px 2px hsl(160 40% 2% / 0.4), 0 6px 18px -8px hsl(160 40% 2% / 0.5);
+    --shadow-elevated: 0 20px 44px -16px hsl(160 40% 2% / 0.7);
 
-    --sidebar-background: 155 12% 9.5%;
-    --sidebar-foreground: 140 12% 93%;
-    --sidebar-primary: 152 48% 46%;
-    --sidebar-primary-foreground: 155 30% 6%;
-    --sidebar-accent: 153 30% 15%;
-    --sidebar-accent-foreground: 150 45% 72%;
-    --sidebar-border: 155 9% 18%;
-    --sidebar-ring: 152 48% 46%;
+    --panel-left: 160 16% 9.5%;
+    --panel-middle: 160 16% 8%;
+    --panel-right: 160 16% 9.5%;
+
+    --sidebar-background: 160 16% 9.5%;
+    --sidebar-foreground: 90 14% 92%;
+    --sidebar-primary: 152 45% 50%;
+    --sidebar-primary-foreground: 160 30% 7%;
+    --sidebar-accent: 156 28% 15%;
+    --sidebar-accent-foreground: 150 45% 76%;
+    --sidebar-border: 160 10% 18%;
+    --sidebar-ring: 152 45% 50%;
   }
 }
 
 @layer base {
   html {
     scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
   }
 
   * {
@@ -127,19 +142,33 @@
   }
 
   body {
-    @apply bg-background font-sans text-foreground antialiased;
-    font-feature-settings: "cv11", "ss01";
+    @apply bg-background font-sans text-[15.5px] leading-relaxed text-foreground antialiased;
+    font-feature-settings: "kern";
   }
 
   h1,
   h2,
   h3,
   h4 {
-    @apply font-display tracking-tight;
+    @apply font-display text-balance;
+    letter-spacing: -0.015em;
+  }
+
+  /* Devanagari vowel marks reach above and below the line: give Hindi and Marathi headings more room. */
+  :lang(hi) :is(h1, h2, h3, .font-display),
+  :lang(mr) :is(h1, h2, h3, .font-display) {
+    line-height: 1.35 !important;
+  }
+
+  /* Figures line up in tables, stats and inputs. */
+  input[type="number"],
+  td,
+  dd {
+    font-variant-numeric: tabular-nums;
   }
 
   ::selection {
-    background: hsl(var(--primary) / 0.18);
+    background: hsl(var(--primary) / 0.2);
   }
 
   :focus-visible {
@@ -162,15 +191,21 @@
 @layer components {
   /* Surfaces */
   .surface {
-    @apply rounded-xl border border-border bg-card shadow-card;
+    @apply rounded-2xl border border-border bg-card shadow-card;
   }
 
   .eyebrow {
-    @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground;
+    @apply text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground;
   }
 
   .kpi-value {
-    @apply font-display text-xl font-semibold tabular-nums tracking-tight text-foreground;
+    @apply font-display text-xl font-bold tabular-nums text-foreground;
+  }
+
+  /* A soft straw underline for one emphasised word in a heading. */
+  .mark-straw {
+    background-image: linear-gradient(transparent 62%, hsl(var(--straw) / 0.45) 62%, hsl(var(--straw) / 0.45) 92%, transparent 92%);
+    padding: 0 0.08em;
   }
 
   .custom-scrollbar {
@@ -206,6 +241,10 @@
     background: hsl(var(--panel-middle));
   }
 
+  .panel-right {
+    background: hsl(var(--panel-right));
+  }
+
   .canvas-container {
     @apply relative h-full w-full overflow-hidden;
   }
@@ -220,11 +259,10 @@
   }
 
   .metric-card {
-    @apply rounded-xl border border-border bg-card p-4;
+    @apply rounded-2xl border border-border bg-card p-4;
   }
 
-  /* Compatibility: older class names now render as flat, solid surfaces so
-     any remaining usage matches the design system. */
+  /* Compatibility: older class names render as the plain surfaces of this system. */
   .glass,
   .glass-card,
   .glass-section,
@@ -241,8 +279,39 @@
     @apply inline-flex items-center gap-1.5 rounded-full border border-border bg-card;
   }
 
-  .panel-right {
-    background: hsl(var(--panel-right));
+  /* Press feedback for anything that acts like a button. */
+  .press {
+    transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .press:active {
+    transform: translateY(1px) scale(0.985);
+  }
+
+  /*
+   * Scroll reveal without JavaScript: content fades up while it enters the viewport. It follows the
+   * element's own visibility, so it is always shown when on screen (print, full-page screenshots, anchor
+   * jumps), and browsers without scroll timelines simply show it.
+   */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .reveal {
+        animation: reveal-up linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 55%;
+      }
+    }
+  }
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
@@ -258,61 +327,118 @@
   }
 }
 
-/* ===== Interaction layer (src/components/motion/InteractionLayer.tsx) ===== */
-@layer components {
-  .fx-progress {
-    position: fixed; top: 0; left: 0; right: 0; height: 2px;
-    transform-origin: 0 50%; background: hsl(var(--primary));
-    z-index: 50; pointer-events: none;
+@media print {
+  .reveal {
+    animation: none !important;
   }
-  .fx-cursor {
-    position: fixed; top: 0; left: 0; width: 34px; height: 34px; margin: -17px 0 0 -17px;
-    border-radius: 999px; border: 1.5px solid hsl(var(--primary) / 0.7);
-    background: hsl(var(--primary) / 0.08);
-    pointer-events: none; z-index: 160; opacity: 0; transition: opacity 0.2s ease;
-  }
-  .fx-burst-host { position: fixed; inset: 0; pointer-events: none; z-index: 155; overflow: hidden; }
-  .fx-ripple {
-    position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 999px;
-    border: 2px solid hsl(var(--primary) / 0.7); animation: fx-ripple 0.65s ease-out forwards;
-  }
-  .fx-sparks { position: absolute; width: 0; height: 0; }
-  .fx-sparks i {
-    position: absolute; width: 5px; height: 5px; margin: -2.5px; border-radius: 999px;
-    background: hsl(var(--primary)); animation: fx-spark 0.6s ease-out forwards;
-  }
-  @keyframes fx-ripple { to { transform: scale(9); opacity: 0; } }
-  @keyframes fx-spark { to { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; } }
+}
 
-  /* Cursor spotlight on cards: --px/--py are written by InteractionLayer. */
-  .surface, [data-spotlight] { position: relative; }
-  .surface::before, [data-spotlight]::before {
-    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-    opacity: 0; transition: opacity 0.25s ease;
-    background: radial-gradient(240px circle at var(--px, 50%) var(--py, 50%), hsl(var(--primary) / 0.13), transparent 65%);
-  }
-  .surface:hover::before, [data-spotlight]:hover::before { opacity: 1; }
+/*
+ * Motion tokens and the workspace transitions, from transitions.dev (panel reveal, page side-by-side, card resize).
+ * The page slide is used enter-only: a step is one page at a time, so the outgoing step is not kept mounted.
+ */
+:root {
+  --duration-quick: 150ms;
+  --duration-fast: 250ms;
+  --duration-medium: 350ms;
+  --duration-slow: 400ms;
+  --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
 
-  /* 3D tilt toward the pointer. */
-  [data-tilt] {
-    transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-    transition: transform 0.2s ease-out, box-shadow 0.25s ease, border-color 0.25s ease;
-    will-change: transform;
-  }
-  [data-tilt]:hover { border-color: hsl(var(--primary) / 0.45); box-shadow: 0 14px 34px -14px hsl(var(--primary) / 0.35); }
+  --panel-open-dur: 400ms;
+  --panel-close-dur: 350ms;
+  --panel-translate-x: 24px;
+  --panel-blur: 2px;
+  --panel-ease: cubic-bezier(0.22, 1, 0.36, 1);
 
-  /* Magnetic buttons lean toward the pointer and squash on press. */
-  [data-magnetic] {
-    transform: translate(var(--mx, 0px), var(--my, 0px));
-    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  [data-magnetic]:active { transform: translate(var(--mx, 0px), var(--my, 0px)) scale(0.96); }
+  --page-slide-dur: 250ms;
+  --page-fade-dur: 250ms;
+  --page-slide-distance: 8px;
+  --page-blur: 3px;
+  --page-slide-ease: cubic-bezier(0.22, 1, 0.36, 1);
 
-  @media (pointer: coarse) {
-    .fx-cursor, .fx-burst-host { display: none; }
+  --resize-dur: 250ms;
+  --resize-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* A step enters from the side it lies on: forward from the right, back from the left. */
+.t-step-enter {
+  animation: t-step-in var(--page-slide-dur) var(--page-slide-ease) both;
+}
+.t-step-enter[data-dir='back'] {
+  --t-page-from-x: calc(var(--page-slide-distance) * -1);
+}
+@keyframes t-step-in {
+  from {
+    opacity: 0.35;
+    transform: translateX(var(--t-page-from-x, var(--page-slide-distance)));
+    filter: blur(var(--page-blur));
   }
-  @media (prefers-reduced-motion: reduce) {
-    [data-tilt], [data-magnetic] { transform: none !important; }
-    .surface::before, [data-spotlight]::before { display: none; }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+/* The advisor's docked panel: the column eases open (card resize), the panel slides in with a cross-blur. */
+.t-dock {
+  transition: width var(--panel-close-dur) var(--resize-ease);
+}
+.t-dock[data-open='true'] {
+  transition-duration: var(--panel-open-dur);
+}
+.t-panel-slide {
+  transform: translateX(var(--panel-translate-x));
+  opacity: 0;
+  filter: blur(var(--panel-blur));
+  pointer-events: none;
+  transition:
+    transform var(--panel-close-dur) var(--panel-ease),
+    opacity var(--panel-close-dur) var(--panel-ease),
+    filter var(--panel-close-dur) var(--panel-ease);
+  will-change: transform, opacity, filter;
+}
+.t-panel-slide[data-open='true'] {
+  transform: translateX(0);
+  opacity: 1;
+  filter: blur(0);
+  pointer-events: auto;
+  transition:
+    transform var(--panel-open-dur) var(--panel-ease),
+    opacity var(--panel-open-dur) var(--panel-ease),
+    filter var(--panel-open-dur) var(--panel-ease);
+}
+
+/* The ask box on the money steps rises into its corner with a soft blur (panel reveal, on the Y axis). */
+.t-ask-in {
+  animation: t-ask-in var(--panel-open-dur) var(--panel-ease) both;
+}
+@keyframes t-ask-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(var(--panel-blur));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+/* The journey rail folds to its icons and back. */
+.t-resize {
+  transition: width var(--resize-dur) var(--resize-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-step-enter,
+  .t-ask-in {
+    animation: none !important;
+  }
+  .t-dock,
+  .t-panel-slide,
+  .t-resize {
+    transition: none !important;
   }
 }

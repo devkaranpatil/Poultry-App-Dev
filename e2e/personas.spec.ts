@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { goToStep, signUp, trackPageErrors } from "./helpers";
+import { goToStep, openAdvisor, signUp, trackPageErrors } from "./helpers";
 
 /**
  * Journeys for the people the planner is for (docs/migration/implementation-plan.md, Phase 7): a first-time broiler
@@ -121,9 +121,8 @@ test.describe("personas", () => {
     const [pdf] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Download PDF" }).click()]);
     expect(pdf.suggestedFilename()).toMatch(/^farm-pune-.*\.pdf$/);
 
-    // The advisor opens from the corner and shows where its answer came from.
-    await page.getByTestId("advisor-launcher").click();
-    const chat = page.getByTestId("advisor-window");
+    // The advisor opens from "More options" and shows where its answer came from.
+    const chat = await openAdvisor(page);
     await chat.getByRole("button", { name: "What should I tell the bank about this project?" }).click();
     await expect(chat.getByText(ANSWER)).toBeVisible();
     await chat.getByText("Sources (1)").click();
@@ -173,7 +172,7 @@ test.describe("personas", () => {
     // The same plan in Hindi.
     await page.evaluate(() => window.localStorage.setItem("farm.locale", "hi"));
     await page.reload();
-    await page.getByRole("tab", { name: "लागत", exact: true }).click();
+    await goToStep(page, "लागत");
     await expect(page.getByRole("heading", { level: 1, name: "लागत" })).toBeVisible();
     await expect(page.getByTestId("in-short")).toContainText("पक्षियों का शेड");
     expect(errors).toEqual([]);
@@ -186,7 +185,7 @@ test.describe("personas", () => {
 
     // Jumping ahead too early says what is missing instead of showing empty numbers.
     await goToStep(page, "Cost");
-    await expect(page.getByText("Finish the design first")).toBeVisible();
+    await expect(page.locator("main#workspace-main").getByText("Finish the design first")).toBeVisible();
     await page.getByRole("button", { name: "Go to Design" }).click();
 
     await page.getByRole("button", { name: /Use recommended/i }).click();

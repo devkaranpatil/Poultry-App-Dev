@@ -15,8 +15,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+        // Both families cover Latin and Devanagari (Hindi, Marathi); self-hosted from @fontsource in main.tsx.
+        sans: ['Mukta', 'system-ui', 'sans-serif'],
+        display: ['Martel', 'Georgia', 'serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       colors: {
@@ -63,6 +64,11 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        straw: {
+          DEFAULT: "hsl(var(--straw))",
+          foreground: "hsl(var(--straw-foreground))",
+        },
+        soil: "hsl(var(--soil))",
         success: "hsl(var(--success))",
         warning: "hsl(var(--warning))",
         info: "hsl(var(--info))",
@@ -78,6 +84,7 @@ export default {
         },
       },
       borderRadius: {
+        card: "var(--radius-card)",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",

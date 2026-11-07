@@ -7,7 +7,8 @@ import { linkGoogleAccount, rememberPostAuthRedirect, unlinkGoogleAccount, updat
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/context/I18nContext";
 import { TopRightMenu } from "@/components/TopRightMenu";
-import { BadgeCheck, KeyRound, Link2, Mail, ShieldCheck, Sparkles, Bird, UserRound, XCircle } from "lucide-react";
+import { BadgeCheck, KeyRound, Link2, Mail, ShieldCheck, Sparkles, UserRound, XCircle } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
 import { cn } from "@/lib/utils";
 import { APP_NAME } from "@/config/app";
 
@@ -75,7 +76,7 @@ export default function AccountPage() {
     return (
       <div className="min-h-screen bg-background px-4 py-10">
         <div className="mx-auto max-w-lg">
-          <Card className="rounded-2xl p-6">
+          <Card className="rounded-card p-6">
             <p className="text-sm text-muted-foreground">{t("auth.pleaseLoginSettings")}</p>
             <Link to="/login" className="mt-3 inline-block text-primary hover:underline">
               {t("auth.goLogin")}
@@ -88,33 +89,29 @@ export default function AccountPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 px-4 pt-4">
-        <div className="glass mx-auto flex max-w-5xl items-center justify-between rounded-2xl px-4 py-3">
-          <Link to="/" className="inline-flex items-center gap-2 font-semibold">
-            <Bird className="h-5 w-5 text-primary" />
-            {APP_NAME}
+      <header className="sticky top-0 z-40 border-b border-border bg-card shadow-soft">
+        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
+          <Link to="/" aria-label={APP_NAME}>
+            <Logo compact />
           </Link>
           <TopRightMenu />
         </div>
       </header>
 
-      <div className="relative px-4 py-10">
-        <div className="pointer-events-none absolute left-0 top-0 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
-        <div className="pointer-events-none absolute right-0 top-32 h-72 w-72 rounded-full bg-accent/10 blur-3xl" />
+      <div className="px-4 py-10 lg:py-14">
+        <div className="mx-auto max-w-4xl space-y-5">
 
-        <div className="relative mx-auto max-w-4xl space-y-5">
-
-          <Card className="overflow-hidden rounded-3xl border p-0">
-            <div className="bg-gradient-to-r from-primary/20 via-primary/10 to-transparent p-6 sm:p-8">
+          <Card className="overflow-hidden p-0">
+            <div className="bg-accent/60 p-6 sm:p-8">
               <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-xl font-bold text-primary-foreground shadow-lg">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-card bg-primary text-xl font-bold text-primary-foreground shadow-lg">
                     {initials}
                   </div>
                   <div>
-                    <h1 className="text-3xl font-bold tracking-tight">{t("auth.account")}</h1>
-                    <p className="mt-1 text-sm text-muted-foreground">{user.name}</p>
-                    <div className="glass mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-muted-foreground">
+                    <h1 className="font-display text-3xl font-extrabold leading-tight">{t("auth.account")}</h1>
+                    <p className="mt-1 text-[15px] text-muted-foreground">{user.name}</p>
+                    <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-[13px] text-muted-foreground">
                       <Mail className="h-3.5 w-3.5" />
                       {user.email}
                     </div>
@@ -133,7 +130,7 @@ export default function AccountPage() {
               { label: t("auth.googleLinked"), ok: user.googleLinked, icon: Link2 },
               { label: t("auth.passwordSet"), ok: user.hasPassword, icon: KeyRound },
             ].map((item) => (
-              <Card key={item.label} className="rounded-2xl p-4">
+              <Card key={item.label} className="rounded-card p-4">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">{item.label}</p>
@@ -146,7 +143,7 @@ export default function AccountPage() {
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <Card className="rounded-2xl p-6">
+            <Card className="rounded-card p-6">
               <h2 className="flex items-center gap-2 text-lg font-semibold">
                 <ShieldCheck className="h-5 w-5 text-primary" />
                 {t("auth.loginMethods")}
@@ -184,11 +181,11 @@ export default function AccountPage() {
                   {user.hasPassword ? t("auth.updatePassword") : t("auth.setPassword")}
                 </Button>
               </form>
-              {notice ? <p role="status" className="mt-3 text-sm text-emerald-600">{notice}</p> : null}
+              {notice ? <p role="status" className="mt-3 text-sm text-success">{notice}</p> : null}
               {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
             </Card>
 
-            <Card className="rounded-2xl p-6">
+            <Card className="rounded-card p-6">
               <h2 className="flex items-center gap-2 text-lg font-semibold">
                 <UserRound className="h-5 w-5 text-primary" />
                 {t("auth.account")}
@@ -210,7 +207,7 @@ export default function AccountPage() {
             </Card>
           </div>
 
-          <Card className="rounded-2xl p-4">
+          <Card className="rounded-card p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs text-muted-foreground">
                 {t("auth.securityNote")}

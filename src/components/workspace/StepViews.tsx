@@ -89,7 +89,7 @@ function LoadingBlocks() {
           <div key={key} className="h-20 animate-pulse rounded-xl bg-muted" />
         ))}
       </div>
-      <div className="h-40 animate-pulse rounded-2xl bg-muted" />
+      <div className="h-40 animate-pulse rounded-card bg-muted" />
     </div>
   );
 }
@@ -204,7 +204,7 @@ function CostPage({ step, onNavigate, result, financials, isLoading }: ReadyProp
       />
 
       <Block title={t('right.costBreakdown')} action={<span className="text-sm font-semibold tabular-nums text-foreground">{formatINR(cost.capitalCost)}</span>}>
-        <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+        <div className="space-y-3 rounded-card border border-border bg-card p-4">
           {breakdown.map((item) => (
             <div key={item.label} className="space-y-1">
               <div className="flex items-baseline justify-between gap-2 text-sm">
@@ -217,7 +217,7 @@ function CostPage({ step, onNavigate, result, financials, isLoading }: ReadyProp
             </div>
           ))}
           {result.diagnostics.unsourcedRates.length ? (
-            <p role="note" className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-foreground" data-testid="unsourced-rates">
+            <p role="note" className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-foreground" data-testid="unsourced-rates">
               {t('right.unsourcedRates', { items: result.diagnostics.unsourcedRates.join(', ') })}
             </p>
           ) : null}
@@ -225,7 +225,7 @@ function CostPage({ step, onNavigate, result, financials, isLoading }: ReadyProp
       </Block>
 
       <Block title={t('cost.workingTitle')} description={contract ? t('cost.workingContract') : t('cost.workingHint')}>
-        <div className="space-y-2 rounded-2xl border border-border bg-card p-4">
+        <div className="space-y-2 rounded-card border border-border bg-card p-4">
           {workingLines.map((item) => (
             <div key={item.label} className="flex items-baseline justify-between gap-2 text-sm">
               <span className="text-muted-foreground">{item.label}</span>
@@ -405,7 +405,7 @@ function ReportPage(props: StepViewsProps) {
           <ArrowRight className="ml-1 h-3.5 w-3.5" />
         </Button>
       </div>
-      <section className="rounded-2xl border border-border bg-card p-4">
+      <section>
         <ExportPanel
           config={config}
           result={isLoading ? null : result}

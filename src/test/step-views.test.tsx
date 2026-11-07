@@ -55,7 +55,6 @@ describe('StepViews', () => {
   it('opens each step with what it answers and a plain bottom line', () => {
     renderStep('cost');
     expect(screen.getByRole('heading', { level: 1, name: 'Cost' })).toBeInTheDocument();
-    expect(screen.getByText('Step 3 of 8')).toBeInTheDocument();
     const inShort = screen.getByTestId('in-short');
     expect(inShort).toHaveTextContent(/Building the shed for 1,076 birds costs about ₹/);
     expect(inShort).toHaveTextContent(/The biggest part is shed \(civil work\)/);
@@ -137,7 +136,6 @@ describe('StepViews', () => {
     const { onNavigate } = renderStep('summary');
     expect(screen.getByRole('heading', { level: 1, name: 'AI summary' })).toBeInTheDocument();
     expect(screen.getByText('Optional')).toBeInTheDocument();
-    expect(screen.getByText('Step 7 of 8')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(onNavigate).toHaveBeenCalledWith('risk');
     fireEvent.click(screen.getByRole('button', { name: 'Next: Report' }));

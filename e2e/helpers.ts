@@ -41,11 +41,39 @@ export async function logIn(page: Page, email: string, password = PASSWORD) {
   await page.getByRole("button", { name: "Sign in" }).click();
 }
 
-/** Opens one step of the planning journey from the step bar. */
+/** A step of the journey, in the rail on a laptop or the step sheet on a phone, in any language. */
+export function stepButton(page: Page, name: string) {
+  return page.getByRole("button", { name, exact: true }).and(page.locator("[data-step]"));
+}
+
+/**
+ * Opens one step of the planning journey: from the rail on a laptop, or on a phone from the sheet that the
+ * "All steps" bar opens. The step's page names itself in the main landmark.
+ */
 export async function goToStep(page: Page, name: string) {
-  const tab = page.getByRole("tab", { name, exact: true });
-  await tab.click();
-  await expect(tab).toHaveAttribute("aria-selected", "true");
+  const switcher = page.getByTestId("journey-switcher");
+  if (await switcher.isVisible()) await switcher.click();
+  await stepButton(page, name).click();
+  await expect(page.locator("main#workspace-main")).toHaveAttribute("aria-label", name);
+}
+
+/** Opens the advisor from the "More options" menu; it is not offered on the Design step. */
+export async function openAdvisor(page: Page) {
+  await page.getByTestId("workspace-menu").click();
+  await page.getByTestId("ask-advisor").click();
+  const panel = page.getByTestId("advisor-panel");
+  await expect(panel).toBeVisible();
+  return panel;
+}
+
+/** Opens Saved setups: a header button on larger screens, in the "More options" menu on a phone. */
+export async function openSavedSetups(page: Page) {
+  const button = page.getByRole("button", { name: "Saved setups" });
+  if (await button.isVisible()) await button.click();
+  else {
+    await page.getByTestId("workspace-menu").click();
+    await page.getByRole("menuitem", { name: "Saved setups" }).click();
+  }
 }
 
 /** Opens the Cost step, the first page of figures. */

@@ -5,6 +5,8 @@ import path from "path";
 export default defineConfig({
   plugins: [react()],
   test: {
+    // Rendering whole pages (the app router, the lazily loaded workspace) can pass 5 s under a full coverage run.
+    testTimeout: 15_000,
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],

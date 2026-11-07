@@ -28,7 +28,7 @@ export function SiteHeader({
   const primaryAction = isAuthenticated ? (
     <Button asChild size="sm">
       <Link to="/visualizer">
-        {t('landing.openVisualizer')}
+        {t('home.openWorkspace')}
         <ArrowRight className="ml-1.5 h-4 w-4" />
       </Link>
     </Button>
@@ -43,14 +43,14 @@ export function SiteHeader({
   );
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-md supports-[backdrop-filter]:bg-background/70">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Link to="/" aria-label={t('app.goHome')}>
           <Logo />
         </Link>
 
         {links.length > 0 ? (
-          <nav aria-label={t('site.primaryNav')} className="hidden items-center gap-7 text-sm font-medium text-muted-foreground md:flex">
+          <nav aria-label={t('site.primaryNav')} className="hidden items-center gap-8 text-[15px] font-medium text-muted-foreground md:flex">
             {links.map((link) => (
               <a key={link.href} href={link.href} className="transition-colors hover:text-foreground">
                 {link.label}
@@ -90,7 +90,7 @@ export function SiteHeader({
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileOpen(false)}
-                className="rounded-md px-2 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
+                className="rounded-lg px-3 py-3 text-base font-medium text-foreground hover:bg-accent"
               >
                 {link.label}
               </a>
@@ -114,12 +114,15 @@ export function SiteFooter() {
   const { t } = useI18n();
   return (
     <footer className="border-t border-border bg-card">
-      <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-2">
-          <Logo compact />
-          <p className="max-w-sm text-sm text-muted-foreground">{t('site.tagline')}</p>
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr] md:items-end lg:px-8">
+        <div className="space-y-3">
+          <Logo />
+          <p className="max-w-sm text-[15px] leading-relaxed text-muted-foreground">{t('site.tagline')}</p>
         </div>
-        <nav aria-label={t('site.footerNav')} className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
+        <nav aria-label={t('site.footerNav')} className="flex flex-wrap gap-x-6 gap-y-2 text-[15px] text-muted-foreground md:justify-end">
+          <Link to="/estimate" className="hover:text-foreground">
+            {t('landing.tryEstimate')}
+          </Link>
           <Link to="/support" className="hover:text-foreground">
             {t('landing.contact')}
           </Link>
@@ -132,7 +135,7 @@ export function SiteFooter() {
         </nav>
       </div>
       <div className="border-t border-border">
-        <p className="mx-auto max-w-6xl px-4 py-4 text-xs text-muted-foreground sm:px-6">
+        <p className="mx-auto max-w-7xl px-4 py-4 text-[13px] text-muted-foreground sm:px-6 lg:px-8">
           {t('landing.copyright', { year: new Date().getFullYear() })}
         </p>
       </div>
@@ -145,10 +148,10 @@ export function ContentPage({ title, intro, children }: { title: string; intro?:
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <SiteHeader />
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-12 sm:px-6 sm:py-16">
-        <h1 className="text-3xl font-bold text-foreground sm:text-4xl">{title}</h1>
-        {intro ? <p className="mt-3 text-base leading-relaxed text-muted-foreground">{intro}</p> : null}
-        <div className="mt-8 space-y-6 text-[15px] leading-relaxed text-foreground">{children}</div>
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-12 sm:px-6 sm:py-20">
+        <h1 className="font-display text-3xl font-extrabold leading-tight text-foreground sm:text-[2.6rem]">{title}</h1>
+        {intro ? <p className="mt-4 max-w-[62ch] text-[17px] leading-relaxed text-muted-foreground">{intro}</p> : null}
+        <div className="mt-10 space-y-6 text-[16px] leading-relaxed text-foreground [&_h2]:mt-10 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-bold">{children}</div>
       </main>
       <SiteFooter />
     </div>

@@ -38,6 +38,8 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Screen readers pick the voice from it, and the CSS gives Devanagari headings room for their vowel marks.
+    document.documentElement.lang = language;
     try {
       window.localStorage.setItem(STORAGE_KEY, language);
     } catch {

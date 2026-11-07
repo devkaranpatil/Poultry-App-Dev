@@ -77,7 +77,7 @@ function PartBody({ part, config, onChange }: { part: EditablePart; config: Farm
             <DimensionRow key={row.key} config={config} rowKey={row.key} label={t(row.labelKey)} onChange={onChange} />
           ))}
         </div>
-        <p className="text-[11px] leading-snug text-muted-foreground">{t('viewport.dragHint')}</p>
+        <p className="text-[12px] leading-snug text-muted-foreground">{t('viewport.dragHint')}</p>
       </div>
     );
   }
@@ -234,7 +234,7 @@ export function PropertiesPanel({ config, selected, onSelect, onChange, compact,
       <div className="flex items-center justify-between gap-2 border-b border-border px-2 py-1">
         <button
           type="button"
-          className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
+          className="flex items-center gap-1 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
           aria-expanded={outlinerOpen}
           onClick={() => setOutlinerOpen((value) => !value)}
         >
@@ -286,7 +286,7 @@ export function PropertiesPanel({ config, selected, onSelect, onChange, compact,
                 className={cn(
                   'flex shrink-0 snap-start rounded-md transition-colors duration-150',
                   // A phone row reads left to right; the narrow desktop panel stacks icon over name so names fit.
-                  compact ? 'items-center gap-1.5 px-2 py-1.5 text-left text-xs' : 'min-w-0 flex-col items-center gap-0.5 px-1 py-1 text-[10.5px] leading-tight',
+                  compact ? 'items-center gap-1.5 px-2 py-1.5 text-left text-xs' : 'min-w-0 flex-col items-center gap-0.5 px-1 py-1 text-[12px] leading-tight',
                   active ? 'bg-orange-500 text-white' : 'text-foreground hover:bg-muted'
                 )}
                 title={compact ? undefined : t(partLabelKey(part))}
@@ -316,7 +316,7 @@ export function PropertiesPanel({ config, selected, onSelect, onChange, compact,
           <PartBody part={selected} config={config} onChange={onChange} />
         </section>
       ) : (
-        <p className={cn('px-2.5 text-[11px] leading-snug text-muted-foreground', compact ? 'py-1.5' : 'py-2.5')}>{t('viewport.nothingSelected')}</p>
+        <p className={cn('px-2.5 text-[12px] leading-snug text-muted-foreground', compact ? 'py-1.5' : 'py-2.5')}>{t('viewport.nothingSelected')}</p>
       )}
     </aside>
   );

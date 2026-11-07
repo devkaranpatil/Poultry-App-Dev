@@ -10,13 +10,20 @@ Output (git-ignored; some sources are copyrighted):
 
 PDF text comes from `pdftotext` (poppler) when it is installed, otherwise from `pypdf` (pip install pypdf).
 `pdftotext` keeps table rows together, so it is preferred for the cost-norm tables.
+
+A scanned PDF has no text layer (the text comes out under MIN_TEXT_CHARS). Those are read with OCR instead:
+pages are rendered by PyMuPDF (pip install pymupdf) and read by Tesseract with the `eng` and `hin` models
+(`winget install UB-Mannheim.TesseractOCR`; put hin.traineddata from tessdata_best in ~/tessdata, or set TESSDATA_PREFIX).
+A manifest source may set "ocrLang" (default "hin+eng").
 """
 import html
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import urllib.request
 from html.parser import HTMLParser
 from pathlib import Path
@@ -25,6 +32,9 @@ ROOT = Path(__file__).resolve().parents[1] / "knowledge"
 RAW = ROOT / "raw"
 TEXT = ROOT / "text"
 USER_AGENT = "Mozilla/5.0 (poultry planner knowledge builder)"
+MIN_TEXT_CHARS = 500
+OCR_DPI = 300
+TESSERACT_WINDOWS = Path("C:/Program Files/Tesseract-OCR/tesseract.exe")
 
 
 def download(url: str, target: Path) -> None:
@@ -43,6 +53,31 @@ def pdf_to_text(path: Path, layout: bool) -> str:
     except ImportError:
         sys.exit("Install poppler (pdftotext) or `pip install pypdf` to read PDFs.")
     return "\n\n".join((page.extract_text() or "") for page in PdfReader(str(path)).pages)
+
+
+def ocr_pdf(path: Path, lang: str) -> str:
+    tesseract = shutil.which("tesseract") or (str(TESSERACT_WINDOWS) if TESSERACT_WINDOWS.exists() else None)
+    if not tesseract:
+        print(f"  {path.name} is scanned and Tesseract is not installed; no text")
+        return ""
+    try:
+        import pymupdf
+    except ImportError:
+        print(f"  {path.name} is scanned; `pip install pymupdf` to read it with OCR")
+        return ""
+    env = dict(os.environ)
+    user_tessdata = Path.home() / "tessdata"
+    if "TESSDATA_PREFIX" not in env and user_tessdata.exists():
+        env["TESSDATA_PREFIX"] = str(user_tessdata)
+    pages = []
+    with pymupdf.open(path) as document, tempfile.TemporaryDirectory() as folder:
+        for number, page in enumerate(document, 1):
+            image = Path(folder) / f"page{number}.png"
+            page.get_pixmap(dpi=OCR_DPI).save(image)
+            result = subprocess.run([tesseract, str(image), "-", "-l", lang, "--psm", "6"],
+                                    capture_output=True, env=env)
+            pages.append(result.stdout.decode("utf-8", "replace"))
+    return "\n\n".join(pages)
 
 
 class _TextExtractor(HTMLParser):
@@ -154,6 +189,9 @@ def main() -> None:
                 print(f"  FAILED: {err}")
                 continue
         text = pdf_to_text(raw_path, source.get("layout", False)) if extension == "pdf" else html_to_text(raw_path)
+        if extension == "pdf" and len(text.strip()) < MIN_TEXT_CHARS:
+            print(f"  {source['id']}: no text layer, reading with OCR")
+            text = ocr_pdf(raw_path, source.get("ocrLang", "hin+eng")) or text
         text = trim(tidy(text), source)
         (TEXT / f"{source['id']}.txt").write_text(text, encoding="utf-8")
         print(f"  {source['id']}: {len(text.split()):,} words")

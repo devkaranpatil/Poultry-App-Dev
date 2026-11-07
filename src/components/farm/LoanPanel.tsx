@@ -128,7 +128,7 @@ export function LoanPanel({ summary, birdType, terms, onTermsChange }: LoanPanel
         </p>
       ) : null}
 
-      <div className="space-y-4 rounded-2xl border border-border bg-card p-4">
+      <div className="space-y-4 rounded-card border border-border bg-card p-4">
         <div className="flex items-start justify-between gap-2">
           <h4 className="text-sm font-semibold text-foreground">{t('ws.loanTerms')}</h4>
           <Button type="button" size="sm" variant="ghost" className="h-8 shrink-0 px-2 text-xs" onClick={() => onTermsChange(poultryLoanTerms(birdType))}>
@@ -172,7 +172,7 @@ export function LoanPanel({ summary, birdType, terms, onTermsChange }: LoanPanel
           </div>
         </div>
         {terms.loanSharePct > MAX_POULTRY_LOAN_SHARE_PCT ? (
-          <p className="flex gap-1.5 text-xs leading-snug text-amber-700 dark:text-amber-400">
+          <p className="flex gap-1.5 text-xs leading-snug text-warning ">
             <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
             {t('loan.shareAboveBank', { max: MAX_POULTRY_LOAN_SHARE_PCT })}
           </p>

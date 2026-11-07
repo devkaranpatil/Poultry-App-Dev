@@ -79,7 +79,7 @@ export default function SignupPage() {
           <p className="text-xs text-muted-foreground">{t("auth.use8")}</p>
         </div>
 
-        {notice ? <p role="status" className="text-sm text-emerald-600">{notice}</p> : null}
+        {notice ? <p role="status" className="text-sm text-success">{notice}</p> : null}
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
         <Button type="submit" className="w-full" disabled={loading}>

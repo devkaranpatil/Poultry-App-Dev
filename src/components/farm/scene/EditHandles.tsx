@@ -381,7 +381,7 @@ export function EditHandles({
                 <Html center position={[0, size * 1.9, 0]} style={{ pointerEvents: 'none' }} zIndexRange={[20, 0]}>
                   <div
                     className={
-                      'whitespace-nowrap rounded-md border px-2 py-0.5 font-mono text-[11px] font-medium shadow-sm ' +
+                      'whitespace-nowrap rounded-md border px-2 py-0.5 font-mono text-[12px] font-medium shadow-sm ' +
                       (isActive ? 'border-orange-500 bg-orange-500 text-white' : 'border-border bg-card/95 text-foreground')
                     }
                   >

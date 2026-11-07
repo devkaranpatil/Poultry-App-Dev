@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { configureSetup, signUp, trackPageErrors } from "./helpers";
+import { configureSetup, goToStep, openAdvisor, openSavedSetups, signUp, trackPageErrors } from "./helpers";
 
 const SHOTS = "test-results/layout";
 
@@ -26,23 +26,20 @@ test.describe("layout", () => {
     await page.screenshot({ path: `${SHOTS}/design-editing.png` });
 
     for (const step of ["Site & rules", "Cost", "Earnings", "Loan", "Risk", "AI summary", "Report"]) {
-      await page.getByRole("tab", { name: step, exact: true }).click();
+      await goToStep(page, step);
       await noHorizontalOverflow(page);
       await page.screenshot({ path: `${SHOTS}/step-${step.replace(/\W+/g, "-").toLowerCase()}.png` });
     }
 
-    // The advisor chat sits in the bottom-right corner, small first and full screen on request.
-    await page.getByTestId("advisor-launcher").click();
-    await expect(page.getByTestId("advisor-window")).toBeVisible();
-    await page.screenshot({ path: `${SHOTS}/advisor-window.png` });
-    await page.getByRole("button", { name: "Open full screen" }).click();
-    await expect(page.getByTestId("advisor-fullscreen")).toBeVisible();
-    await page.screenshot({ path: `${SHOTS}/advisor-fullscreen.png` });
-    await page.getByRole("button", { name: "Close advisor" }).click();
-    await expect(page.getByTestId("advisor-fullscreen")).toBeHidden();
+    // The advisor opens from "More options": docked beside the step on a laptop, a page of its own on a phone.
+    const advisor = await openAdvisor(page);
+    await noHorizontalOverflow(page);
+    await page.screenshot({ path: `${SHOTS}/advisor.png` });
+    await page.keyboard.press("Escape");
+    await expect(advisor).toBeHidden();
 
-    await page.getByRole("tab", { name: "Design", exact: true }).click();
-    await page.getByRole("button", { name: "Saved setups" }).click();
+    await goToStep(page, "Design");
+    await openSavedSetups(page);
     await page.getByRole("textbox", { name: "Configuration name" }).fill("Pune broiler shed");
     await page.getByRole("button", { name: "Save to my account" }).click();
     await expect(page.getByText("Pune broiler shed").first()).toBeVisible();

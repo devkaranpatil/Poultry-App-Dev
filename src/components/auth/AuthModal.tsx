@@ -16,9 +16,11 @@ interface AuthModalProps {
   mode: AuthMode;
   onOpenChange: (open: boolean) => void;
   onModeChange: (mode: AuthMode) => void;
+  /** Where to go once signed in; the estimate sends people on to the workspace with their farm. */
+  redirectTo?: string;
 }
 
-export function AuthModal({ open, mode, onOpenChange, onModeChange }: AuthModalProps) {
+export function AuthModal({ open, mode, onOpenChange, onModeChange, redirectTo = "/dashboard" }: AuthModalProps) {
   const { t } = useI18n();
   const navigate = useNavigate();
   const { login, signup } = useAuth();
@@ -48,7 +50,7 @@ export function AuthModal({ open, mode, onOpenChange, onModeChange }: AuthModalP
     try {
       await login(email, password);
       onOpenChange(false);
-      navigate("/dashboard");
+      navigate(redirectTo);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors.unableLogin"));
     } finally {
@@ -67,7 +69,7 @@ export function AuthModal({ open, mode, onOpenChange, onModeChange }: AuthModalP
         return;
       }
       onOpenChange(false);
-      navigate("/dashboard");
+      navigate(redirectTo);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors.unableCreate"));
     } finally {
@@ -78,7 +80,7 @@ export function AuthModal({ open, mode, onOpenChange, onModeChange }: AuthModalP
   const onGoogleAuth = async () => {
     resetFormState();
     try {
-      rememberPostAuthRedirect("/dashboard");
+      rememberPostAuthRedirect(redirectTo);
       await signInWithGoogle();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors.googleUnavailable"));
@@ -87,11 +89,11 @@ export function AuthModal({ open, mode, onOpenChange, onModeChange }: AuthModalP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass-elevated max-w-md overflow-hidden border-white/40 p-0">
-        <div className="bg-gradient-to-br from-primary/10 via-transparent to-[hsl(36_82%_60%_/_0.14)] p-6 pb-4">
+      <DialogContent className="max-w-md overflow-hidden p-0">
+        <div className="border-b border-border bg-accent/50 p-6 pb-5">
           <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
-            <DialogDescription>{t("auth.accessSaved")}</DialogDescription>
+            <DialogTitle className="font-display text-2xl font-extrabold">{title}</DialogTitle>
+            <DialogDescription className="text-[15px]">{t("auth.accessSaved")}</DialogDescription>
           </DialogHeader>
         </div>
 
@@ -104,7 +106,7 @@ export function AuthModal({ open, mode, onOpenChange, onModeChange }: AuthModalP
           }}
           className="w-full"
         >
-          <TabsList className="glass mt-1 grid w-full grid-cols-2 rounded-2xl border border-white/20 p-1">
+          <TabsList className="mt-5 grid w-full grid-cols-2">
             <TabsTrigger value="login">{t("auth.login")}</TabsTrigger>
             <TabsTrigger value="signup">{t("landing.signup")}</TabsTrigger>
           </TabsList>
@@ -134,7 +136,7 @@ export function AuthModal({ open, mode, onOpenChange, onModeChange }: AuthModalP
 
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" size="lg" className="w-full" disabled={loading}>
                 {loading ? t("auth.signingIn") : t("auth.signIn")}
               </Button>
               <Button
@@ -193,10 +195,10 @@ export function AuthModal({ open, mode, onOpenChange, onModeChange }: AuthModalP
                 <p className="text-xs text-muted-foreground">{t("auth.use8")}</p>
               </div>
 
-              {notice ? <p role="status" className="text-sm text-emerald-600">{notice}</p> : null}
+              {notice ? <p role="status" className="text-sm text-success">{notice}</p> : null}
               {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" size="lg" className="w-full" disabled={loading}>
                 {loading ? t("auth.creating") : t("auth.createAccount")}
               </Button>
               <Button

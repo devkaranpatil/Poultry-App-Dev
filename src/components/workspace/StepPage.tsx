@@ -3,7 +3,7 @@ import { AlertTriangle, ArrowLeft, ArrowRight, Lightbulb, Loader2 } from 'lucide
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/context/I18nContext';
 import { cn } from '@/lib/utils';
-import { OPTIONAL_STEPS, STEPS, STEP_ICONS, nextStep, previousStep, stepIndex, type StepId } from './steps';
+import { OPTIONAL_STEPS, STEP_ICONS, nextStep, previousStep, type StepId } from './steps';
 
 interface StepPageProps {
   step: StepId;
@@ -24,57 +24,58 @@ export function StepPage({ step, onNavigate, inShort, refreshing = false, childr
 
   return (
     <div className="custom-scrollbar h-full overflow-y-auto" data-testid={`step-${step}`}>
-      {/* Bottom padding keeps Back/Next clear of the floating advisor button. */}
-      <div className="mx-auto w-full max-w-3xl space-y-6 px-4 pb-24 pt-6 sm:px-6 sm:pt-8">
+      {/* Bottom room on larger screens lets the last figures scroll clear of the ask box in the corner. */}
+      <div className="mx-auto w-full max-w-3xl space-y-7 px-4 pt-6 sm:px-6 sm:pt-10 md:pb-44">
         <header className="flex items-start gap-4">
-          <span className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent text-accent-foreground sm:flex">
-            <Icon className="h-6 w-6" />
+          <span className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-card bg-accent text-accent-foreground sm:flex">
+            <Icon className="h-6 w-6" strokeWidth={1.75} />
           </span>
           <div className="min-w-0">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {t('ws.stepOf', { n: stepIndex(step) + 1, total: STEPS.length })}
-            </p>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="font-display text-2xl font-semibold text-foreground">{t(`ws.steps.${step}`)}</h1>
+              <h1 id="step-heading" tabIndex={-1} className="font-display text-[1.75rem] font-extrabold leading-tight text-foreground outline-none sm:text-[2rem]">
+                {t(`ws.steps.${step}`)}
+              </h1>
               {OPTIONAL_STEPS.has(step) ? (
-                <span className="rounded-full border border-border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  {t('ws.optional')}
-                </span>
+                <span className="rounded-full bg-secondary px-2.5 py-0.5 text-[12px] font-semibold text-muted-foreground">{t('ws.optional')}</span>
               ) : null}
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">{t(`ws.question.${step}`)}</p>
+            <p className="mt-1.5 max-w-[60ch] text-[16px] leading-relaxed text-muted-foreground">{t(`ws.question.${step}`)}</p>
           </div>
         </header>
 
         {inShort ? (
           <section
             aria-label={t('ws.inShort')}
-            className={cn('rounded-2xl border border-primary/20 bg-accent/60 p-4 sm:p-5', refreshing && 'opacity-60')}
+            className={cn('rounded-card border border-primary/20 bg-accent/60 p-5 transition-opacity', refreshing && 'opacity-60')}
             data-testid="in-short"
           >
-            <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-accent-foreground">
-              {refreshing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lightbulb className="h-3.5 w-3.5" />}
+            <p className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-accent-foreground">
+              {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lightbulb className="h-4 w-4" />}
               {t('ws.inShort')}
             </p>
-            <div className="space-y-1.5 text-[15px] leading-relaxed text-foreground">{inShort}</div>
+            <div className="space-y-1.5 text-[16px] leading-relaxed text-foreground">{inShort}</div>
           </section>
         ) : null}
 
-        <div className={cn('space-y-6 transition-opacity', refreshing && 'opacity-60')}>{children}</div>
+        <div className={cn('space-y-8 transition-opacity', refreshing && 'opacity-60')}>{children}</div>
 
-        <nav className="flex items-center justify-between gap-3 border-t border-border pt-5" aria-label={t('ws.stepsNav')}>
+        {/* On a phone Back and Next stay at the bottom of the screen, where the thumb is. */}
+        <nav
+          className="sticky bottom-0 z-10 -mx-4 flex items-center justify-between gap-3 border-t border-border bg-background/95 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 backdrop-blur-sm sm:-mx-6 sm:px-6 md:static md:mx-0 md:bg-transparent md:px-0 md:pb-0 md:pt-6 md:backdrop-blur-none"
+          aria-label={t('ws.pageNav')}
+        >
           {back ? (
-            <Button variant="outline" onClick={() => onNavigate(back)}>
-              <ArrowLeft className="mr-1.5 h-4 w-4" />
+            <Button variant="outline" size="lg" className="h-12 md:h-11" onClick={() => onNavigate(back)}>
+              <ArrowLeft />
               {t('ws.back')}
             </Button>
           ) : (
             <span />
           )}
           {next ? (
-            <Button onClick={() => onNavigate(next)}>
-              {t('ws.next', { step: t(`ws.steps.${next}`) })}
-              <ArrowRight className="ml-1.5 h-4 w-4" />
+            <Button size="lg" className="h-12 min-w-0 flex-1 md:h-11 md:flex-none" onClick={() => onNavigate(next)}>
+              <span className="truncate">{t('ws.next', { step: t(`ws.steps.${next}`) })}</span>
+              <ArrowRight />
             </Button>
           ) : null}
         </nav>
@@ -87,8 +88,8 @@ export function StepPage({ step, onNavigate, inShort, refreshing = false, childr
 export function FinishDesignFirst({ missing, onGoDesign }: { missing: string[]; onGoDesign: () => void }) {
   const { t } = useI18n();
   return (
-    <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-6 text-center">
-      <p className="text-base font-semibold text-foreground">{t('ws.finishSetupTitle')}</p>
+    <div className="rounded-card border border-dashed border-input bg-card p-8 text-center">
+      <p className="font-display text-lg font-extrabold text-foreground">{t('ws.finishSetupTitle')}</p>
       <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">{t('ws.finishSetupDesc')}</p>
       {missing.length > 0 ? <p className="mt-3 text-xs text-muted-foreground">{t('ws.missing', { items: missing.join(', ') })}</p> : null}
       <Button className="mt-4" onClick={onGoDesign}>
@@ -103,7 +104,7 @@ export function FinishDesignFirst({ missing, onGoDesign }: { missing: string[]; 
 export function StepError({ message, onRetry }: { message: string; onRetry: () => void }) {
   const { t } = useI18n();
   return (
-    <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-center">
+    <div className="rounded-card border border-destructive/30 bg-destructive/[0.06] p-6 text-center">
       <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-destructive" />
       <p className="text-sm font-medium text-destructive">{message}</p>
       <p className="mt-1 text-xs text-muted-foreground">{t('right.correctConfig')}</p>
@@ -121,12 +122,12 @@ export function Figures({ items }: { items: Array<{ label: ReactNode; value: str
       {items.map((item) => (
         <div
           key={item.key}
-          className={cn('rounded-xl border px-4 py-3', item.tone === 'primary' ? 'border-primary/20 bg-accent' : 'border-border bg-card')}
+          className={cn('rounded-card border px-4 py-3.5', item.tone === 'primary' ? 'border-primary/25 bg-accent' : 'border-border bg-card shadow-soft')}
         >
-          <dt className="text-xs font-medium text-muted-foreground">{item.label}</dt>
+          <dt className="text-[13px] font-medium leading-snug text-muted-foreground">{item.label}</dt>
           <dd
             className={cn(
-              'kpi-value mt-1 text-lg sm:text-xl',
+              'kpi-value mt-1 text-lg leading-tight sm:text-xl',
               item.tone === 'primary' && 'text-accent-foreground',
               item.tone === 'bad' && 'text-destructive',
               item.tone === 'good' && 'text-primary'
@@ -146,8 +147,8 @@ export function Block({ title, description, action, children }: { title: ReactNo
     <section className="space-y-3">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold text-foreground">{title}</h2>
-          {description ? <p className="mt-0.5 text-sm text-muted-foreground">{description}</p> : null}
+          <h2 className="font-display text-lg font-extrabold leading-snug text-foreground">{title}</h2>
+          {description ? <p className="mt-1 text-[15px] leading-relaxed text-muted-foreground">{description}</p> : null}
         </div>
         {action}
       </div>

@@ -20,7 +20,7 @@ const SEVERITY_DOT: Record<'low' | 'medium' | 'high', string> = {
 export function AiNotConfigured() {
   const { t } = useI18n();
   return (
-    <div className="mx-auto max-w-md rounded-2xl border border-dashed border-border bg-muted/40 p-6 text-center">
+    <div className="mx-auto max-w-md rounded-card border border-dashed border-border bg-muted/40 p-6 text-center">
       <Bot className="mx-auto h-8 w-8 text-muted-foreground" />
       <p className="mt-3 text-sm font-medium text-foreground">{t('ai.notConfiguredTitle')}</p>
       <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{t('ai.notConfiguredDesc')}</p>
@@ -63,7 +63,7 @@ export function AdvisorReview({ report }: { report: AdvisorReport }) {
                 <p className="flex items-center gap-2 text-sm font-medium text-foreground">
                   <span className={cn('h-2 w-2 shrink-0 rounded-full', SEVERITY_DOT[risk.severity])} aria-hidden="true" />
                   {risk.title}
-                  <span className="ml-auto text-[11px] font-normal text-muted-foreground">{t(`ai.severity.${risk.severity}`)}</span>
+                  <span className="ml-auto text-[12px] font-normal text-muted-foreground">{t(`ai.severity.${risk.severity}`)}</span>
                 </p>
                 <p className="mt-1 pl-4 text-xs leading-relaxed text-muted-foreground">{risk.detail}</p>
               </li>
@@ -78,13 +78,13 @@ export function AdvisorReview({ report }: { report: AdvisorReport }) {
           <ol className="divide-y divide-border rounded-lg border border-border bg-card">
             {report.recommendations.map((rec, index) => (
               <li key={rec.title} className="flex items-start gap-3 p-3">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-accent-foreground">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-[12px] font-semibold text-accent-foreground">
                   {index + 1}
                 </span>
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-foreground">{rec.title}</p>
                   <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{rec.detail}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[12px]">
                     <span className="rounded-full border border-border px-2 py-0.5 text-muted-foreground">{t(`ai.category.${rec.category}`)}</span>
                     {rec.impact ? <span className="font-medium text-primary">{rec.impact}</span> : null}
                   </div>

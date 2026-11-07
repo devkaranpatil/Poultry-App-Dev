@@ -136,7 +136,7 @@ export function ExportPanel({ config, result, assumptions, loanTerms, sitingTick
           !hasAdvisor
         )}
       </div>
-      <p className="text-[11px] leading-snug text-muted-foreground">{t('export.languageNote')}</p>
+      <p className="text-[12px] leading-snug text-muted-foreground">{t('export.languageNote')}</p>
     </div>
   );
 }

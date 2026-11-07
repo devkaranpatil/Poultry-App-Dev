@@ -598,10 +598,10 @@ export function MiddlePanel({
               <span className="hidden text-xs text-muted-foreground sm:inline">
                 {area.toFixed(0)} m² · {volume.toFixed(0)} m³
               </span>
-              <label className="hidden items-center gap-1 text-[11px] text-muted-foreground sm:flex">
+              <label className="hidden items-center gap-1 text-[12px] text-muted-foreground sm:flex">
                 <span className="sr-only">{t('middle.quality')}</span>
                 <select
-                  className="h-6 rounded border border-border bg-card px-1 text-[11px] text-foreground"
+                  className="h-6 rounded border border-border bg-card px-1 text-[12px] text-foreground"
                   aria-label={t('middle.quality')}
                   value={qualityMode}
                   onChange={(event) => setQualityMode(event.target.value as QualityMode)}
@@ -686,7 +686,7 @@ export function MiddlePanel({
                   </button>
                 </span>
               ) : null}
-              <p className="glass rounded-full px-3 py-1 text-[11px] text-muted-foreground shadow-soft" data-testid="viewport-status">
+              <p className="glass rounded-full px-3 py-1 text-[12px] text-muted-foreground shadow-soft" data-testid="viewport-status">
                 {statusText}
               </p>
             </div>

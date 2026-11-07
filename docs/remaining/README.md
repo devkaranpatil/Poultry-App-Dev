@@ -10,7 +10,7 @@ Last updated: 2026-11-06.
 
 | # | Task | Who | Size |
 |---|---|---|---|
-| 01 | [Run the assistant evaluation to the end](01-run-ai-evaluation.md) (74 of 85 on 2026-11-06; project and NABARD questions fixed since; seven open) | developer | small |
+| 01 | [Run the assistant evaluation to the end](01-run-ai-evaluation.md) (78 of 85 on 2026-11-07; seven open) | developer | small |
 | 02 | [What-if answers quote the wrong column](02-fix-what-if-answers.md) | developer | small |
 | 03 | [An impossible change gets no limit](03-fix-impossible-change.md) | developer | small |
 | 04 | [Project cost questions quote the wrong figure](04-fix-project-cost-figures.md) | developer | small |
@@ -29,6 +29,7 @@ The full run of 01 passed 65 of 85 on the old code (2026-10-23) and 78 of 85 on 
 | 10 | [Native review of Hindi and Marathi](10-review-hindi-marathi.md) | native speakers | medium |
 | 11 | [Fetch the CPCB guideline text](11-fetch-cpcb-guideline.md) | developer | small |
 | 12 | [NABARD unit costs and schemes for more states](12-more-states.md) (done 2026-11-06: all 28 states' unit costs, 11 states' schemes) | developer or researcher | medium per state |
+| 14 | [Brief for the poultry-expert review](14-expert-review-brief.md) (the formulas and eight questions; no reviewer yet) | poultry consultant or lender | small |
 
 ## Clean-up
 

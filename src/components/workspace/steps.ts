@@ -16,6 +16,20 @@ export const STEP_ICONS: Record<StepId, LucideIcon> = {
   report: FileText,
 };
 
+/** The three things a grower does, in order: plan the shed, check the money, share it. Every step is in one phase. */
+export const PHASES = [
+  { id: 'plan', steps: ['design', 'site'] },
+  { id: 'money', steps: ['cost', 'earnings', 'loan', 'risk'] },
+  { id: 'share', steps: ['summary', 'report'] },
+] as const satisfies ReadonlyArray<{ id: string; steps: readonly StepId[] }>;
+
+export type PhaseId = (typeof PHASES)[number]['id'];
+
+export const phaseOf = (step: StepId): PhaseId => PHASES.find((phase) => (phase.steps as readonly StepId[]).includes(step))!.id;
+
+/** Steps whose page is about money: the project figures strip stays on screen there. */
+export const MONEY_STEPS: ReadonlySet<StepId> = new Set<StepId>(['cost', 'earnings', 'loan', 'risk', 'summary']);
+
 /** Steps a grower may skip; the report is complete without them. */
 export const OPTIONAL_STEPS: ReadonlySet<StepId> = new Set<StepId>(['summary']);
 

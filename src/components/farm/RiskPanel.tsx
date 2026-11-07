@@ -148,7 +148,7 @@ export function RiskPanel({ risk, years, onYearsChange, outbreakChancePct, onOut
 
       {!simulation && status !== 'error' ? (
         <div className="space-y-3" aria-busy="true">
-          <div className="h-24 animate-pulse rounded-2xl bg-muted" />
+          <div className="h-24 animate-pulse rounded-card bg-muted" />
           <div className="grid grid-cols-3 gap-3">
             {[0, 1, 2].map((key) => (
               <div key={key} className="h-20 animate-pulse rounded-xl bg-muted" />
@@ -261,7 +261,7 @@ function ChanceCard({ chance, years }: { chance: number; years: number }) {
   const verdict = verdictFor(chance);
   const share = Math.round(chance * 100);
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm" data-testid="risk-chance">
+    <div className="rounded-card border border-border bg-card p-5 shadow-sm" data-testid="risk-chance">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-medium text-foreground">
           <Labelled term="riskSim" label={t('risk.chanceTitle', { years })} />

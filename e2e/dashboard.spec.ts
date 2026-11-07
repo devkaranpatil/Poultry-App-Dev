@@ -50,10 +50,11 @@ test.describe("dashboard", () => {
     await expect(page.getByTestId("model-dimensions")).toContainText("14 × 7");
   });
 
-  test("the Dashboard link in the designer leads back, and the Design tab returns", async ({ page }) => {
+  test("All projects in the designer's menu leads back, and the Design tab returns", async ({ page }) => {
     await signUp(page);
     await configureSetup(page);
-    await page.getByRole("link", { name: "Dashboard" }).first().click();
+    await page.getByTestId("workspace-menu").click();
+    await page.getByRole("menuitem", { name: "All projects" }).click();
     await expect(page).toHaveURL(/dashboard/);
     await page.getByRole("link", { name: "Design" }).first().click();
     await expect(page).toHaveURL(/visualizer/);

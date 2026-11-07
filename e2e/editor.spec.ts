@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { configureSetup, signUp, trackPageErrors } from "./helpers";
+import { configureSetup, goToStep, signUp, trackPageErrors } from "./helpers";
 
 type Project = (name: string, centre?: boolean) => { x: number; y: number } | null;
 
@@ -84,7 +84,7 @@ test.describe("editing the model in 3D", () => {
 
     await expect.poll(async () => (await dimensions(page)).length).toBeGreaterThan(14);
     const after = await dimensions(page);
-    expect(Number.isInteger(after.length)).toBe(true); // snaps to whole metres
+    expect(Number.isInteger(after.length * 2)).toBe(true); // snaps to half metres (SNAP_STEP.length)
     expect(after.width).toBe(before.width);
 
     // The sidebar and the scene stay in step with the drag.
@@ -217,21 +217,21 @@ test.describe("editing the model in 3D", () => {
     await page.getByTestId("part-editor").getByRole("radio", { name: "Mesh, automatic curtains" }).click();
     await expect(page.getByText("Up to date")).toBeVisible();
 
-    await page.getByRole("tab", { name: "Cost", exact: true }).click();
+    await goToStep(page, "Cost");
     const note = page.getByTestId("unsourced-rates");
     await expect(note).toContainText("No published price exists");
     await expect(note).toContainText("puf-panel");
     await expect(note).toContainText("automatic curtains");
 
     // Back to the standard choices: only the footbath's assumed price is left. Returning keeps the model fully built.
-    await page.getByRole("tab", { name: "Design", exact: true }).click();
+    await goToStep(page, "Design");
     await waitForScene(page);
     await page.getByRole("button", { name: "Roof sheet", exact: true }).click();
     await page.getByTestId("part-editor").getByRole("radio", { name: "GI sheet" }).click();
     await page.getByRole("button", { name: "Side walls", exact: true }).click();
     await page.getByTestId("part-editor").getByRole("radio", { name: "Mesh and curtains" }).click();
     await expect(page.getByText("Up to date")).toBeVisible();
-    await page.getByRole("tab", { name: "Cost", exact: true }).click();
+    await goToStep(page, "Cost");
     await expect(page.getByTestId("unsourced-rates")).not.toContainText("puf-panel");
   });
 });

@@ -2,7 +2,6 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SAMPLE_CONFIG, sampleResult } from './helpers/poultryResult';
-import { formatINRCompact } from '@/lib/format';
 import { I18nProvider } from '@/context/I18nContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import LoginPage from '@/pages/auth/LoginPage';
@@ -121,11 +120,12 @@ describe('Landing', () => {
     calc.calculateFarm.mockResolvedValue(sampleResult());
     wrap(<Landing />);
     expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('Know what a poultry shed will cost');
-    for (const id of ['problem', 'solution', 'features', 'ai', 'workflow', 'faq']) {
+    for (const id of ['questions', 'how-it-works', 'bank', 'birds', 'ai', 'faq']) {
       expect(document.getElementById(id)).not.toBeNull();
     }
     // The main call to action needs no account.
-    expect(screen.getByRole('link', { name: /Try a free estimate/ })).toHaveAttribute('href', '/estimate');
+    // Every start action on the page has the same label and goes to the estimate.
+    for (const link of screen.getAllByRole('link', { name: /Try a free estimate/ })) expect(link).toHaveAttribute('href', '/estimate');
     fireEvent.click(screen.getAllByRole('button', { name: /Sign up/i })[0]);
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
   });
@@ -162,8 +162,8 @@ describe('Workspace (Index)', () => {
     expect(await screen.findByText('Nagpur, Maharashtra')).toBeInTheDocument();
     await waitFor(() => expect(calc.calculateFarm).toHaveBeenCalledTimes(1), { timeout: 3000 });
     expect(calc.calculateFarm.mock.calls[0][0]).toMatchObject({ state: 'Maharashtra', district: 'Nagpur' });
-    expect(await screen.findByText(formatINRCompact(result.cost.capitalCost))).toBeInTheDocument();
-    expect(screen.getByText('1,076 birds')).toBeInTheDocument();
+    // The status says the figures are current; the figures themselves are on the money steps.
+    expect(await screen.findByText('Up to date')).toBeInTheDocument();
   });
 
   it('copies a share link for the current setup', async () => {

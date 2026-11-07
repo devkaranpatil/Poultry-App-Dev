@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode, type Ref } from 'react';
+import { useEffect, useRef, useState, type ReactNode, type Ref } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, ArrowUp, BookOpen, Bot, ChevronDown, Loader2, LogIn, MessageCircle, Sparkles, Square, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -96,7 +96,7 @@ function MessageBubble({ message, pending }: { message: ChatMessage; pending: bo
   if (message.role === 'user') {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-sm leading-relaxed text-primary-foreground">
+        <div className="max-w-[85%] whitespace-pre-wrap rounded-card rounded-br-md bg-primary px-4 py-2.5 text-sm leading-relaxed text-primary-foreground">
           {message.content}
         </div>
       </div>
@@ -107,7 +107,7 @@ function MessageBubble({ message, pending }: { message: ChatMessage; pending: bo
       <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground" aria-hidden="true">
         <Bot className="h-4 w-4" />
       </span>
-      <div className="min-w-0 max-w-[92%] flex-1 rounded-2xl rounded-tl-md border border-border bg-card px-4 py-3 text-sm leading-relaxed text-foreground shadow-sm">
+      <div className="min-w-0 max-w-[92%] flex-1 rounded-card rounded-tl-md border border-border bg-card px-4 py-3 text-sm leading-relaxed text-foreground shadow-sm">
         {message.content ? (
           <div className="whitespace-pre-wrap">{message.content}</div>
         ) : pending ? (
@@ -118,7 +118,7 @@ function MessageBubble({ message, pending }: { message: ChatMessage; pending: bo
         ) : null}
         {message.scenario ? <ScenarioTable scenario={message.scenario} /> : null}
         {message.unverified && message.unverified.length > 0 ? (
-          <p className="mt-3 flex items-start gap-1.5 rounded-md bg-amber-500/10 px-3 py-2 text-xs leading-snug text-amber-700 dark:text-amber-300" role="note">
+          <p className="mt-3 flex items-start gap-1.5 rounded-md bg-warning/10 px-3 py-2 text-xs leading-snug text-warning " role="note">
             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>
               {t('ai.unverified')} {message.unverified.join(', ')}
@@ -157,11 +157,29 @@ export interface AdvisorChatProps {
 export function AdvisorChat({ ai, ready, suggestions, draft, onDraftChange, inputRef, onOpenSummary, wide = false }: AdvisorChatProps) {
   const { t } = useI18n();
   const endRef = useRef<HTMLDivElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
   const messages = ai?.messages;
+  const streaming = Boolean(ai?.chatStreaming);
+  const [announcement, setAnnouncement] = useState('');
+  const wasStreaming = useRef(false);
 
+  // Follow a streaming reply only while the reader is at the bottom; someone scrolled up to re-read is left there.
+  const shownCount = useRef(0);
   useEffect(() => {
-    endRef.current?.scrollIntoView?.({ block: 'nearest' });
+    const scroller = scrollerRef.current;
+    const count = messages?.length ?? 0;
+    const asked = count > shownCount.current;
+    shownCount.current = count;
+    const nearBottom = !scroller || scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 120;
+    if (asked || nearBottom) endRef.current?.scrollIntoView?.({ block: 'nearest' });
   }, [messages]);
+
+  // Screen readers hear that a reply is ready once, not every word as it streams in.
+  useEffect(() => {
+    if (wasStreaming.current && !streaming) setAnnouncement(t('ws.replyReady'));
+    if (streaming) setAnnouncement('');
+    wasStreaming.current = streaming;
+  }, [streaming, t]);
 
   if (!ai) {
     return (
@@ -204,7 +222,7 @@ export function AdvisorChat({ ai, ready, suggestions, draft, onDraftChange, inpu
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto">
+      <div ref={scrollerRef} className="custom-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <section aria-label={t('ai.chatTitle')} className={cn(column, 'space-y-4 p-4', wide && 'sm:p-6')}>
           {ai.messages.length === 0 ? (
             <div className="px-1 py-2 text-center">
@@ -227,10 +245,10 @@ export function AdvisorChat({ ai, ready, suggestions, draft, onDraftChange, inpu
               </div>
             </div>
           ) : (
-            <div className="space-y-4" aria-live="polite">
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <p className="eyebrow">{t('ai.chatTitle')}</p>
-                <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-muted-foreground" onClick={ai.resetChat}>
+                <Button size="sm" variant="ghost" className="h-9 px-2.5 text-xs text-muted-foreground" onClick={ai.resetChat}>
                   <Trash2 className="mr-1 h-3 w-3" />
                   {t('ai.clearChat')}
                 </Button>
@@ -251,6 +269,9 @@ export function AdvisorChat({ ai, ready, suggestions, draft, onDraftChange, inpu
             </button>
           ) : null}
           <div ref={endRef} />
+          <p className="sr-only" role="status">
+            {announcement}
+          </p>
         </section>
       </div>
 
@@ -274,7 +295,8 @@ export function AdvisorChat({ ai, ready, suggestions, draft, onDraftChange, inpu
               value={draft}
               onChange={(event) => onDraftChange(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === 'Enter' && !event.shiftKey) {
+                // A Hindi or Marathi word still being composed in the keyboard is not sent half-way.
+                if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
                   event.preventDefault();
                   send(draft);
                 }
@@ -283,26 +305,26 @@ export function AdvisorChat({ ai, ready, suggestions, draft, onDraftChange, inpu
               aria-label={t('ai.chatPlaceholder')}
               maxLength={2000}
               rows={1}
-              className="min-h-[48px] resize-none rounded-xl py-3 pr-12 text-sm"
+              className="min-h-[56px] resize-none rounded-xl py-3.5 pr-14 text-sm"
             />
             {ai.chatStreaming ? (
               <Button
                 type="button"
                 size="icon"
                 variant="outline"
-                className="absolute bottom-2 right-2 h-8 w-8 rounded-lg"
+                className="absolute bottom-2 right-2 h-10 w-10 rounded-lg"
                 onClick={ai.stopChat}
                 aria-label={t('ai.stop')}
               >
                 <Square className="h-3.5 w-3.5" />
               </Button>
             ) : (
-              <Button type="submit" size="icon" className="absolute bottom-2 right-2 h-8 w-8 rounded-lg" disabled={!draft.trim()} aria-label={t('ai.send')}>
+              <Button type="submit" size="icon" className="absolute bottom-2 right-2 h-10 w-10 rounded-lg" disabled={!draft.trim()} aria-label={t('ai.send')}>
                 <ArrowUp className="h-4 w-4" />
               </Button>
             )}
           </form>
-          <p className="mt-2 text-[11px] leading-snug text-muted-foreground">{t('ai.disclaimer')}</p>
+          <p className="mt-2 text-[12px] leading-snug text-muted-foreground">{t('ai.disclaimer')}</p>
         </div>
       </div>
     </div>

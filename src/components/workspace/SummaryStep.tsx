@@ -39,7 +39,7 @@ export function SummaryStep({ step, onNavigate, ai, includeAiSummary, onIncludeA
   if (!ai) {
     return (
       <StepPage step={step} onNavigate={onNavigate} inShort={inShort}>
-        <section className="rounded-2xl border border-dashed border-border bg-muted/30 p-6 text-center" data-testid="summary-sign-in">
+        <section className="rounded-card border border-dashed border-border bg-muted/30 p-6 text-center" data-testid="summary-sign-in">
           <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-accent text-accent-foreground">
             <LogIn className="h-5 w-5" />
           </span>
@@ -74,7 +74,7 @@ export function SummaryStep({ step, onNavigate, ai, includeAiSummary, onIncludeA
 
   return (
     <StepPage step={step} onNavigate={onNavigate} inShort={inShort}>
-      <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+      <section className="rounded-card border border-border bg-card p-4 sm:p-5">
         <div className="flex items-start gap-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
             <Sparkles className="h-4 w-4" />
@@ -116,7 +116,7 @@ export function SummaryStep({ step, onNavigate, ai, includeAiSummary, onIncludeA
       ) : null}
 
       {ai.advisorLoading && !ai.advisor ? (
-        <section className="space-y-3 rounded-2xl border border-border bg-card p-4 sm:p-5" aria-busy="true">
+        <section className="space-y-3 rounded-card border border-border bg-card p-4 sm:p-5" aria-busy="true">
           <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             {t('summary.generating')}
@@ -129,21 +129,21 @@ export function SummaryStep({ step, onNavigate, ai, includeAiSummary, onIncludeA
         <section
           aria-label={t('ws.steps.summary')}
           aria-busy={ai.advisorLoading}
-          className={cn('rounded-2xl border border-border bg-card p-4 transition-opacity sm:p-5', (ai.advisorLoading || state === 'stale') && 'opacity-60')}
+          className={cn('rounded-card border border-border bg-card p-4 transition-opacity sm:p-5', (ai.advisorLoading || state === 'stale') && 'opacity-60')}
           data-testid="summary-review"
         >
           <div className="mb-4 flex items-center justify-between gap-2">
             <h2 className="text-base font-semibold text-foreground">{t('ws.steps.summary')}</h2>
-            <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold text-accent-foreground">{t('summary.aiLabel')}</span>
+            <span className="rounded-full bg-accent px-2 py-0.5 text-[12px] font-semibold text-accent-foreground">{t('summary.aiLabel')}</span>
           </div>
           <AdvisorReview report={ai.advisor} />
-          <p className="mt-4 text-[11px] leading-snug text-muted-foreground">{t('ai.disclaimer')}</p>
+          <p className="mt-4 text-[12px] leading-snug text-muted-foreground">{t('ai.disclaimer')}</p>
         </section>
       ) : null}
 
       <label
         htmlFor="summary-include"
-        className={cn('flex items-start gap-3 rounded-2xl border border-border bg-background p-4', fresh ? 'cursor-pointer' : 'opacity-70')}
+        className={cn('flex items-start gap-3 rounded-card border border-border bg-background p-4', fresh ? 'cursor-pointer' : 'opacity-70')}
       >
         <Switch
           id="summary-include"

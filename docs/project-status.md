@@ -125,7 +125,7 @@ of memory. CI runs the whole suite in one go.
   (Rs 10 a kg). Feed (Rs 35) and chicks (Rs 40) are NABARD's published Maharashtra figures. See the vault note
   "05 Price Research 2026-11".
 - **NABARD unit costs** are in for all 28 states (task 12, 2026-11-06); a bank uses its own state's.
-- **State schemes:** 11 states (task 12). Maharashtra's rules are read from the GR of 9 March 2026 (a copy; the original on gr.maharashtra.gov.in is still to be linked). Six scheme PDFs (Bihar, Odisha, Uttarakhand, Uttar Pradesh) gave empty text and are reported as unusable, not as coverage.
+- **State schemes:** 11 states (task 12). Maharashtra's rules are read from the GR of 9 March 2026 (a copy; the original on gr.maharashtra.gov.in is still to be linked). Six scheme PDFs (Bihar, Odisha, Uttarakhand, Uttar Pradesh) are scans; they are read with OCR (Tesseract, Hindi and English) by `fetch_knowledge.py`, so figures may carry reading errors. A source under 500 characters is still reported as unusable, not as coverage.
 - **Heat stress on monthly means:** afternoons are hotter than the index.
 - **AI:** 40-90 s per answer on a laptop CPU, 20-30 s with part of the model on a GPU (what-if answers 70-135 s).
   The evaluation passes 78 of 85; five of the seven failures are fixed but not yet rerun, two are open

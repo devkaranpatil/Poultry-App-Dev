@@ -34,6 +34,14 @@ import { DEFAULT_CONFIG, normalizeFarmConfig, optionKey, type FarmConfig } from 
 
 const SAVED_QUERY_KEY = ['saved-configurations'];
 
+/** A photo per kind of farm, so projects are easy to tell apart at a glance. */
+const BIRD_PHOTO: Record<string, string> = {
+  broiler: '/images/shed-interior-800.webp',
+  'layer-cage': '/images/layer-cages-640.webp',
+  'layer-floor': '/images/layer-cages-640.webp',
+  desi: '/images/desi-yard-640.webp',
+};
+
 /** A saved setup only has a price once it names a place, because climate is part of the estimate. */
 const hasLocation = (config: FarmConfig) => config.state.trim() !== '' && config.district.trim() !== '';
 
@@ -52,7 +60,7 @@ function SetupCost({ config }: { config: FarmConfig }) {
   if (cost.isPending) return <Skeleton className="h-6 w-24" />;
   if (cost.isError || !cost.data) return <p className="text-xs text-muted-foreground">{t('dashboard.costFailed')}</p>;
   return (
-    <p className="text-lg font-semibold text-foreground" data-testid="setup-cost">
+    <p className="font-display text-lg font-extrabold text-foreground" data-testid="setup-cost">
       {formatINRCompact(cost.data.cost.capitalCost)}
     </p>
   );
@@ -77,22 +85,24 @@ function SetupCard({
   const updated = new Date(item.updatedAt).toLocaleDateString(language, { day: 'numeric', month: 'short', year: 'numeric' });
 
   return (
-    <Card className="flex flex-col gap-4 rounded-2xl p-5" data-testid="setup-card">
+    <Card className="flex flex-col overflow-hidden rounded-card p-0 transition-shadow hover:shadow-elevated" data-testid="setup-card">
+      <img src={BIRD_PHOTO[config.birdType] ?? BIRD_PHOTO.broiler} alt="" loading="lazy" className="h-28 w-full object-cover" />
+      <div className="flex flex-1 flex-col gap-4 p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="truncate text-base font-semibold text-foreground">{item.name}</h3>
-          <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+          <h3 className="truncate font-display text-lg font-extrabold text-foreground">{item.name}</h3>
+          <p className="mt-0.5 flex items-center gap-1 text-[13px] text-muted-foreground">
             <MapPin className="h-3 w-3 shrink-0" />
             <span className="truncate">{place}</span>
           </p>
         </div>
         <div className="shrink-0 text-right">
-          <p className="text-[11px] text-muted-foreground">{t('dashboard.cost')}</p>
+          <p className="text-[12px] text-muted-foreground">{t('dashboard.cost')}</p>
           <SetupCost config={config} />
         </div>
       </div>
 
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <Ruler className="h-3.5 w-3.5" />
           <dd className="text-foreground">
@@ -131,6 +141,7 @@ function SetupCard({
         >
           <Trash2 className="h-4 w-4" />
         </Button>
+      </div>
       </div>
     </Card>
   );
@@ -207,7 +218,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-border bg-card px-3 sm:px-4">
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-border bg-card px-3 shadow-soft sm:px-6">
         <div className="flex items-center gap-3">
           <Link to="/" aria-label={t('app.goHome')}>
             <Logo compact />
@@ -215,14 +226,14 @@ export default function Dashboard() {
           <nav className="flex items-center gap-1" aria-label={t('app.primaryNav')}>
             <span
               aria-current="page"
-              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-muted px-3 text-sm font-medium text-foreground"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-accent px-3.5 text-sm font-semibold text-accent-foreground"
             >
               <BarChart3 className="h-4 w-4" />
               {t('nav.dashboard')}
             </span>
             <Link
               to="/visualizer"
-              className="inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             >
               <Box className="h-4 w-4" />
               {t('nav.design')}
@@ -232,11 +243,11 @@ export default function Dashboard() {
         <TopRightMenu />
       </header>
 
-      <main className="mx-auto w-full max-w-6xl space-y-8 px-4 py-8 sm:px-6">
+      <main className="mx-auto w-full max-w-6xl space-y-10 px-4 py-10 sm:px-6 lg:py-14">
         <section className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{t('dashboard.welcome', { name: firstName })}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">{t('dashboard.subtitle')}</p>
+            <h1 className="font-display text-3xl font-extrabold leading-tight sm:text-4xl">{t('dashboard.welcome', { name: firstName })}</h1>
+            <p className="mt-2 text-[16px] text-muted-foreground">{t('dashboard.subtitle')}</p>
           </div>
           <Button size="lg" onClick={startNew} className="gap-2 self-start sm:self-auto">
             <Plus className="h-5 w-5" />
@@ -245,7 +256,7 @@ export default function Dashboard() {
         </section>
 
         {draftWorthResuming ? (
-          <Card className="flex flex-col gap-3 rounded-2xl border-primary/30 bg-primary/5 p-5 sm:flex-row sm:items-center sm:justify-between" data-testid="draft-card">
+          <Card className="flex flex-col gap-3 rounded-card border-primary/30 bg-primary/5 p-5 sm:flex-row sm:items-center sm:justify-between" data-testid="draft-card">
             <div>
               <h2 className="text-sm font-semibold">{t('dashboard.continue')}</h2>
               <p className="mt-0.5 text-sm text-muted-foreground">
@@ -261,7 +272,7 @@ export default function Dashboard() {
             </Button>
           </Card>
         ) : (
-          <Card className="flex flex-col gap-3 rounded-2xl p-5 sm:flex-row sm:items-center sm:justify-between">
+          <Card className="flex flex-col gap-3 rounded-card p-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-sm font-semibold">{t('dashboard.quickStart')}</h2>
               <p className="mt-0.5 text-sm text-muted-foreground">{t('dashboard.quickStartDesc')}</p>
@@ -272,7 +283,7 @@ export default function Dashboard() {
           </Card>
         )}
 
-        <section className="grid gap-4 sm:grid-cols-3" aria-label={t('dashboard.title')}>
+        <section className="flex flex-wrap gap-x-8 gap-y-2" aria-label={t('dashboard.title')}>
           {[
             { label: t('dashboard.statSetups'), value: saved.isPending ? '…' : String(items.length) },
             { label: t('dashboard.statArea'), value: saved.isPending ? '…' : `${Math.round(stats.area).toLocaleString(language)} m²` },
@@ -285,26 +296,26 @@ export default function Dashboard() {
                   : t('dashboard.statNone'),
             },
           ].map((stat) => (
-            <Card key={stat.label} className="rounded-2xl p-5">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">{stat.label}</p>
-              <p className="mt-1 text-2xl font-semibold">{stat.value}</p>
-            </Card>
+            <p key={stat.label} className="flex items-baseline gap-2 text-[14px]">
+              <span className="text-muted-foreground">{stat.label}</span>
+              <span className="font-display text-lg font-extrabold">{stat.value}</span>
+            </p>
           ))}
         </section>
 
         <section aria-labelledby="saved-heading" className="space-y-4">
-          <h2 id="saved-heading" className="text-lg font-semibold">
+          <h2 id="saved-heading" className="font-display text-2xl font-extrabold">
             {t('dashboard.sectionTitle')}
           </h2>
 
           {saved.isPending ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {[0, 1, 2].map((key) => (
-                <Skeleton key={key} className="h-48 rounded-2xl" />
+                <Skeleton key={key} className="h-48 rounded-card" />
               ))}
             </div>
           ) : saved.isError ? (
-            <Card className="flex flex-col items-start gap-3 rounded-2xl p-6">
+            <Card className="flex flex-col items-start gap-3 rounded-card p-6">
               <p role="alert" className="text-sm text-destructive">
                 {t('dashboard.loadError')}
               </p>
@@ -313,14 +324,21 @@ export default function Dashboard() {
               </Button>
             </Card>
           ) : items.length === 0 ? (
-            <Card className="flex flex-col items-center gap-3 rounded-2xl p-10 text-center" data-testid="dashboard-empty">
-              <Bird className="h-8 w-8 text-primary" />
-              <h3 className="text-base font-semibold">{t('dashboard.emptyTitle')}</h3>
-              <p className="max-w-md text-sm text-muted-foreground">{t('dashboard.emptyDesc')}</p>
-              <Button onClick={startNew} className="gap-2">
-                <Plus className="h-4 w-4" />
-                {t('dashboard.newDesign')}
-              </Button>
+            <Card className="flex flex-col items-center gap-3 rounded-card p-10 text-center" data-testid="dashboard-empty">
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-foreground">
+                <Bird className="h-7 w-7" strokeWidth={1.75} />
+              </span>
+              <h3 className="font-display text-xl font-extrabold">{t('dashboard.emptyTitle')}</h3>
+              <p className="max-w-md text-[15px] text-muted-foreground">{t('dashboard.emptyDesc')}</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button onClick={startNew} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  {t('dashboard.newDesign')}
+                </Button>
+                <Button asChild variant="outline">
+                  <Link to="/estimate">{t('landing.tryEstimate')}</Link>
+                </Button>
+              </div>
             </Card>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

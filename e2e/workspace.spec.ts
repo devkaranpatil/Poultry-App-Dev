@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { configureSetup, goToStep, logIn, openResults, signUp, trackPageErrors } from "./helpers";
+import { configureSetup, goToStep, logIn, openAdvisor, openResults, signUp, trackPageErrors } from "./helpers";
 
 test.describe("workspace", () => {
   test("configure a poultry shed and get its figures", async ({ page }) => {
@@ -7,9 +7,9 @@ test.describe("workspace", () => {
     await signUp(page);
     await configureSetup(page);
 
-    // Header reflects the project, and the live estimate sits beside it.
+    // Header reflects the project; the journey says the figures are current (the figures are on the money steps).
     await expect(page.getByText("Pune, Maharashtra")).toBeVisible();
-    await expect(page.getByText(/₹\d+(\.\d+)? L/).first()).toBeVisible();
+    await expect(page.getByTestId("journey-rail").getByText("Up to date")).toBeVisible();
 
     // The 3D viewer renders a WebGL canvas.
     await expect(page.locator("canvas").first()).toBeVisible();
@@ -48,21 +48,33 @@ test.describe("workspace", () => {
     await siting.getByRole("checkbox").first().click();
     await expect(siting.getByText(/item\(s\) not confirmed yet|All confirmed/)).toBeVisible();
 
-    // The advisor opens from the corner on any step and explains it needs the model (the e2e backend runs without one).
-    const launcher = page.getByTestId("advisor-launcher");
-    await launcher.click();
-    await expect(launcher).toHaveAttribute("aria-expanded", "true");
-    const chat = page.getByTestId("advisor-window");
+    // The advisor opens from "More options", docked beside the step, and explains it needs the model (the e2e
+    // backend runs without one). Escape closes it and focus goes back to the menu.
+    await expect(page.getByTestId("advisor-launcher")).toHaveCount(0);
+    const chat = await openAdvisor(page);
     await expect(chat.getByText("AI advisor isn't set up yet")).toBeVisible();
-    // Full screen and back: Escape steps down to the small window, then closes it.
-    await chat.getByRole("button", { name: "Open full screen" }).click();
-    await expect(page.getByTestId("advisor-fullscreen")).toBeVisible();
-    await page.keyboard.press("Escape");
-    await expect(page.getByTestId("advisor-fullscreen")).toBeHidden();
-    await expect(chat).toBeVisible();
+    await expect(page.getByTestId("step-site")).toBeVisible();
+    await chat.getByRole("button", { name: "Close advisor" }).focus();
     await page.keyboard.press("Escape");
     await expect(chat).toBeHidden();
-    await expect(launcher).toBeFocused();
+    await expect(page.getByTestId("workspace-menu")).toBeFocused();
+
+    // Designing the shed needs no advisor: it is not in the menu on the Design step.
+    await goToStep(page, "Design");
+    await page.getByTestId("workspace-menu").click();
+    await expect(page.getByRole("menuitem", { name: /How it works/ })).toBeVisible();
+    await expect(page.getByTestId("ask-advisor")).toHaveCount(0);
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("money-ask")).toHaveCount(0);
+
+    // The money steps carry a small ask box in the corner; a question typed there opens the advisor.
+    await goToStep(page, "Cost");
+    const askBox = page.getByTestId("money-ask");
+    await expect(askBox).toBeVisible();
+    await askBox.getByRole("textbox").fill("Why does it not pay back?");
+    await askBox.getByRole("button", { name: "Send" }).click();
+    await expect(page.getByTestId("advisor-panel")).toBeVisible();
+    await expect(askBox).toBeHidden();
 
     expect(errors).toEqual([]);
   });

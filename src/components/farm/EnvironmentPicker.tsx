@@ -81,7 +81,7 @@ export function EnvironmentPicker({ choice, environment, sky, state, district, o
           <Swatch id={environment} className="h-5 w-7" />
           <span className="hidden max-w-[9rem] truncate sm:inline">{t(`scene.env.${environment}`)}</span>
           {choice === 'auto' ? (
-            <span className="hidden rounded bg-muted px-1 py-px text-[10px] font-semibold uppercase tracking-wide text-muted-foreground sm:inline">
+            <span className="hidden rounded bg-muted px-1 py-px text-[12px] font-semibold uppercase tracking-wide text-muted-foreground sm:inline">
               {t('scene.auto')}
             </span>
           ) : null}
@@ -90,7 +90,7 @@ export function EnvironmentPicker({ choice, environment, sky, state, district, o
       </PopoverTrigger>
       <PopoverContent align="start" sideOffset={8} className="w-[19rem] space-y-3 p-3" data-testid="environment-panel">
         <section>
-          <h3 className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <h3 className="mb-1.5 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
             <Mountain className="h-3.5 w-3.5" />
             {t('scene.landscape')}
           </h3>
@@ -99,7 +99,7 @@ export function EnvironmentPicker({ choice, environment, sky, state, district, o
               <MapPin className="ml-1 h-4 w-4 shrink-0 text-primary" />
               <span className="min-w-0 flex-1">
                 <span className="block font-medium text-foreground">{t('scene.auto')}</span>
-                <span className="block truncate text-[11px]">
+                <span className="block truncate text-[12px]">
                   {place ? t('scene.autoFor', { environment: t(`scene.env.${local}`), place }) : t('scene.autoNoPlace')}
                 </span>
               </span>
@@ -122,11 +122,11 @@ export function EnvironmentPicker({ choice, environment, sky, state, district, o
               ))}
             </div>
           </div>
-          <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">{t(`scene.envDesc.${environment}`)}</p>
+          <p className="mt-1.5 text-[12px] leading-snug text-muted-foreground">{t(`scene.envDesc.${environment}`)}</p>
         </section>
 
         <section>
-          <h3 className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <h3 className="mb-1.5 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
             <Sun className="h-3.5 w-3.5" />
             {t('scene.skyTitle')}
           </h3>
@@ -151,7 +151,7 @@ export function EnvironmentPicker({ choice, environment, sky, state, district, o
                   >
                     <Icon className="h-4 w-4" />
                   </span>
-                  <span className="w-full truncate text-[10.5px] leading-tight">{t(`scene.sky.${id}`)}</span>
+                  <span className="w-full truncate text-[12px] leading-tight">{t(`scene.sky.${id}`)}</span>
                 </button>
               );
             })}

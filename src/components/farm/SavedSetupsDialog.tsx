@@ -211,7 +211,7 @@ export function SavedSetupsDialog({
                       >
                         {metric.render(row)}
                         {best ? (
-                          <span className="ml-1.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium">
+                          <span className="ml-1.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[12px] font-medium">
                             {t('compare.best')}
                           </span>
                         ) : null}
@@ -223,7 +223,7 @@ export function SavedSetupsDialog({
             </tbody>
           </table>
         </div>
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-[12px] text-muted-foreground">
           {t('compare.note', { subsidy: formatINRCompact(financeAssumptions.subsidyInr) })}
         </p>
       </div>
@@ -242,7 +242,7 @@ export function SavedSetupsDialog({
           renderCompare(compareRows)
         ) : (
           <div className="space-y-4">
-            <div className="glass-card rounded-2xl p-4">
+            <div className="glass-card rounded-card p-4">
               <div className="flex items-start gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
                   <FolderOpen className="h-4 w-4" />

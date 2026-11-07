@@ -38,7 +38,7 @@ function Segment<T extends string>({
 }) {
   return (
     <div className="px-2 py-1.5">
-      <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">{label}</p>
+      <p className="mb-1.5 text-[12px] font-medium text-muted-foreground">{label}</p>
       <div role="group" aria-label={label} className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
         {options.map((option) => {
           const Icon = option.icon;
@@ -115,7 +115,7 @@ export function TopRightMenu() {
         <DropdownMenuItem onSelect={() => window.dispatchEvent(new Event("open-command-palette"))}>
           <Search className="mr-2 h-4 w-4" />
           {t("palette.open")}
-          <kbd className="ml-auto rounded border border-border px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">Ctrl K</kbd>
+          <kbd className="ml-auto rounded border border-border px-1.5 py-0.5 font-mono text-[12px] text-muted-foreground">Ctrl K</kbd>
         </DropdownMenuItem>
 
         {isAuthenticated ? (
