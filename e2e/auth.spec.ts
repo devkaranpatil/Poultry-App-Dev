@@ -114,9 +114,16 @@ test.describe("landing page", () => {
     expect(errors).toEqual([]);
   });
 
-  test("Get Started opens sign-up", async ({ page }) => {
+  test("the header Sign Up opens sign-up", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: /Get Started/ }).click();
+    await page.getByRole("button", { name: /Sign Up/i }).first().click();
     await expect(page.getByRole("dialog")).toBeVisible();
+  });
+
+  test("the main button goes to the estimate without asking for an account", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("link", { name: /Try a free estimate/ }).click();
+    await expect(page).toHaveURL(/\/estimate$/);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 });
