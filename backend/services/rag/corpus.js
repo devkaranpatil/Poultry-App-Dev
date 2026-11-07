@@ -63,15 +63,19 @@ function documentFromPassages(doc, passages) {
 
 /* ------------------------------ 1. official documents ------------------------------ */
 
+/** A source whose extracted text is shorter than this (after trimming) counts as an extraction failure, not coverage. */
+const MIN_USABLE_CHARS = 500;
+
 function officialDocuments() {
   const manifestPath = path.join(KNOWLEDGE_DIR, "manifest.json");
   const missing = [];
+  const unusable = [];
   const documents = [];
   let manifest = { sources: [], gaps: [] };
   try {
     manifest = JSON.parse(readText(manifestPath));
   } catch {
-    return { documents, missing, gaps: [] };
+    return { documents, missing, unusable, gaps: [] };
   }
   for (const source of manifest.sources) {
     const textFile = path.join(KNOWLEDGE_DIR, "text", `${source.id}.txt`);
@@ -80,11 +84,15 @@ function officialDocuments() {
       continue;
     }
     let text = readText(textFile);
+    if (text.trim().length < MIN_USABLE_CHARS) {
+      unusable.push(source.id);
+      continue;
+    }
     if (source.fixDegreeSigns) text = fixDegreeSigns(text);
     const doc = { ...source, kind: "document" };
     documents.push({ doc, chunks: chunkText(text).map((piece, index) => makeChunk(doc, index, piece)) });
   }
-  return { documents, missing, gaps: manifest.gaps || [] };
+  return { documents, missing, unusable, gaps: manifest.gaps || [] };
 }
 
 /* ------------------------------ 2. official tables ------------------------------ */
@@ -441,7 +449,13 @@ function plannerDocs() {
     });
 }
 
-function gapsDocument(gaps) {
+function gapsDocument(gaps, unusable = []) {
+  if (unusable.length) {
+    gaps = [
+      ...gaps,
+      `The text of these official documents could not be extracted, so their contents are not available: ${unusable.join(", ")}.`,
+    ];
+  }
   if (!gaps.length) return [];
   const doc = {
     id: "knowledge-gaps",
@@ -461,7 +475,7 @@ function gapsDocument(gaps) {
 /* ------------------------------ assemble ------------------------------ */
 
 /**
- * @returns {{ chunks: object[], documents: Array<{id:string,title:string,chunks:number}>, missing: string[] }}
+ * @returns {{ chunks: object[], documents: Array<{id:string,title:string,chunks:number}>, missing: string[], unusable: string[] }}
  */
 function buildCorpus() {
   const official = officialDocuments();
@@ -477,13 +491,14 @@ function buildCorpus() {
     plannerSchemesDocument(),
     plannerSitingDocument(),
     ...plannerDocs(),
-    ...gapsDocument(official.gaps),
+    ...gapsDocument(official.gaps, official.unusable),
   ];
   const chunks = built.flatMap((entry) => entry.chunks);
   return {
     chunks,
     documents: built.map(({ doc, chunks: list }) => ({ id: doc.id, title: doc.title, chunks: list.length })),
     missing: official.missing,
+    unusable: official.unusable,
   };
 }
 

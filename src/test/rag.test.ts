@@ -365,3 +365,21 @@ describe('reranking', () => {
     expect(result.passages.length).toBeGreaterThan(0);
   });
 });
+
+describe('document coverage', () => {
+  it('counts a document as covered only when its text has real content', () => {
+    const corpus = buildCorpus();
+    const covered = new Set(corpus.documents.map((doc: { id: string }) => doc.id));
+    expect(Array.isArray(corpus.unusable)).toBe(true);
+    // An empty extraction is reported, never silently counted as coverage.
+    for (const id of corpus.unusable) expect(covered.has(id)).toBe(false);
+    for (const id of corpus.missing) expect(covered.has(id)).toBe(false);
+  });
+
+  it('tells the assistant which documents it cannot read', () => {
+    const corpus = buildCorpus();
+    if (corpus.unusable.length === 0) return;
+    const gaps = corpus.chunks.filter((chunk: { docId: string }) => chunk.docId === 'knowledge-gaps');
+    expect(gaps.some((chunk: { text: string }) => chunk.text.includes(corpus.unusable[0]))).toBe(true);
+  });
+});

@@ -16,6 +16,7 @@ import { CommandPalette } from "@/components/CommandPalette";
 const Index = lazy(() => import("./pages/Index"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Landing = lazy(() => import("./pages/Landing"));
+const Estimate = lazy(() => import("./pages/Estimate"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const LoginPage = lazy(() => import("./pages/auth/LoginPage"));
 const SignupPage = lazy(() => import("./pages/auth/SignupPage"));
@@ -117,6 +118,7 @@ const AppRoutes = () => {
     >
       <Routes>
         <Route path="/" element={<Landing />} />
+        <Route path="/estimate" element={<Estimate />} />
         <Route
           path="/visualizer"
           element={

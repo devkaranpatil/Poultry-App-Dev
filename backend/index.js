@@ -27,6 +27,9 @@ function warmAssistant() {
   if (info.missingDocuments.length > 0) {
     console.warn(`  Missing source text: ${info.missingDocuments.join(", ")} (run: python datasets/scripts/fetch_knowledge.py)`);
   }
+  if (info.unusableDocuments.length > 0) {
+    console.warn(`  Text extraction failed (empty or near-empty), assistant cannot use: ${info.unusableDocuments.join(", ")}`);
+  }
   engine
     .warmUp()
     .then((loaded) => {

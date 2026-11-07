@@ -41,7 +41,7 @@ function knowledge() {
 
 /** Test hook: replace the corpus with a handful of passages, and forget any embeddings. */
 function useChunksForTesting(chunks) {
-  built = chunks ? { chunks, documents: [], missing: [], retriever: createRetriever(chunks) } : null;
+  built = chunks ? { chunks, documents: [], missing: [], unusable: [], retriever: createRetriever(chunks) } : null;
   embedding = embeddingState();
   warmPromise = null;
 }
@@ -213,6 +213,7 @@ function describe() {
     passages: kb.chunks.length,
     documents: kb.documents.length,
     missingDocuments: kb.missing,
+    unusableDocuments: kb.unusable || [],
     embeddings: { ...embedding, vectors: kb.retriever.vectorCount() },
     mode: kb.retriever.vectorCount() > 0 ? "hybrid" : "keyword",
   };

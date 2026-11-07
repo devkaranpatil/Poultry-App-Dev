@@ -117,14 +117,34 @@ describe('LoginPage', () => {
 });
 
 describe('Landing', () => {
-  it('renders the key sections and opens sign-up from the hero', async () => {
+  it('renders the key sections, offers the estimate first and opens sign-up from the header', async () => {
+    calc.calculateFarm.mockResolvedValue(sampleResult());
     wrap(<Landing />);
     expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent('Know what a poultry shed will cost');
     for (const id of ['problem', 'solution', 'features', 'ai', 'workflow', 'faq']) {
       expect(document.getElementById(id)).not.toBeNull();
     }
-    fireEvent.click(screen.getByRole('button', { name: /Get Started/ }));
+    // The main call to action needs no account.
+    expect(screen.getByRole('link', { name: /Try a free estimate/ })).toHaveAttribute('href', '/estimate');
+    fireEvent.click(screen.getAllByRole('button', { name: /Sign up/i })[0]);
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('shows the example from the calculator, labelled with its assumptions, and a loss as a loss', async () => {
+    const result = sampleResult();
+    calc.calculateFarm.mockResolvedValue({ ...result, returns: { ...result.returns, annualProfit: -193935, paybackYears: null } });
+    wrap(<Landing />);
+    const card = await screen.findByTestId('example-estimate');
+    await waitFor(() => expect(card).toHaveTextContent('-₹1.94 L'));
+    expect(card).toHaveTextContent('Does not pay back');
+    expect(card).toHaveTextContent('not a quote');
+    expect(calc.calculateFarm.mock.calls[0][0]).toMatchObject({ state: 'Maharashtra', district: 'Pune' });
+  });
+
+  it('hides the numbers when the calculator is unreachable', async () => {
+    calc.calculateFarm.mockRejectedValue(new Error('offline'));
+    wrap(<Landing />);
+    expect(await screen.findByText(/example could not be loaded/i)).toBeInTheDocument();
   });
 });
 

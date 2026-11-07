@@ -12,7 +12,6 @@ import {
   IndianRupee,
   Layers3,
   Bird,
-  MapPin,
   MessageSquare,
   ShieldCheck,
 } from "lucide-react";
@@ -25,7 +24,7 @@ import { useI18n } from "@/context/I18nContext";
 import { motion } from "framer-motion";
 import { HeroBackdrop } from "@/components/motion/HeroBackdrop";
 import { HeroMedia } from "@/components/motion/HeroMedia";
-import { CountUp } from "@/components/motion/CountUp";
+import { ExampleEstimate } from "@/components/landing/ExampleEstimate";
 import { Reveal } from "@/components/motion/Reveal";
 
 const HERO_IMAGE_SRC = "/images/landing-poultry-shed.svg";
@@ -80,9 +79,11 @@ export default function Landing() {
       </Link>
     </Button>
   ) : (
-    <Button data-magnetic size="lg" className="h-12 px-6 text-base" onClick={openSignup}>
-      {t("landing.getStarted")}
-      <ArrowRight className="ml-2 h-4 w-4" />
+    <Button asChild data-magnetic size="lg" className="h-12 px-6 text-base">
+      <Link to="/estimate">
+        {t("landing.tryEstimate")}
+        <ArrowRight className="ml-2 h-4 w-4" />
+      </Link>
     </Button>
   );
 
@@ -131,35 +132,7 @@ export default function Landing() {
             <HeroMedia
               src={HERO_IMAGE_SRC}
               alt={t("landing.heroImageAlt")}
-              floating={
-                <div className="surface absolute -bottom-6 left-4 right-4 p-4 shadow-elevated sm:left-auto sm:right-6 sm:w-72">
-                  <div className="flex items-center justify-between">
-                    <p className="eyebrow">{t("landing.previewLabel")}</p>
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <MapPin className="h-3 w-3" />
-                      Pune
-                    </span>
-                  </div>
-                  <p className="mt-2 font-display text-2xl font-bold tabular-nums text-foreground">
-                    <CountUp to={26.55} decimals={2} prefix="₹" suffix=" L" />
-                  </p>
-                  <p className="text-xs text-muted-foreground">{t("landing.previewSub")}</p>
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                    <div className="rounded-lg bg-accent px-2.5 py-2">
-                      <p className="text-accent-foreground/80">{t("right.kpiNet")}</p>
-                      <p className="font-semibold tabular-nums text-accent-foreground">
-                        <CountUp to={13.28} decimals={2} prefix="₹" suffix=" L" />
-                      </p>
-                    </div>
-                    <div className="rounded-lg bg-muted px-2.5 py-2">
-                      <p className="text-muted-foreground">{t("right.kpiPayback")}</p>
-                      <p className="font-semibold tabular-nums text-foreground">
-                        <CountUp to={5} decimals={1} suffix=" yrs" />
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              }
+              floating={<ExampleEstimate />}
             />
           </div>
         </section>

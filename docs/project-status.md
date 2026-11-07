@@ -1,6 +1,7 @@
 # Project status and roadmap
 
-Last updated: 2026-11-02. Poultry Planner (working name) is a working prototype: every feature below runs end to end on
+Last updated: 2026-11-07. **What is still open for launch lives in `docs/launch-readiness.md`;** this file describes
+what the product does and how it is checked. Poultry Planner (working name) is a working prototype: every feature below runs end to end on
 a laptop, against the Supabase database it shares with the polyhouse planner, with the AI on local open-source models.
 It was migrated from that polyhouse planner in seven phases (`docs/migration`); the polyhouse code is on the
 `polyhouse` git tag, and its own status history ends there.
@@ -123,8 +124,8 @@ of memory. CI runs the whole suite in one go.
   egg rates, the environment-controlled shed (Rs 800 per sq ft, range 700 to 900) and the contract growing charge
   (Rs 10 a kg). Feed (Rs 35) and chicks (Rs 40) are NABARD's published Maharashtra figures. See the vault note
   "05 Price Research 2026-11".
-- **NABARD unit costs for one state** (Jharkhand); banks use their own state's.
-- **State schemes:** only Maharashtra's. Its rules are read from the GR of 9 March 2026 (a copy; the original on gr.maharashtra.gov.in is still to be linked). Other states have none.
+- **NABARD unit costs** are in for all 28 states (task 12, 2026-11-06); a bank uses its own state's.
+- **State schemes:** 11 states (task 12). Maharashtra's rules are read from the GR of 9 March 2026 (a copy; the original on gr.maharashtra.gov.in is still to be linked). Six scheme PDFs (Bihar, Odisha, Uttarakhand, Uttar Pradesh) gave empty text and are reported as unusable, not as coverage.
 - **Heat stress on monthly means:** afternoons are hotter than the index.
 - **AI:** 40-90 s per answer on a laptop CPU, 20-30 s with part of the model on a GPU (what-if answers 70-135 s).
   The evaluation passes 78 of 85; five of the seven failures are fixed but not yet rerun, two are open
@@ -138,7 +139,7 @@ of memory. CI runs the whole suite in one go.
 ### Now
 
 1. Rerun the five questions fixed on 2026-11-02, and read the two open answers in the GPU report (`docs/remaining`, task 01).
-2. Apply the poultry migration to the live Supabase project and load the poultry tables.
+2. ~~Apply the poultry migration to the live Supabase project~~ (done 2026-11-05).
 3. Check the unverified rates and the default prices with current quotes; native review of Hindi and Marathi.
 
 ### Next
