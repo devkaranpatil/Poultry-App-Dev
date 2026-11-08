@@ -1,155 +1,139 @@
 # Kukkut
 
-कुक्कुट, "poultry" in Hindi and Marathi (कुक्कुटपालन, poultry farming).
+**Plan a poultry farm in India and see whether it pays, before you build.**
 
-A planner for poultry farms in India: design a shed, see what it costs and earns, which schemes and loans apply, the
-risks, and a bank-ready report. It was built from a complete polyhouse planner (the GreenhouseIQ project); the
-polyhouse code is kept on the `polyhouse` git tag. The app name is a placeholder set in one place, `shared/app.json`,
-which every screen, the page title, the report and the emails read.
+Kukkut (कुक्कुट, from कुक्कुटपालन, poultry farming in Hindi and Marathi) is for farmers planning a new or bigger shed, and
+for the bank and subsidy officers who read their plans. Design the shed in 3D, cost it against NABARD's unit costs, see
+the yearly profit, the schemes and bank loan that apply, the risks, and export a bank-ready report, in English, Hindi
+and Marathi.
 
-**Migration status:** all seven phases are done (tags `phase-1` to `phase-7`). What is still open, including a full
-run of the assistant evaluation, is in [docs/remaining](docs/remaining/README.md), one file per task; the plan,
-research and feature changes are in [docs/migration](docs/migration/README.md).
+It is honest by design: every figure shows its official source, unverified prices are marked "verify", a loss is shown
+as a loss, and the AI advisor answers only from official documents and the project's own numbers.
 
-What it does:
+## Quick start
 
-- **Design** a poultry shed in 3D: size and heights, shed type (open-sided, environment-controlled with tunnel fans and
-  cooling pads, or backyard), roof (gable, monitor, lean-to), frame, roof sheet, side walls and curtains, entry
-  (door, footbath, anteroom), birds (broiler, layers in cages or on litter, improved desi) and feeding. The flock size
-  follows from the floor area and the stocking density.
-- **Cost** it from NABARD's 2023-24 unit costs (shed rate per sq ft, equipment per bird), with the first batch's
-  working capital, compared with NABARD's unit cost for the same flock. Items without a published price are marked
-  "verify".
-- **Earnings:** batches a year (or the layer cycle), birds and eggs sold, feed, running costs, profit, payback and the
-  break-even price, independent or on contract, from editable prices and norms that each show their source.
-- **Schemes and loan:** which schemes can apply (NLM-EDP for rural poultry parent farms, AHIDF for feed and processing,
-  state schemes) and why; when none applies the screens say so plainly, and the bank loan carries the project
-  (margin, instalments, interest and the yearly debt cover).
-- **Site and rules:** the CPCB consent and siting distances for farms above 5,000 birds, a checklist to confirm, and
-  the district's heat stress months (NASA POWER climate).
-- **Risk:** a Monte Carlo simulation of mortality, feed conversion, prices, build cost and the chance of an outbreak.
-- **AI assistant** that runs on your own server and answers from official documents, with sources. "What if" questions
-  (more birds, contract, layers, another shed, another price) are answered by the planner itself, so the figures come
-  from code, shown as a now/with-the-change table.
-- **Save, compare, share and export** (PDF and Excel with live formulas), in English, Hindi and Marathi.
+You need [Node.js](https://nodejs.org) 20.19+ or 22.12+ and git.
 
-The workspace is a guided journey of seven steps: **Design → Site & rules → Cost → Earnings → Loan → Risk → Report**.
-- **Each step:** it answers one question, starts with an "In short" sentence built from your figures, and has Back and
-  Next buttons.
-- **Help where you need it:** a "?" beside a hard word explains it, and tables, statistics and sources sit under "Show
-  details".
-- **The advisor:** "Ask the advisor" opens the AI beside any step, with example questions for that step.
-- **First visit:** a short guide explains it all and can start you from a recommended shed (14 x 7 m, about 1,050
-  broilers).
+```sh
+git clone https://github.com/devkaranpatil/Poultry-App-Dev.git kukkut
+cd kukkut
+npm start
+```
 
-More: [project status](docs/project-status.md), [backend architecture and audit](docs/backend-architecture.md),
-[3D shed](docs/3d-scene.md), [what Indian sheds look like](docs/3d-model-references.md).
+`npm start` installs everything that is missing, creates the settings files, and runs the website and the API
+together. Open **http://localhost:8080**. Ctrl+C stops both. Run it again any time: it only installs what changed.
+
+| Command | What it does |
+|---|---|
+| `npm start` | Install what is missing, then run the website (port 8080) and the API (port 5000) |
+| `npm start -- --with-ai` | The same, after downloading the AI models (about 3 GB, once) |
+
+Out of the box it uses a local database inside the API (no install). What works straight away and what needs setting up:
+
+| Works at once | Needs a setting |
+|---|---|
+| Landing page, the free estimate, the calculations | **Sign-in, saved projects, the workspace:** a Supabase project (below) |
+| | **The AI advisor:** the models (`--with-ai`) and the official documents (below) |
+
+### Sign-in (Supabase)
+
+Create a free project at [supabase.com](https://supabase.com), then fill in:
+
+- `.env`: `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` (Dashboard > Project Settings > API)
+- `backend/.env`: `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` (the same values); `DATABASE_URL` can stay on the local
+  database or point to the project's Postgres (the "Session pooler" string)
+
+`backend/.env.example` explains every setting, including Google sign-in and email.
+
+### The AI advisor
+
+The advisor runs inside the API on open-source models (`node-llama-cpp`); nothing is sent to an outside AI service.
+
+```sh
+npm start -- --with-ai                       # the chat, search and reranking models, about 3 GB, once
+python datasets/scripts/fetch_knowledge.py   # the official documents it reads (needs poppler's pdftotext, or pip install pypdf)
+```
+
+How it answers:
+
+1. A Hindi or Marathi question is put into English (the documents are English).
+2. Keyword search (BM25) and multilingual embeddings (bge-m3) each rank the passages; a reranker (bge-reranker-v2-m3)
+   keeps the ones that answer the question.
+3. The chat model (Qwen3-4B, Apache-2.0) answers only from those passages and the project's own numbers, citing them.
+   Subsidies come only from the planner's scheme check, and "what if" questions are worked out by the planner itself.
+4. The answer ends with its sources and a warning for any figure found in neither the sources nor the project.
+
+It reads about 34 official sources (NLM-EDP and AHIDF guidelines, NABARD unit costs and model projects, NCDC, DAHD
+biosecurity, TNAU and Vikaspedia, state schemes), listed with their status in `datasets/knowledge/manifest.json`. The
+downloaded text is git-ignored because some of it is copyrighted. On a laptop CPU an answer takes 40 to 90 seconds;
+the evaluation set scores 78 of 85 (`cd backend && npm run eval:assistant`).
+
+## What it does
+
+- **Design** the shed in 3D: size and heights, shed type (open-sided, environment-controlled with tunnel fans and
+  cooling pads, backyard), roof, frame, sheets, side walls and curtains, entry, birds (broilers, layers in cages or on
+  litter, improved desi) and feeding. The flock follows from the floor area and the stocking density, and the birds
+  peck and wander in the model.
+- **Cost** from NABARD's 2023-24 unit costs, with the first batch's working capital, compared with NABARD's own unit
+  cost for the same flock.
+- **Earnings:** batches a year or the layer cycle, feed, running costs, profit, payback and the break-even price,
+  independent or on contract, from editable prices that each show their source.
+- **Schemes and loan:** NLM-EDP, AHIDF and state schemes, each with why it does or does not apply; the bank loan with
+  margin, instalments and the yearly debt cover.
+- **Site and rules:** CPCB consent and siting distances above 5,000 birds, and the district's heat-stress months
+  (NASA POWER climate).
+- **Risk:** a Monte Carlo simulation of mortality, feed conversion, prices, build cost and outbreaks.
+- **Report:** a PDF in the order of a bank DPR, and Excel with live formulas that match the app's figures.
+- **Save, compare and share** setups.
+
+The workspace is a guided journey in three phases: **Plan the shed** (Design, Site & rules), **Check the money**
+(Cost, Earnings, Loan, Risk) and **Share it** (AI summary, Report). Each step answers one question and opens with an
+"In short" line built from your figures. The advisor opens from "More options" (⋯), docked beside the step on a laptop
+and full screen on a phone; the money steps also carry a small "Ask about these figures" box.
 
 ## Project layout
 
 | Path | What it is |
 |---|---|
-| `src/` | React + Vite frontend (TypeScript, Three.js viewer) |
-| `backend/` | Express API (calculations, auth, saved configurations) backed by Postgres (Supabase) |
-| `shared/` | Data used by both sides: the app name, states and districts, the poultry norms and prices with their sources, and the shed limits |
-| `datasets/` | Official CSV datasets, the AI knowledge-base manifest and fetch scripts, and the assistant's evaluation set (`datasets/eval`) |
-| `supabase/` | Database migrations (Supabase Postgres) |
-| `e2e/` | Playwright browser tests |
-| `src/test/` | Vitest suites for the frontend and the backend API |
+| `src/` | The website: React, Vite, TypeScript, Tailwind, Three.js for the 3D shed |
+| `backend/` | The API: Express, the poultry calculations, schemes, risk, saved setups, the AI advisor |
+| `shared/` | Used by both: the app name, states and districts, the poultry norms and prices with their sources |
+| `datasets/` | Official CSV tables, the AI knowledge manifest and fetch scripts, the assistant's evaluation set |
+| `supabase/` | Database migrations |
+| `deploy/` | Server scripts for the free hosting set-up |
+| `scripts/start.mjs` | The one-command install and run |
+| `e2e/`, `src/test/` | Browser tests (Playwright) and unit tests (Vitest) |
+| `docs/` | Status, architecture, the 3D scene, deployment and the open tasks |
 
-## Setup
-
-Requirements: Node.js 18+ and a Postgres database (needed for login and saved configurations): a Supabase project, or `DATABASE_URL=pglite:./.data/dev-db` for a zero-setup local one (see `backend/.env.example`).
-
-```sh
-npm install
-cd backend && npm install && cd ..
-cp backend/.env.example backend/.env   # then fill in real values
-```
-
-Optional frontend `.env` in the project root:
+## Testing
 
 ```sh
-VITE_API_BASE_URL=http://localhost:5000
+npm test                  # unit and integration tests (Vitest, website and API)
+npm run test:e2e          # browser tests (Playwright) on their own servers and an in-memory database
+npm run test:e2e:scene    # the long 3D sweep: every setup option in the viewer
+npm run ci                # lint, types, tests with coverage and the build, as CI runs them
 ```
 
-## Running locally
+Run `npm run test:e2e:install` once on a new machine to get the test browser. GitHub Actions runs the checks and the
+browser tests on every push (`.github/workflows`).
 
-```sh
-# terminal 1 - API on http://localhost:5000
-cd backend && npm run dev
+## Deploying
 
-# terminal 2 - frontend on http://localhost:8080
-npm run dev
-```
+[docs/deploy.md](docs/deploy.md) walks through a free set-up: the website on Cloudflare Pages, the API and the AI on
+an Oracle Cloud Always Free server in Hyderabad, HTTPS through DuckDNS and Caddy, sign-in and data on Supabase. In
+production the API needs `NODE_ENV=production`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `DATABASE_URL` and
+`CORS_ORIGINS`, and refuses to start without them.
 
-## AI assistant (runs on your own server, no API key)
+## Status and limits
 
-The project advisor and the chat answer from **official documents**, using open-source models that run inside the
-backend process (`node-llama-cpp`). Nothing is sent to an outside AI service.
+A working prototype, not yet launched. Before inviting users ([docs/launch-readiness.md](docs/launch-readiness.md)):
+dated local price quotes, a native review of the Hindi and Marathi wording, a poultry expert's review of the key
+calculations, and trials with growers and lenders.
 
-```sh
-cd backend && npm run models:download      # once, about 3 GB (chat model, embedding model, reranker)
-python datasets/scripts/fetch_knowledge.py   # the official documents it reads (needs poppler's pdftotext, or: pip install pypdf)
-```
+What users should know: at today's default prices the default 14 x 7 m Maharashtra shed loses money (the app shows
+this and the defaults are not tuned to hide it); several rates are unverified and marked so; schemes cover 11 states;
+PDF reports are English only; the AI can be wrong, so check important figures against the cited source.
 
-`LLM_MODELS_DIR` points the backend at model files that are already on disk. Start the backend as usual. On the first
-start it indexes the documents, which takes a few minutes and is then cached in `backend/.data/`. Until the models are
-installed the AI features report "not configured" and everything else works.
-
-How a question is answered:
-
-1. A Hindi or Marathi question is put into English (the documents are English).
-2. **Retrieval**: keyword search (BM25) and multilingual embeddings (bge-m3) each rank the passages; a **reranker**
-   (bge-reranker-v2-m3) then reads the question with the best candidates and keeps the ones that truly answer it.
-3. The chat model (Qwen3, Apache-2.0) answers **only from those passages and the project's own numbers**, citing them
-   as [1], [2]. Subsidies come only from the planner's scheme check, never worked out by the model.
-4. The answer is followed by its sources (with links) and by a warning listing any figure that appears in neither the
-   sources nor the project facts.
-
-What it reads (`datasets/knowledge/manifest.json` lists every source with its publisher, URL and status): the NLM-EDP
-and AHIDF guidelines, NABARD's unit costs and its broiler, layer and indigenous poultry projects, the NCDC broiler
-project report, the DAHD biosecurity guidelines, the TNAU poultry expert system (housing, broilers, layers, brooding,
-litter, equipment, lighting, disease and vaccination, biosecurity) and the Vikaspedia broiler and layer pages, plus
-the CSV tables in `datasets/csv` and the planner's own norms and cost items. Gaps are listed there too (for example,
-no central capital subsidy for a plain broiler or layer farm, and medicine doses are for a veterinarian); the
-assistant is told to say so rather than guess. The downloaded text is git-ignored because some of it is copyrighted.
-
-Speed, measured on a 15 W laptop CPU (Intel Core 7 150U, no GPU): the default Qwen3-4B model takes about 40 to 90
-seconds for a full answer; the project facts are cached after the first question. A faster CPU or `LLM_GPU=auto` on a
-real GPU helps a lot. The 1.7B (`LLM_MODEL_URI`, see `backend/.env.example`) is about 1.8x faster but weaker.
-Always check important figures with the cited source or a local expert.
-
-To measure the assistant after changing retrieval, prompts or the model: `cd backend && npm run eval:assistant` (85
-poultry questions with known answers, including "what if" questions answered by the planner; about an hour and a
-half on a laptop CPU, or `-- --only=id1,id2` for a few). Run one evaluation at a time: two runs hold two copies of the
-models and exhaust 16 GB of memory.
-
-## Testing & CI
-
-```sh
-npm test                  # unit + integration tests (vitest, frontend and backend API)
-npm run test:coverage     # same, with coverage report in coverage/ and enforced floors
-npm run test:e2e          # end-to-end browser tests (Playwright); runs against an in-memory Postgres (PGlite), no setup needed
-npm run test:e2e:scene    # the long 3D sweep: every setup option in the viewer (its own CI workflow)
-npm run lint              # eslint
-npm run typecheck         # strict TypeScript
-npm run ci                # lint + types + coverage + build, exactly as CI runs it
-```
-
-- **Unit/integration** (`src/test/`): poultry calculations (including the NABARD reproduction), validators, services, auth and AI
-  routes and retrieval (the language model is faked), PDF/Excel builders, and React pages and panels.
-- **End-to-end** (`e2e/`): sign-up, password reset, the full workspace journey, real PDF/Excel
-  downloads, saved-setup comparison, share links and mobile. It starts its own servers on ports
-  5390/5391 and uses a throwaway in-memory database (override with `E2E_DATABASE_URL`).
-  On a fresh machine run `npm run test:e2e:install` once to download Chromium.
-- **CI** (`.github/workflows/ci.yml`): on every push and pull request GitHub Actions runs the
-  quality checks, the e2e suite, and a dependency audit. The 3D sweep (`scene-e2e.yml`) runs when the
-  3D code changes, weekly and on demand: CI runners have no GPU, so WebGL is drawn on the CPU and the
-  sweep takes over half an hour.
-
-## Production notes
-
-- **Free hosting walk-through:** [docs/deploy.md](docs/deploy.md) (Cloudflare Pages, Oracle Cloud Always Free in Hyderabad, DuckDNS and Caddy; scripts in `deploy/oracle`).
-- Set `NODE_ENV=production`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `DATABASE_URL` (the Supabase connection string) and `CORS_ORIGINS` in `backend/.env`; the API refuses to start without them. Password-reset emails are sent by Supabase Auth, so set Resend as its SMTP provider in the dashboard.
-- Generated PDF reports are always in English, because jsPDF cannot render Devanagari text.
+More: [project status](docs/project-status.md), [backend architecture](docs/backend-architecture.md),
+[3D shed](docs/3d-scene.md), [open tasks](docs/remaining/README.md). Kukkut began as a polyhouse planner (GreenhouseIQ),
+kept on the `polyhouse` git tag; the migration is in [docs/migration](docs/migration/README.md).

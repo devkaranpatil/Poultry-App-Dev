@@ -1,9 +1,14 @@
 {
-  "name": "poultry-planner",
+  "name": "kukkut",
   "private": true,
   "version": "0.0.0",
+  "description": "Kukkut: plan a poultry farm in India and see whether it pays. Design the shed in 3D, cost it against NABARD unit costs, check schemes, the bank loan and the risks, and export a bank-ready report, in English, Hindi and Marathi.",
   "type": "module",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
   "scripts": {
+    "start": "node scripts/start.mjs",
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",

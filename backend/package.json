@@ -1,8 +1,8 @@
 {
-  "name": "poultry-planner-backend",
+  "name": "kukkut-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "Poultry Planner backend API",
+  "description": "Kukkut API: the poultry calculations, schemes, risk simulation, saved setups and the AI advisor that answers from official documents on this server",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
