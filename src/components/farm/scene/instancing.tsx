@@ -11,10 +11,21 @@ interface InstancedPartProps {
   receiveShadow?: boolean;
   castShadow?: boolean;
   renderOrder?: number;
+  /** The shadow caster for a mesh whose vertices move in the shader. */
+  customDepthMaterial?: THREE.Material;
 }
 
 /** Renders an InstanceSet. The mesh is rebuilt when the number of instances changes (WebGL buffers cannot resize). */
-export function InstancedPart({ name, set, geometry, material, receiveShadow = false, castShadow = false, renderOrder }: InstancedPartProps) {
+export function InstancedPart({
+  name,
+  set,
+  geometry,
+  material,
+  receiveShadow = false,
+  castShadow = false,
+  renderOrder,
+  customDepthMaterial,
+}: InstancedPartProps) {
   const ref = useRef<THREE.InstancedMesh>(null);
 
   useLayoutEffect(() => {
@@ -39,6 +50,7 @@ export function InstancedPart({ name, set, geometry, material, receiveShadow = f
       receiveShadow={receiveShadow}
       castShadow={castShadow}
       renderOrder={renderOrder}
+      customDepthMaterial={customDepthMaterial}
     />
   );
 }

@@ -47,7 +47,8 @@ Success means growers, consultants and lenders trust the estimate enough to use 
 
 ## Brand Commitments
 
-- Name: **Poultry Planner**, a working name set in one place (`shared/app.json`) that every screen, the report and the emails read.
+- Name: **Kukkut** (कुक्कुट, from कुक्कुटपालन, the word for poultry farming in Hindi, Marathi and the scheme papers), chosen 2026-11-08; set in one place (`shared/app.json`) that every screen, the report and the emails read. Trademark and domain not yet checked.
+- Logo: a hen in profile on forest green, comb, beak and feet in straw (`src/components/brand/Logo.tsx`, `public/favicon.svg`).
 - Voice: plain, direct and honest. Short sentences, no jargon without a "?" explanation, and losses and unverified figures stated openly.
 
 ## Evidence on Hand

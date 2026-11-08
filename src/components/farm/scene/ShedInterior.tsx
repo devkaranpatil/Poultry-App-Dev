@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { InstancedPart } from './instancing';
 import { InstanceSet, addSegment } from './instanceSet';
 import { geo } from './sceneGeometry';
 import { CAGE, FITTING_CAP, PLINTH, type InteriorLayout, type RenderQuality, type ShedLayout } from './shedLayout';
+import { createMotionDepthMaterial, createMotionMaterial, useSceneClock } from './sceneMaterials';
 import { createConcreteMaterial, createLitterMaterial } from './shedMaterials';
 import { metrePlane, useDisposal } from './structureHelpers';
 
@@ -96,8 +98,14 @@ function chickenGeometry() {
   return birdGeometry;
 }
 
-/** The flock: up to BIRD_CAP birds as two instanced meshes, in the breed's colours and slightly varied poses. */
+/**
+ * The flock: up to BIRD_CAP birds as two instanced meshes, in the breed's colours and slightly varied poses. Each
+ * bird pecks, looks about and, on a floor, walks a small loop back to its place (the 'flock' motion, in the vertex
+ * shader, so a thousand birds cost the CPU nothing per frame). With reduced motion asked for, they stand still.
+ */
 export function BirdFlock({ interior }: { interior: InteriorLayout }) {
+  const still = usePrefersReducedMotion();
+  useSceneClock(!still);
   const sets = useMemo(() => {
     const body = new InstanceSet();
     const details = new InstanceSet();
@@ -109,19 +117,34 @@ export function BirdFlock({ interior }: { interior: InteriorLayout }) {
     }
     return { body, details };
   }, [interior]);
-  const materials = useMemo(
-    () => ({
-      body: new THREE.MeshStandardMaterial({ roughness: 0.92, vertexColors: true }),
-      details: new THREE.MeshStandardMaterial({ roughness: 0.7, vertexColors: true }),
-    }),
-    []
-  );
+  const walk = interior.mode === 'floor' ? 1 : 0;
+  const materials = useMemo(() => {
+    if (still) {
+      return {
+        body: new THREE.MeshStandardMaterial({ roughness: 0.92, vertexColors: true }),
+        details: new THREE.MeshStandardMaterial({ roughness: 0.7, vertexColors: true }),
+      };
+    }
+    return {
+      body: createMotionMaterial('flock', { roughness: 0.92, vertexColors: true }, { walk }),
+      details: createMotionMaterial('flock', { roughness: 0.7, vertexColors: true }, { walk }),
+      // The shadows move with the birds.
+      shadow: createMotionDepthMaterial('flock', { walk }),
+    };
+  }, [still, walk]);
   const items = useMemo(() => Object.values(materials), [materials]);
   useDisposal(items);
   const shape = chickenGeometry();
   return (
     <group name="birds-flock" userData={{ birdsShown: interior.birdsShown, birdsTotal: interior.birdsTotal }}>
-      <InstancedPart name="birds-bodies" set={sets.body} geometry={shape.body} material={materials.body} castShadow />
+      <InstancedPart
+        name="birds-bodies"
+        set={sets.body}
+        geometry={shape.body}
+        material={materials.body}
+        customDepthMaterial={'shadow' in materials ? materials.shadow : undefined}
+        castShadow
+      />
       <InstancedPart name="birds-details" set={sets.details} geometry={shape.details} material={materials.details} />
     </group>
   );

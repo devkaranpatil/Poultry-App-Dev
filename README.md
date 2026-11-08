@@ -1,4 +1,6 @@
-# Poultry Planner (working name)
+# Kukkut
+
+कुक्कुट, "poultry" in Hindi and Marathi (कुक्कुटपालन, poultry farming).
 
 A planner for poultry farms in India: design a shed, see what it costs and earns, which schemes and loans apply, the
 risks, and a bank-ready report. It was built from a complete polyhouse planner (the GreenhouseIQ project); the

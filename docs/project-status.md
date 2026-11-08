@@ -1,7 +1,7 @@
 # Project status and roadmap
 
 Last updated: 2026-11-07. **What is still open for launch lives in `docs/launch-readiness.md`;** this file describes
-what the product does and how it is checked. Poultry Planner (working name) is a working prototype: every feature below runs end to end on
+what the product does and how it is checked. Kukkut (named 2026-11-08; formerly the working name Poultry Planner) is a working prototype: every feature below runs end to end on
 a laptop, against the Supabase database it shares with the polyhouse planner, with the AI on local open-source models.
 It was migrated from that polyhouse planner in seven phases (`docs/migration`); the polyhouse code is on the
 `polyhouse` git tag, and its own status history ends there.

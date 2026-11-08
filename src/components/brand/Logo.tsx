@@ -2,20 +2,30 @@ import { APP_NAME } from '@/config/app';
 import { cn } from '@/lib/utils';
 
 /**
- * Brand mark: an open-sided shed (two posts under a gable roof) with the sun rising inside it, on forest green.
- * Drawn with theme tokens so it follows light and dark mode; public/favicon.svg is the same drawing in fixed colours.
+ * Brand mark for Kukkut (कुक्कुट, poultry): a hen in profile on forest green, comb, beak and feet in straw. Plain
+ * shapes so it still reads as a hen at favicon size. Drawn with theme tokens so it follows light and dark mode;
+ * public/favicon.svg is the same drawing in fixed colours.
  */
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" className={cn('h-8 w-8', className)} aria-hidden="true">
       <rect width="32" height="32" rx="9" className="fill-primary" />
-      <circle cx="16" cy="22" r="5.2" className="fill-straw" />
-      <rect x="4" y="22" width="24" height="6" className="fill-primary" />
-      <g fill="none" strokeLinecap="round" strokeLinejoin="round" className="stroke-primary-foreground">
-        <path d="M5.5 15.2 16 8l10.5 7.2" strokeWidth="2.6" />
-        <path d="M9 14v8M23 14v8" strokeWidth="2" />
-        <path d="M6 22.5h20" strokeWidth="2" />
+      <g className="fill-primary-foreground">
+        <path d="M4.8 8.4c3 .2 6 2.4 7.8 5.6L8.2 18.6C6.2 15.6 5 12.2 4.8 8.4Z" />
+        <ellipse cx="15.2" cy="18.6" rx="8.6" ry="6.4" />
+        <path d="M16.6 15.2 19 9.8 23.6 11 23.4 16.8Z" />
+        <circle cx="21.4" cy="9.9" r="3.5" />
       </g>
+      <path d="M9.4 16.6c4.2-1.6 8.6-.8 11 2.2-3.2 2.8-8.4 2.4-11-2.2Z" className="fill-primary opacity-20" />
+      <g className="fill-straw">
+        <circle cx="19.6" cy="6.5" r="1.35" />
+        <circle cx="21.5" cy="5.9" r="1.45" />
+        <circle cx="23.3" cy="6.7" r="1.25" />
+        <path d="M24.5 9.1 27.6 10.3 24.5 11.5Z" />
+        <rect x="12.3" y="24.4" width="1.7" height="3.6" rx=".85" />
+        <rect x="16.6" y="24.4" width="1.7" height="3.6" rx=".85" />
+      </g>
+      <circle cx="22.2" cy="9.4" r=".9" className="fill-primary" />
     </svg>
   );
 }
