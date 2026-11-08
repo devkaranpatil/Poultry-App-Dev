@@ -23,6 +23,26 @@ address from DuckDNS with HTTPS by Caddy. Chosen on 2026-11-08; prices and limit
 - **Addresses:** `*.pages.dev` and `*.duckdns.org` until a domain is bought. A domain is the first thing worth paying
   for (it also unlocks Resend email).
 
+## Checklist (status 2026-11-08: prepared, not deployed)
+
+Done already: the code, scripts and this guide are on `main`; an SSH key for the server exists on the owner's laptop
+at `~/.ssh/kukkut_oracle` (public key `~/.ssh/kukkut_oracle.pub`, comment `kukkut-oracle`). Left, in order:
+
+- [ ] Oracle Cloud account, home region **India South (Hyderabad)** (step 1)
+- [ ] The server: Ubuntu 24.04, VM.Standard.A1.Flex, 2 OCPU, 12 GB, 50 GB disk; paste the contents of
+      `~/.ssh/kukkut_oracle.pub` as its SSH key; note its public IP (step 2)
+- [ ] Ingress rules for TCP 80 and 443 in the subnet's security list (step 2)
+- [ ] DuckDNS subdomain pointing at the public IP, for example `kukkut-api.duckdns.org` (step 1 and 2)
+- [ ] Log in: `ssh -i ~/.ssh/kukkut_oracle ubuntu@<server-ip>`, then run `setup.sh` (step 3)
+- [ ] Copy the documents and the search cache, with `-i ~/.ssh/kukkut_oracle` on each `scp` (step 4)
+- [ ] `backend/.env` on the server: take `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` and `DATABASE_URL` from this
+      laptop's `backend/.env` (never commit them), add the production values in step 4, then start the service
+- [ ] Cloudflare Pages project from the GitHub repo, with `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` from
+      this laptop's `.env` and `VITE_API_BASE_URL` set to the DuckDNS address (step 5)
+- [ ] `CORS_ORIGINS` on the server set to the `pages.dev` address once Cloudflare gives it; restart the service
+- [ ] Supabase sign-in URLs for the `pages.dev` address (step 6)
+- [ ] The launch checks (step 7)
+
 ## 1. Accounts
 
 1. **Oracle Cloud**: sign up, home region **India South (Hyderabad)**.

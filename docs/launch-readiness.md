@@ -31,6 +31,7 @@ advice, Hindi and Marathi) support it and are not the pitch.
 | 3 | Poultry-expert review of the highest-impact calculations (break-even, mortality, FCR, working capital) | no one outside the project has checked them | a poultry consultant | `docs/remaining/14` (brief written, no reviewer yet) |
 | 4 | Validate with a few growers, consultants and lenders: do they trust the estimate enough to use it in a real decision? | decides what to build next | owner | not started |
 | 5 | Assistant evaluation: 78 of 85 on 2026-11-07 (CPU, after the OCR text); seven open | answer quality | developer | `docs/remaining/01` |
+| 6 | Deploy: free set-up prepared (Cloudflare Pages, Oracle Always Free in Hyderabad, DuckDNS and Caddy); accounts and server not created yet | the app is only on this laptop | owner | `docs/deploy.md` (checklist at the top) |
 
 ## Known limits users must be told
 
